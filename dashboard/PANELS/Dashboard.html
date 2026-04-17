@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>GUARDIAN-OTA Dashboard</title>
+<!-- Fonts & Icons -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Space+Grotesk:wght@300;400;500;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "inverse-on-surface": "#4d556b",
+                        "on-tertiary-fixed-variant": "#4e5c71",
+                        "tertiary-container": "#d5e3fd",
+                        "primary-fixed": "#00f4fe",
+                        "secondary": "#69f6b8",
+                        "secondary-dim": "#58e7ab",
+                        "surface-container-low": "#091328",
+                        "error-dim": "#d7383b",
+                        "surface-container-lowest": "#000000",
+                        "on-primary-fixed": "#004346",
+                        "on-primary-fixed-variant": "#006266",
+                        "on-primary-container": "#00575b",
+                        "inverse-primary": "#006a6e",
+                        "secondary-fixed": "#69f6b8",
+                        "on-tertiary": "#4d5b70",
+                        "surface-container-high": "#141f38",
+                        "surface-variant": "#192540",
+                        "on-tertiary-fixed": "#324054",
+                        "primary": "#a1faff",
+                        "tertiary-dim": "#c7d5ee",
+                        "primary-fixed-dim": "#00e5ee",
+                        "outline-variant": "#40485d",
+                        "tertiary-fixed-dim": "#c7d5ee",
+                        "secondary-container": "#006c49",
+                        "on-background": "#dee5ff",
+                        "tertiary": "#ebf1ff",
+                        "on-error-container": "#ffa8a3",
+                        "on-error": "#490006",
+                        "surface-tint": "#a1faff",
+                        "inverse-surface": "#faf8ff",
+                        "error": "#ff716c",
+                        "surface-container": "#0f1930",
+                        "outline": "#6d758c",
+                        "surface-container-highest": "#192540",
+                        "on-secondary-fixed": "#00452d",
+                        "error-container": "#9f0519",
+                        "on-surface": "#dee5ff",
+                        "secondary-fixed-dim": "#58e7ab",
+                        "on-surface-variant": "#a3aac4",
+                        "on-tertiary-container": "#455367",
+                        "on-secondary-fixed-variant": "#006544",
+                        "surface": "#060e20",
+                        "tertiary-fixed": "#d5e3fd",
+                        "surface-dim": "#060e20",
+                        "surface-bright": "#1f2b49",
+                        "on-secondary-container": "#e1ffec",
+                        "on-primary": "#006165",
+                        "on-secondary": "#005a3c",
+                        "background": "#060e20",
+                        "primary-dim": "#00e5ee",
+                        "primary-container": "#00f4fe"
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    fontFamily: {
+                        "headline": ["Space Grotesk", "sans-serif"],
+                        "body": ["Inter", "sans-serif"],
+                        "label": ["Inter", "sans-serif"],
+                        "mono": ["JetBrains Mono", "monospace"]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        /* Custom scrollbar for tactical UI */
+        ::-webkit-scrollbar { width: 4px; height: 4px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #192540; border-radius: 2px; }
+        ::-webkit-scrollbar-thumb:hover { background: #40485d; }
+    </style>
+</head>
+<body class="bg-surface text-on-surface font-body h-screen w-full flex overflow-hidden selection:bg-primary/30 selection:text-primary">
+<!-- SideNavBar (Shared Component) -->
+<aside class="fixed left-0 top-0 h-full w-64 flex flex-col z-40 bg-[#091328] dark:bg-[#091328] border-r border-[#141f38] font-['Inter'] font-medium text-sm">
+<!-- Header -->
+<div class="p-6 flex items-center space-x-4 border-b border-surface-container-high/40">
+<div class="w-10 h-10 rounded-sm bg-surface-container-highest border border-secondary/20 flex items-center justify-center overflow-hidden">
+<img alt="System Status Indicator" class="w-full h-full object-cover opacity-80 mix-blend-screen" data-alt="abstract glowing geometric node visualization representing a secure server connection in dark cyan and black" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDLVL-yh91BVM6BaehVa-xDIzw972kT4io0fg7B-Vj_vKr9vC-sYO5FeSIOPG1KQI2cH4yD5RyBPl85IWdT7iD3jW0amqJOZ1q7lgweBAUmBif4l4jRENlPqf7lus9iWWgzYI0we-O8E_pxPC1Z_dlaktbiNjbD86XS4swt6HGr6h9OxL-l2EbHQc_e_AirWzCp2KuUCOehbNKXrATpGhv9Fl0FadcXDHZr-YuPUluX2ZG1Gaes4oevBEKgnlvmEGO6FWVIHqyo7G4"/>
+</div>
+<div>
+<h1 class="font-headline font-bold text-[#dee5ff] tracking-wide text-base">NODE_01</h1>
+<p class="text-[0.65rem] text-secondary tracking-[0.2em] font-mono mt-0.5">CONNECTED / SECURE</p>
+</div>
+</div>
+<!-- CTA -->
+<div class="p-4 px-5">
+<button class="w-full py-2.5 px-4 bg-gradient-to-br from-[#a1faff] to-[#00e5ee] text-[#004346] font-bold rounded-sm text-sm hover:brightness-110 transition-all shadow-[0_0_15px_rgba(161,250,255,0.15)] flex items-center justify-center space-x-2">
+<span class="material-symbols-outlined text-[1.1rem]">add</span>
+<span>New Fleet Group</span>
+</button>
+</div>
+<!-- Main Navigation Tabs -->
+<nav class="flex-1 flex flex-col gap-1 px-3 mt-4">
+<!-- Active Tab: Dashboard -->
+<a class="flex items-center px-4 py-2.5 rounded-sm bg-[#141f38] text-[#00F5FF] border-l-4 border-[#00F5FF]" href="#">
+<span class="material-symbols-outlined mr-3 text-[1.2rem]" style="font-variation-settings: 'FILL' 1;">dashboard</span>
+                Dashboard
+            </a>
+<!-- Inactive Tabs -->
+<a class="flex items-center px-4 py-2.5 rounded-sm text-[#dee5ff] opacity-60 hover:opacity-100 hover:bg-[#192540] transition-colors duration-200" href="#">
+<span class="material-symbols-outlined mr-3 text-[1.2rem]">terminal</span>
+                Terminal
+            </a>
+<a class="flex items-center px-4 py-2.5 rounded-sm text-[#dee5ff] opacity-60 hover:opacity-100 hover:bg-[#192540] transition-colors duration-200" href="#">
+<span class="material-symbols-outlined mr-3 text-[1.2rem]">system_update_alt</span>
+                Updates
+            </a>
+<a class="flex items-center px-4 py-2.5 rounded-sm text-[#dee5ff] opacity-60 hover:opacity-100 hover:bg-[#192540] transition-colors duration-200" href="#">
+<span class="material-symbols-outlined mr-3 text-[1.2rem]">verified_user</span>
+                Verification
+            </a>
+<a class="flex items-center px-4 py-2.5 rounded-sm text-[#dee5ff] opacity-60 hover:opacity-100 hover:bg-[#192540] transition-colors duration-200" href="#">
+<span class="material-symbols-outlined mr-3 text-[1.2rem]">analytics</span>
+                Device Logs
+            </a>
+</nav>
+<!-- Footer Navigation Tabs -->
+<div class="p-3 border-t border-surface-container-high/40 mt-auto flex flex-col gap-1">
+<a class="flex items-center px-4 py-2 rounded-sm text-[#dee5ff] opacity-60 hover:opacity-100 hover:bg-[#192540] transition-colors duration-200" href="#">
+<span class="material-symbols-outlined mr-3 text-[1.2rem]">monitor_heart</span>
+                System Health
+            </a>
+<a class="flex items-center px-4 py-2 rounded-sm text-[#dee5ff] opacity-60 hover:opacity-100 hover:bg-[#192540] transition-colors duration-200" href="#">
+<span class="material-symbols-outlined mr-3 text-[1.2rem]">menu_book</span>
+                Documentation
+            </a>
+</div>
+</aside>
+<!-- Main Content Area Wrapper -->
+<div class="flex-1 ml-64 flex flex-col h-screen overflow-hidden relative">
+<!-- Ambient Glow Effect -->
+<div class="absolute top-[-20%] left-[10%] w-[800px] h-[600px] bg-primary/5 rounded-full blur-[140px] pointer-events-none"></div>
+<!-- TopNavBar (Shared Component) -->
+<header class="flex justify-between items-center w-full px-6 h-16 bg-[#060e20] dark:bg-[#060e20] font-['Space_Grotesk'] tracking-tight border-b border-[#141f38] relative z-30 shrink-0">
+<!-- Left Side -->
+<div class="flex items-center space-x-10">
+<span class="text-xl font-bold uppercase tracking-widest text-[#00F5FF]">SENTINEL COMMAND</span>
+<!-- Navigation Links -->
+<nav class="hidden md:flex space-x-8 items-center h-full">
+<!-- Active Link (Closest to Dashboard context) -->
+<a class="h-16 flex items-center text-[#00F5FF] border-b-2 border-[#00F5FF] text-sm uppercase font-medium tracking-wide" href="#">Fleet Metrics</a>
+<!-- Inactive Links -->
+<a class="h-16 flex items-center text-[#dee5ff] opacity-70 hover:text-[#a1faff] hover:bg-[#141f38] transition-all px-2 text-sm uppercase font-medium tracking-wide" href="#">Firmware Repo</a>
+<a class="h-16 flex items-center text-[#dee5ff] opacity-70 hover:text-[#a1faff] hover:bg-[#141f38] transition-all px-2 text-sm uppercase font-medium tracking-wide" href="#">Crypto Audit</a>
+</nav>
+</div>
+<!-- Right Side Actions -->
+<div class="flex items-center space-x-5">
+<button class="px-4 py-1.5 border border-outline-variant/50 text-[#dee5ff] text-sm font-['Inter'] rounded-sm hover:bg-[#141f38] transition-colors">Emergency Stop</button>
+<button class="px-5 py-1.5 bg-gradient-to-r from-[#a1faff] to-[#00e5ee] text-[#004346] font-bold text-sm font-['Inter'] rounded-sm shadow-[0_0_12px_rgba(161,250,255,0.2)] hover:brightness-110 transition-all">Deploy Update</button>
+<div class="flex items-center space-x-3 pl-5 border-l border-[#141f38] h-8">
+<button class="text-[#dee5ff] opacity-70 hover:text-[#a1faff] transition-all flex items-center justify-center hover:scale-98"><span class="material-symbols-outlined text-[1.25rem]">rss_feed</span></button>
+<button class="text-[#dee5ff] opacity-70 hover:text-[#a1faff] transition-all flex items-center justify-center hover:scale-98"><span class="material-symbols-outlined text-[1.25rem]">settings_input_component</span></button>
+<button class="text-[#dee5ff] opacity-70 hover:text-[#a1faff] transition-all flex items-center justify-center hover:scale-98"><span class="material-symbols-outlined text-[1.25rem]">notifications</span></button>
+<div class="w-8 h-8 rounded-sm ml-2 bg-surface-container-high overflow-hidden border border-outline-variant/30">
+<img alt="Operator Profile" class="w-full h-full object-cover opacity-80" data-alt="abstract close up of high tech server rack lights in dark environment" src="https://lh3.googleusercontent.com/aida-public/AB6AXuChjBVXUTb4UOzkaEVsDHNuBp_LYro_w9MNCsdns6CPn-rm-lYDQ8Bw6N941lXW45IRseCeOEL62CzuZL73YhmpAvVyyHEy0VpOZ_TCgKnYo0dKJxmSLxqYKMJ9QpO0U5z9Hwii9fyGsgTZvzcUGAyiW0kS8QQJpEAFOfRt97D_6QSBuf6IjCIOdmrBp5tn81jzNGNTkoMdNRlBPC9qOs0Zw6atNN4lYxTb85QNt6z4pP7UTS5WDOW9ZKuqLRVpqoYtSEc7pkRZObA"/>
+</div>
+</div>
+</div>
+</header>
+<!-- Canvas Area (Scrollable Dashboard) -->
+<main class="flex-1 overflow-y-auto p-8 relative z-20">
+<div class="max-w-[1400px] mx-auto space-y-6">
+<!-- Page Header -->
+<div class="flex justify-between items-end mb-10">
+<div>
+<h2 class="font-headline text-[3rem] leading-none text-on-surface font-light tracking-tighter">Fleet Overview</h2>
+<p class="font-mono text-on-surface-variant text-sm mt-3 flex items-center">
+<span class="w-2 h-2 rounded-full bg-secondary mr-2 shadow-[0_0_8px_rgba(105,246,184,0.6)]"></span>
+                            SYSTEM.STATE = NOMINAL_OPERATION
+                        </p>
+</div>
+</div>
+<!-- Bento Grid: Top KPI Row -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+<!-- KPI 1: Update Success Rate -->
+<div class="bg-surface-container-low p-5 rounded-sm flex flex-col justify-between relative group hover:bg-surface-container-high transition-colors">
+<div class="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity rounded-sm"></div>
+<div class="flex justify-between items-start relative z-10">
+<span class="font-body text-xs text-on-surface-variant uppercase tracking-wider font-semibold">Update Success Rate</span>
+<span class="material-symbols-outlined text-secondary text-xl" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+</div>
+<div class="mt-6 relative z-10">
+<span class="font-headline text-5xl font-light text-transparent bg-clip-text bg-gradient-to-r from-primary to-primary-dim tracking-tight">98.2%</span>
+<div class="flex items-center mt-2 space-x-1 text-xs font-mono text-secondary">
+<span class="material-symbols-outlined text-[1rem]">trending_up</span>
+<span>+1.4% Δ</span>
+</div>
+</div>
+</div>
+<!-- KPI 2: Total Devices -->
+<div class="bg-surface-container-low p-5 rounded-sm flex flex-col justify-between relative group hover:bg-surface-container-high transition-colors">
+<div class="flex justify-between items-start relative z-10">
+<span class="font-body text-xs text-on-surface-variant uppercase tracking-wider font-semibold">Total Devices</span>
+<span class="material-symbols-outlined text-on-surface-variant text-xl">router</span>
+</div>
+<div class="mt-6 relative z-10">
+<span class="font-headline text-5xl font-light text-on-surface tracking-tight">412</span>
+<div class="flex items-center mt-2 space-x-1 text-xs font-mono text-on-surface-variant">
+<span>ONLINE: 409</span>
+<span class="mx-1">|</span>
+<span class="text-error">OFFLINE: 3</span>
+</div>
+</div>
+</div>
+<!-- KPI 3: Active Deployments -->
+<div class="bg-surface-container-low p-5 rounded-sm flex flex-col justify-between relative group hover:bg-surface-container-high transition-colors">
+<div class="flex justify-between items-start relative z-10">
+<span class="font-body text-xs text-on-surface-variant uppercase tracking-wider font-semibold">Active Deployments</span>
+<span class="material-symbols-outlined text-primary text-xl">rocket_launch</span>
+</div>
+<div class="mt-6 relative z-10">
+<span class="font-headline text-5xl font-light text-on-surface tracking-tight">3</span>
+<div class="flex items-center mt-2 space-x-1 text-xs font-mono text-on-surface-variant">
+<span>V2.4.1 (STAGED)</span>
+</div>
+</div>
+</div>
+<!-- KPI 4: Fleet Health Status -->
+<div class="bg-surface-container-low p-5 rounded-sm flex flex-col justify-between relative">
+<div class="absolute left-0 top-0 bottom-0 w-1 bg-secondary rounded-l-sm shadow-[0_0_10px_rgba(105,246,184,0.3)]"></div>
+<div class="flex justify-between items-start pl-2">
+<span class="font-body text-xs text-on-surface-variant uppercase tracking-wider font-semibold">Fleet Health</span>
+<span class="material-symbols-outlined text-secondary text-xl" style="font-variation-settings: 'FILL' 1;">shield</span>
+</div>
+<div class="mt-6 pl-2">
+<span class="font-headline text-3xl font-bold text-secondary tracking-wide uppercase">Secure</span>
+<p class="font-body text-xs text-on-surface-variant mt-2 line-clamp-2">No critical vulnerabilities detected in the current epoch.</p>
+</div>
+</div>
+</div>
+<!-- Main Content Row -->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6 h-[480px]">
+<!-- Left: Complex Terminal/Map Module (2 cols) -->
+<div class="lg:col-span-2 bg-surface-container-lowest rounded-sm border border-outline-variant/20 flex flex-col overflow-hidden relative">
+<!-- Terminal Header -->
+<div class="h-10 bg-surface-container-low border-b border-outline-variant/30 flex items-center px-4 justify-between shrink-0">
+<div class="flex space-x-4 font-mono text-[0.65rem] text-on-surface-variant tracking-wider">
+<span class="text-primary border-b border-primary pb-1">GEO_DISTRIBUTION.MAP</span>
+<span class="hover:text-on-surface cursor-pointer transition-colors">NETWORK_TOPOLOGY</span>
+</div>
+<div class="flex space-x-1.5">
+<div class="w-2.5 h-2.5 rounded-full bg-outline-variant/50"></div>
+<div class="w-2.5 h-2.5 rounded-full bg-outline-variant/50"></div>
+<div class="w-2.5 h-2.5 rounded-full bg-outline-variant/50"></div>
+</div>
+</div>
+<!-- Map Content Area -->
+<div class="flex-1 relative bg-[#040812]">
+<!-- Abstract Map Background -->
+<img alt="Fleet Map" class="absolute inset-0 w-full h-full object-cover opacity-20 mix-blend-screen" data-alt="abstract dark blue tech grid representing a world map with glowing cyan connection points and data lines" data-location="Global" src="https://lh3.googleusercontent.com/aida-public/AB6AXuARSXrOQxjcmN57x0uXf8hpSlldBsO46bwQe_dOhpd6KfnK4ude-wwM-tP7sgwI0nUMA3cdcxnO808nBOKN0pgKngNLe_hKX215T4WoMrtc14Dt14a2T559O0FWNdTJhon6R0Cxk99kUmHZrLvSWuEklz7w7bmzuoONOXzfNeDJqhHGbUl375LI1VsadjIWuNo3fZ95UvXdfQUCfkdjnXdXBYmgJgbQJXPdgo7fDA-tpyLEdMMlBxS6ley8tfHVEa9Ep_XINb8TZWg"/>
+<!-- Overlays -->
+<div class="absolute inset-0 bg-gradient-to-t from-surface-container-lowest via-transparent to-transparent"></div>
+<!-- Tactical UI Elements on Map -->
+<div class="absolute top-6 left-6 bg-surface-variant/60 backdrop-blur-md p-3 rounded-sm border border-outline-variant/30 w-48">
+<div class="font-mono text-[0.65rem] text-on-surface-variant mb-2">REGION_ALPHA (US-EAST)</div>
+<div class="flex justify-between items-end">
+<span class="font-headline text-2xl text-on-surface leading-none">142</span>
+<span class="text-[0.65rem] text-secondary font-mono flex items-center"><span class="material-symbols-outlined text-[0.8rem] mr-0.5" style="font-variation-settings: 'FILL' 1;">circle</span> 100% UP</span>
+</div>
+</div>
+<div class="absolute bottom-6 right-6 font-mono text-[0.65rem] text-on-surface-variant text-right">
+                                LAT: 37.7749 N <br/>
+                                LNG: 122.4194 W <br/>
+<span class="text-primary mt-1 inline-block">SCANNING...</span>
+</div>
+</div>
+</div>
+<!-- Right: Recent Activity Feed (1 col) -->
+<div class="bg-surface-container-low rounded-sm border border-outline-variant/20 flex flex-col relative overflow-hidden">
+<!-- Header -->
+<div class="p-5 border-b border-surface-container-high shrink-0 flex justify-between items-center relative z-10 bg-surface-container-low">
+<h3 class="font-headline text-base text-on-surface uppercase tracking-wide">Recent Activity</h3>
+<button class="text-xs font-mono text-primary hover:text-primary-dim transition-colors">VIEW_ALL</button>
+</div>
+<!-- Feed List -->
+<div class="flex-1 overflow-y-auto p-4 space-y-3 relative z-10">
+<!-- Item 1: Firmware Push (Success) -->
+<div class="p-3 bg-surface-container-highest/50 rounded-sm border-l-2 border-primary hover:bg-surface-variant transition-colors group cursor-pointer">
+<div class="flex justify-between items-start mb-1">
+<span class="font-mono text-[0.65rem] text-primary bg-primary/10 px-1.5 py-0.5 rounded-sm">FW_PUSH_SUCCESS</span>
+<span class="font-mono text-[0.65rem] text-on-surface-variant">JUST NOW</span>
+</div>
+<p class="font-body text-sm text-on-surface mb-1">Payload v2.4.1 delivered to NODE_77.</p>
+<div class="font-mono text-[0.6rem] text-on-surface-variant opacity-60">HASH: a8f4...9c2e</div>
+</div>
+<!-- Item 2: Verification -->
+<div class="p-3 bg-surface-container-highest/50 rounded-sm border-l-2 border-secondary hover:bg-surface-variant transition-colors group cursor-pointer">
+<div class="flex justify-between items-start mb-1">
+<span class="font-mono text-[0.65rem] text-secondary bg-secondary/10 px-1.5 py-0.5 rounded-sm">CRYPTO_VERIFIED</span>
+<span class="font-mono text-[0.65rem] text-on-surface-variant">2M AGO</span>
+</div>
+<p class="font-body text-sm text-on-surface mb-1">Bootloader signature valid on Cluster Beta.</p>
+<div class="font-mono text-[0.6rem] text-on-surface-variant opacity-60">ID: CLSTR-B-09</div>
+</div>
+<!-- Item 3: Routine Ping -->
+<div class="p-3 bg-surface-container-highest/50 rounded-sm border-l-2 border-outline-variant hover:bg-surface-variant transition-colors group cursor-pointer">
+<div class="flex justify-between items-start mb-1">
+<span class="font-mono text-[0.65rem] text-on-surface-variant bg-outline-variant/10 px-1.5 py-0.5 rounded-sm">SYS_PING</span>
+<span class="font-mono text-[0.65rem] text-on-surface-variant">15M AGO</span>
+</div>
+<p class="font-body text-sm text-on-surface mb-1">Routine health check completed globally.</p>
+<div class="font-mono text-[0.6rem] text-on-surface-variant opacity-60">LATENCY: 42ms avg</div>
+</div>
+<!-- Item 4: Firmware Push (Success) -->
+<div class="p-3 bg-surface-container-highest/50 rounded-sm border-l-2 border-primary hover:bg-surface-variant transition-colors group cursor-pointer">
+<div class="flex justify-between items-start mb-1">
+<span class="font-mono text-[0.65rem] text-primary bg-primary/10 px-1.5 py-0.5 rounded-sm">FW_PUSH_SUCCESS</span>
+<span class="font-mono text-[0.65rem] text-on-surface-variant">1H AGO</span>
+</div>
+<p class="font-body text-sm text-on-surface mb-1">Payload v2.4.0 delivered to NODE_12.</p>
+<div class="font-mono text-[0.6rem] text-on-surface-variant opacity-60">HASH: f3b1...8d4a</div>
+</div>
+</div>
+<!-- Gradient fade at bottom of scroll -->
+<div class="absolute bottom-0 left-0 w-full h-12 bg-gradient-to-t from-surface-container-low to-transparent pointer-events-none z-20"></div>
+</div>
+</div>
+</div>
+</main>
+</div>
+</body></html>
