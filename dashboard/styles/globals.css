@@ -1,3 +1,23 @@
+@import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=DM+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* New globals.css code from p:\JJK OTA\globals.css */
+
+:root {
+  --cyan: #00f5ff;
+  --violet: #a855f7;
+  --green: #00ff88;
+  --red: #ff3366;
+  --amber: #ffb800;
+  --bg: #020408;
+  --panel: #070d1a;
+  color-scheme: dark;
+}
+
+/* ...rest of the new globals.css code... */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
 
 @tailwind base;
