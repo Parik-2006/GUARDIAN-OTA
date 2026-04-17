@@ -14,7 +14,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
 	"github.com/jackc/pgx/v5/pgxpool"
-	mqtt "github.com/paho.mqtt.golang"
+	mqtt "github.com/eclipse/paho.mqtt.golang"
 )
 
 type OTARequest struct {
@@ -83,7 +83,9 @@ var (
 )
 
 func main() {
-	rand.Seed(time.Now().UnixNano())
+	// FIX: rand.Seed is deprecated since Go 1.20 — global rand is automatically seeded.
+	// Removed: rand.Seed(time.Now().UnixNano())
+
 	broker := getenv("MQTT_BROKER", "tcp://localhost:1883")
 	client := connectMQTT(broker)
 	defer client.Disconnect(500)
@@ -261,6 +263,7 @@ func fleetSimulator(ctx context.Context) {
 					s.ThreatLevel = "LOW"
 				}
 			}
+			// FIX: snapshot() reads states — call it while lock is still held
 			payload := snapshot()
 			smu.Unlock()
 			hub.Broadcast(Event{
@@ -273,6 +276,7 @@ func fleetSimulator(ctx context.Context) {
 	}
 }
 
+// snapshot must be called with smu held (at least RLock)
 func snapshot() []DeviceState {
 	out := make([]DeviceState, 0, len(states))
 	for _, s := range states {
@@ -318,4 +322,3 @@ func writeEvent(eventType string, payload interface{}) {
 	_, _ = dbpool.Exec(context.Background(),
 		"INSERT INTO ota_events(event_type, payload) VALUES ($1, $2)", eventType, b)
 }
-
