@@ -1,0 +1,21 @@
+# Node
+dashboard/node_modules/
+dashboard/.next/
+dashboard/.env.local
+
+# Go build artifacts
+backend/bin/
+*.exe
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
