@@ -49,6 +49,7 @@ function Card({
       transition={{ type: "spring", stiffness: 320, damping: 26 }}
       className={`c-card ${selected ? "c-card--sel" : ""} ${onClick ? "cursor-pointer" : ""} ${className}`}
     >
+      {/* Shine overlay — slides on hover via CSS */}
       <div className="c-card-shine-layer" />
       {selected && (
         <motion.div
@@ -108,7 +109,7 @@ function Dot({ color, pulse = false }: { color: string; pulse?: boolean }) {
 }
 
 /* ═══════════════════════════════════════════
-   3D CHART — Isometric Bar Chart
+   3D CHART — Isometric Bar Chart (Enhanced)
 ══════════════════════════════════════════════ */
 function Chart3DFleetHealth({ safe, warn, high, total }: {
   safe: number; warn: number; high: number; total: number;
@@ -131,8 +132,8 @@ function Chart3DFleetHealth({ safe, warn, high, total }: {
     <div className="flex flex-col">
       <SectionLabel>Fleet Health — 3D</SectionLabel>
       <svg viewBox={`0 0 ${W} ${H}`} className="w-full" style={{ overflow: "visible", marginTop: 8 }}>
-        {[0, 0.33, 0.66, 1].map((t, idx) => (
-          <line key={idx} x1={sx} y1={baseY - t * maxBarH} x2={sx + totalW + dx} y2={baseY - t * maxBarH}
+        {[0, 0.33, 0.66, 1].map((t) => (
+          <line key={t} x1={sx} y1={baseY - t * maxBarH} x2={sx + totalW + dx} y2={baseY - t * maxBarH}
             stroke="rgba(240,235,224,0.06)" strokeWidth="1" />
         ))}
         {bars.map((b, i) => {
@@ -152,6 +153,7 @@ function Chart3DFleetHealth({ safe, warn, high, total }: {
               <path d={front} fill={b.front} />
               <path d={top} fill={b.top} />
               <path d={side} fill={b.side} />
+              {/* shimmer strip */}
               <path d={`M${x + 4},${y} L${x + 4},${baseY}`} fill="none"
                 stroke="rgba(255,255,255,0.07)" strokeWidth="3" />
               <text x={x + barW / 2 + dx / 2} y={y - dy - 5}
@@ -171,7 +173,7 @@ function Chart3DFleetHealth({ safe, warn, high, total }: {
 }
 
 /* ═══════════════════════════════════════════
-   3D CHART — Threat Ring
+   3D CHART — Threat Ring (perspective donut)
 ══════════════════════════════════════════════ */
 function Chart3DThreatRing({ low, med, high }: { low: number; med: number; high: number }) {
   const total = low + med + high || 1;
@@ -278,7 +280,7 @@ function Chart3DECUMatrix({ fleet }: { fleet: DeviceState[] }) {
 }
 
 /* ═══════════════════════════════════════════
-   3D Canary Rollout Funnel
+   NEW: 3D Canary Rollout Funnel
 ══════════════════════════════════════════════ */
 function Chart3DRolloutFunnel({ total, canaryPct, deployed }: {
   total: number; canaryPct: number; deployed: number;
@@ -310,24 +312,30 @@ function Chart3DRolloutFunnel({ total, canaryPct, deployed }: {
               transition={{ delay: i * 0.15, duration: 0.7, ease: "easeOut" }}
               style={{ transformOrigin: "140px 50%" }}
             >
+              {/* depth face top */}
               <path
                 d={`M${x},${y} L${x + bW},${y} L${x + bW + depthX},${y - depthY} L${x + depthX},${y - depthY}Z`}
                 fill={s.color} opacity="0.55"
               />
+              {/* front face */}
               <path
                 d={`M${x},${y} L${x + bW},${y} L${x + bW},${y + h} L${x},${y + h}Z`}
                 fill={s.color}
               />
+              {/* side face */}
               <path
                 d={`M${x + bW},${y} L${x + bW + depthX},${y - depthY} L${x + bW + depthX},${y + h - depthY} L${x + bW},${y + h}Z`}
                 fill={s.dark}
               />
+              {/* shimmer */}
               <path d={`M${x + 4},${y} L${x + 4},${y + h}`} stroke="rgba(255,255,255,0.1)" strokeWidth="3" />
+              {/* label */}
               <text x={x + bW / 2} y={y + h / 2 + 4.5}
                 textAnchor="middle" fill="rgba(9,8,10,0.7)"
                 fontSize="8.5" fontFamily="JetBrains Mono,monospace" fontWeight="600">
                 {s.label}: {s.val}
               </text>
+              {/* pct */}
               <text x={x + bW + depthX + 6} y={y + 5}
                 fill="rgba(240,235,224,0.35)" fontSize="7.5" fontFamily="JetBrains Mono,monospace">
                 {Math.round(pct * 100)}%
@@ -341,7 +349,7 @@ function Chart3DRolloutFunnel({ total, canaryPct, deployed }: {
 }
 
 /* ═══════════════════════════════════════════
-   3D Radar / Spider Chart
+   NEW: 3D Radar / Spider Chart
 ══════════════════════════════════════════════ */
 function Chart3DRadar({ fleet }: { fleet: DeviceState[] }) {
   const cx = 110; const cy = 95; const r = 72;
@@ -353,16 +361,12 @@ function Chart3DRadar({ fleet }: { fleet: DeviceState[] }) {
     { label: "RBCK", key: "rollbackArmed" },
   ];
   const n = axes.length;
-
-  // FIX: safetyOk is not a field on DeviceState — use safetyState === "SAFE" for that axis
   const pct = (key: string) => {
     if (!fleet.length) return 0;
-    if (key === "safetyOk") {
-      return fleet.filter((d) => d.safetyState === "SAFE").length / fleet.length;
-    }
-    return fleet.filter((d) => (d as Record<string, unknown>)[key] === true).length / fleet.length;
+    return fleet.filter((d) =>
+      key === "safetyOk" ? d.safetyState === "SAFE" : (d as any)[key]
+    ).length / fleet.length;
   };
-
   function pt(i: number, frac: number) {
     const angle = (i / n) * 2 * Math.PI - Math.PI / 2;
     return {
@@ -387,6 +391,7 @@ function Chart3DRadar({ fleet }: { fleet: DeviceState[] }) {
     <div className="flex flex-col">
       <SectionLabel>Security Radar</SectionLabel>
       <svg viewBox="0 0 220 190" className="w-full" style={{ overflow: "visible", marginTop: 8 }}>
+        {/* web rings */}
         {webs.map((w) => {
           const pts = axes.map((_, i) => {
             const p = pt(i, w);
@@ -395,11 +400,13 @@ function Chart3DRadar({ fleet }: { fleet: DeviceState[] }) {
           return <polygon key={w} points={pts} fill="none"
             stroke="rgba(240,235,224,0.07)" strokeWidth="1" />;
         })}
+        {/* spokes */}
         {axes.map((_, i) => {
           const outer = pt(i, 1);
           return <line key={i} x1={cx} y1={cy} x2={outer.x} y2={outer.y}
             stroke="rgba(240,235,224,0.06)" strokeWidth="1" />;
         })}
+        {/* data polygon */}
         <motion.polygon
           points={polyPts}
           fill="rgba(212,169,106,0.12)"
@@ -407,6 +414,7 @@ function Chart3DRadar({ fleet }: { fleet: DeviceState[] }) {
           initial={{ opacity: 0 }} animate={{ opacity: 1 }}
           transition={{ duration: 0.8, delay: 0.3 }}
         />
+        {/* dots */}
         {vals.map((v, i) => (
           <motion.circle key={i} cx={v.x} cy={v.y} r="3.5"
             fill="#D4A96A" opacity="0.85"
@@ -414,6 +422,7 @@ function Chart3DRadar({ fleet }: { fleet: DeviceState[] }) {
             transition={{ delay: i * 0.08 + 0.5 }}
           />
         ))}
+        {/* labels */}
         {labelPts.map((l) => (
           <text key={l.label} x={l.x} y={l.y} textAnchor="middle" dominantBaseline="middle"
             fill="rgba(240,235,224,0.4)" fontSize="7.5" fontFamily="JetBrains Mono,monospace"
@@ -425,7 +434,7 @@ function Chart3DRadar({ fleet }: { fleet: DeviceState[] }) {
 }
 
 /* ═══════════════════════════════════════════
-   3D OTA Wave / Firmware Distribution
+   NEW: 3D OTA Progress Wave
 ══════════════════════════════════════════════ */
 function Chart3DOTAWave({ fleet }: { fleet: DeviceState[] }) {
   const W = 280; const H = 120;
@@ -463,8 +472,10 @@ function Chart3DOTAWave({ fleet }: { fleet: DeviceState[] }) {
 
           return (
             <g key={v}>
+              {/* shadow */}
               <rect x={x + 3} y={y + 3} width={barW} height={barH}
                 rx="2" fill="rgba(0,0,0,0.4)" />
+              {/* bar */}
               <motion.rect
                 x={x} y={H - 22} width={barW} height={0} rx="2"
                 fill={`url(#waveGrad${i})`}
@@ -472,8 +483,10 @@ function Chart3DOTAWave({ fleet }: { fleet: DeviceState[] }) {
                 animate={{ y: y, height: barH }}
                 transition={{ delay: i * 0.12, duration: 0.7, ease: "easeOut" }}
               />
+              {/* value */}
               <text x={x + barW / 2} y={y - 5} textAnchor="middle"
                 fill={colors[i]} fontSize="10" fontFamily="JetBrains Mono,monospace">{counts[i]}</text>
+              {/* label */}
               <text x={x + barW / 2} y={H - 8} textAnchor="middle"
                 fill="rgba(240,235,224,0.3)" fontSize="7" fontFamily="JetBrains Mono,monospace">{v}</text>
             </g>
@@ -695,15 +708,7 @@ function DeploymentCockpit({
   version, setVersion, firmwareUrl, setFirmwareUrl,
   firmwareHash, setFirmwareHash, sigB64, setSigB64,
   canaryPct, setCanaryPct, fleetTotal, highCount, deploying, onDeploy,
-}: {
-  version: string; setVersion: (v: string) => void;
-  firmwareUrl: string; setFirmwareUrl: (v: string) => void;
-  firmwareHash: string; setFirmwareHash: (v: string) => void;
-  sigB64: string; setSigB64: (v: string) => void;
-  canaryPct: number; setCanaryPct: (v: number) => void;
-  fleetTotal: number; highCount: number;
-  deploying: boolean; onDeploy: () => void;
-}) {
+}: any) {
   return (
     <motion.div
       initial={{ opacity: 0, x: -14 }} animate={{ opacity: 1, x: 0 }}
@@ -833,9 +838,7 @@ export default function Dashboard({ onBackToLanding }: { onBackToLanding?: () =>
       .catch(() => appendLog("warn", "Backend offline — demo simulation active"));
 
     const wsBase = (process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:8080").replace(/^http/, "ws");
-
-    // FIX: declare ws with let so it's accessible in cleanup without referencing before assign
-    let ws: WebSocket | null = null;
+    let ws: WebSocket;
     try {
       ws = new WebSocket(`${wsBase}/ws/events`);
       ws.onopen = () => { setConnected(true); appendLog("info", "WebSocket connected"); };
@@ -846,9 +849,7 @@ export default function Dashboard({ onBackToLanding }: { onBackToLanding?: () =>
       };
       ws.onerror = () => appendLog("error", "WebSocket error");
       ws.onclose = () => { setConnected(false); appendLog("warn", "WebSocket closed"); };
-    } catch {
-      appendLog("warn", "WebSocket unavailable");
-    }
+    } catch { appendLog("warn", "WebSocket unavailable"); }
 
     const sim = setInterval(() => {
       setFleet((prev) => {
@@ -856,11 +857,9 @@ export default function Dashboard({ onBackToLanding }: { onBackToLanding?: () =>
         return prev.map((d) => {
           const r = Math.random();
           return {
-            ...d,
-            // FIX: lastSeen is a string (ISO) in DeviceState, not a Date object
-            lastSeen: new Date().toISOString(),
+            ...d, lastSeen: new Date().toISOString(),
             safetyState: r < 0.03 ? "UNSAFE" : "SAFE",
-            threatLevel: (r < 0.03 ? "HIGH" : r < 0.08 ? "MEDIUM" : "LOW") as "LOW" | "MEDIUM" | "HIGH",
+            threatLevel: r < 0.03 ? "HIGH" : r < 0.08 ? "MEDIUM" : "LOW",
             ecuStates: {
               brake: r < 0.03 ? "failure" : "green",
               powertrain: r < 0.06 ? "warning" : "green",
@@ -875,10 +874,7 @@ export default function Dashboard({ onBackToLanding }: { onBackToLanding?: () =>
 
     return () => {
       clearInterval(sim);
-      // FIX: null check before close
-      if (ws) {
-        try { ws.close(); } catch { /* ignore */ }
-      }
+      try { ws?.close(); } catch { /* ignore */ }
     };
   }, []);
 
@@ -929,6 +925,7 @@ export default function Dashboard({ onBackToLanding }: { onBackToLanding?: () =>
 
   return (
     <>
+      {/* Extra CSS for glassmorphism shine */}
       <style>{`
         .c-card-shine-layer {
           position: absolute;
@@ -950,6 +947,7 @@ export default function Dashboard({ onBackToLanding }: { onBackToLanding?: () =>
         }
         .c-card:hover .c-card-shine-layer { left: 140%; }
         .stat-card:hover { box-shadow: 0 0 32px rgba(212,169,106,0.1), 0 8px 28px rgba(0,0,0,0.5); }
+        /* Nav pill hover */
         .c-pill { transition: border-color 0.2s, background 0.2s; }
         .c-pill:hover { border-color: rgba(212,169,106,0.35); background: rgba(212,169,106,0.05); }
       `}</style>
@@ -989,7 +987,7 @@ export default function Dashboard({ onBackToLanding }: { onBackToLanding?: () =>
           </Card>
         </motion.div>
 
-        {/* 3D CHARTS ROW 2 */}
+        {/* 3D CHARTS ROW 2 — NEW */}
         <motion.div
           initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.28, duration: 0.5 }}

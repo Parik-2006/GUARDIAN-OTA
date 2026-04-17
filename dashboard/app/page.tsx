@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import Landing from "@/landing";
+import Landing from "@/components/landing";
 import Dashboard from "@/components/dashboard";
 
 export default function Page() {
