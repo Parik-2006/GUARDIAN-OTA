@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Verification Panel - Sentinel Command</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Space+Grotesk:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "inverse-on-surface": "#4d556b",
+                        "on-tertiary-fixed-variant": "#4e5c71",
+                        "tertiary-container": "#d5e3fd",
+                        "primary-fixed": "#00f4fe",
+                        "secondary": "#69f6b8",
+                        "secondary-dim": "#58e7ab",
+                        "surface-container-low": "#091328",
+                        "error-dim": "#d7383b",
+                        "surface-container-lowest": "#000000",
+                        "on-primary-fixed": "#004346",
+                        "on-primary-fixed-variant": "#006266",
+                        "on-primary-container": "#00575b",
+                        "inverse-primary": "#006a6e",
+                        "secondary-fixed": "#69f6b8",
+                        "on-tertiary": "#4d5b70",
+                        "surface-container-high": "#141f38",
+                        "surface-variant": "#192540",
+                        "on-tertiary-fixed": "#324054",
+                        "primary": "#a1faff",
+                        "tertiary-dim": "#c7d5ee",
+                        "primary-fixed-dim": "#00e5ee",
+                        "outline-variant": "#40485d",
+                        "tertiary-fixed-dim": "#c7d5ee",
+                        "secondary-container": "#006c49",
+                        "on-background": "#dee5ff",
+                        "tertiary": "#ebf1ff",
+                        "on-error-container": "#ffa8a3",
+                        "on-error": "#490006",
+                        "surface-tint": "#a1faff",
+                        "inverse-surface": "#faf8ff",
+                        "error": "#ff716c",
+                        "surface-container": "#0f1930",
+                        "outline": "#6d758c",
+                        "surface-container-highest": "#192540",
+                        "on-secondary-fixed": "#00452d",
+                        "error-container": "#9f0519",
+                        "on-surface": "#dee5ff",
+                        "secondary-fixed-dim": "#58e7ab",
+                        "on-surface-variant": "#a3aac4",
+                        "on-tertiary-container": "#455367",
+                        "on-secondary-fixed-variant": "#006544",
+                        "surface": "#060e20",
+                        "tertiary-fixed": "#d5e3fd",
+                        "surface-dim": "#060e20",
+                        "surface-bright": "#1f2b49",
+                        "on-secondary-container": "#e1ffec",
+                        "on-primary": "#006165",
+                        "on-secondary": "#005a3c",
+                        "background": "#060e20",
+                        "primary-dim": "#00e5ee",
+                        "primary-container": "#00f4fe"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "fontFamily": {
+                        "headline": ["Space Grotesk", "sans-serif"],
+                        "body": ["Inter", "sans-serif"],
+                        "label": ["Inter", "sans-serif"],
+                        "mono": ["ui-monospace", "SFMono-Regular", "Menlo", "Monaco", "Consolas", "Liberation Mono", "Courier New", "monospace"]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .glass-panel {
+            background-color: rgba(25, 37, 64, 0.6);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+        }
+        .text-glow-primary {
+            text-shadow: 0 0 12px rgba(161, 250, 255, 0.4);
+        }
+        .box-glow-primary {
+            box-shadow: 0 0 15px rgba(161, 250, 255, 0.1);
+        }
+    </style>
+</head>
+<body class="bg-surface text-on-surface font-body overflow-x-hidden selection:bg-primary-dim selection:text-surface-lowest">
+<!-- TopNavBar (JSON Controlled) -->
+<nav class="fixed docked full-width top-0 border-b border-[#141f38] bg-[#060e20] dark:bg-[#060e20] flex justify-between items-center w-full px-6 h-16 z-50 tonal shifts with surface_container_low bg-opacity-60 backdrop-blur-md flat no shadows font-['Space_Grotesk'] tracking-tight">
+<div class="flex items-center gap-8">
+<div class="text-xl font-bold uppercase tracking-widest text-[#00F5FF]">SENTINEL COMMAND</div>
+<div class="hidden md:flex gap-6 items-center h-full">
+<a class="text-[#dee5ff] opacity-70 hover:text-[#a1faff] hover:bg-[#141f38] transition-all h-full flex items-center px-2 text-sm font-medium" href="#">Fleet Metrics</a>
+<a class="text-[#dee5ff] opacity-70 hover:text-[#a1faff] hover:bg-[#141f38] transition-all h-full flex items-center px-2 text-sm font-medium" href="#">Firmware Repo</a>
+<a class="text-[#00F5FF] border-b-2 border-[#00F5FF] pb-1 hover:text-[#a1faff] hover:bg-[#141f38] transition-all h-full flex items-center px-2 text-sm font-medium" href="#">Crypto Audit</a>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<div class="flex gap-3 text-[#00F5FF]">
+<button class="hover:text-[#a1faff] hover:bg-[#141f38] transition-all p-1 rounded"><span class="material-symbols-outlined text-[20px]">rss_feed</span></button>
+<button class="hover:text-[#a1faff] hover:bg-[#141f38] transition-all p-1 rounded"><span class="material-symbols-outlined text-[20px]">settings_input_component</span></button>
+<button class="hover:text-[#a1faff] hover:bg-[#141f38] transition-all p-1 rounded"><span class="material-symbols-outlined text-[20px]">notifications</span></button>
+</div>
+<div class="flex gap-3 ml-4">
+<button class="bg-surface-variant border border-outline-variant/15 text-on-surface px-4 py-1.5 rounded-sm text-xs font-semibold hover:bg-surface-container-high transition-colors tracking-wide uppercase">Emergency Stop</button>
+<button class="bg-gradient-to-br from-primary to-primary-dim text-surface-lowest px-4 py-1.5 rounded-sm text-xs font-bold shadow-[0_0_15px_rgba(161,250,255,0.2)] hover:brightness-110 transition-all tracking-wide uppercase">Deploy Update</button>
+</div>
+<img alt="Operator Profile" class="w-8 h-8 rounded-sm object-cover ml-2 border border-outline-variant/30" data-alt="close up portrait of a serious male operator in a dimly lit high tech control room with blue monitor glow reflecting on his face" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAThi9-O6zgQIOnFMQkdQ4KHM3zsyK3hJv6rbUdIhY3lk7FReN71KT96sstYeWlMdvMtmfRwBZ8Z1Lj5BCSoJZcVWtdWe6f-Xkjl9PtzLBKXug8YWsBF956bJmRvyMRauSfHbXNYnZTXdsZeITBCndEm21YkT-RWty1nqby875Z5pXpWNZrymAMHalIEeGYj_xS3YMLwMhuo_HomkzK4ISxbHU0eWUC0zT3iVze-a4gMRl_czOexJ_Og5D94ltlWpw3Au7pPKoOYig"/>
+</div>
+</nav>
+<!-- SideNavBar (JSON Controlled) -->
+<aside class="fixed left-0 top-0 h-full flex flex-col z-40 docked left-0 h-full w-64 border-r border-[#141f38] bg-[#091328] dark:bg-[#091328] font-['Inter'] font-medium text-sm pt-16 tonal background layering using surface_container_low flat no shadows">
+<div class="p-6 border-b border-[#141f38]/50 mb-4 flex items-center gap-4">
+<div class="w-10 h-10 rounded bg-surface-container-high border border-outline-variant/20 flex items-center justify-center">
+<img alt="System Status Indicator" class="w-full h-full object-cover rounded opacity-80 mix-blend-screen" data-alt="abstract glowing blue circuit board node radiating energy in a dark void" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA3llwC-AQeD0SC7T3HMG1P8IlpRXTIPILlJ-stC7egxDKe6sXn-nlWAXNrD4su0Q-ThF7pbUIyDyYTcIr8fYseMQ0JZ2jfWA3_ozLe0mWtQlp6PWltIo_gdz3iZuApMyysV2cbqQ_niTKohjl_MfztVRd-3RFEF-hLkN3sl3gKLm9pe1jyeGsX0pZWeOIdW9IYtfUrtqI_YlqvwVARgFDFIM-pNQhNvS2qB52IdH1GcIPC_LfNxOkzYRfE1zoOu37aqc1TH9KrOk8"/>
+</div>
+<div>
+<div class="font-headline font-bold text-[#dee5ff] tracking-wider text-sm">NODE_01</div>
+<div class="text-[0.65rem] text-secondary tracking-widest font-mono uppercase mt-0.5">CONNECTED / SECURE</div>
+</div>
+</div>
+<nav class="flex-1 flex flex-col gap-1 px-3">
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-sm text-[#dee5ff] opacity-60 hover:opacity-100 hover:bg-[#192540] transition-colors duration-200 tactile press feedback with 2px right-side highlight" href="#">
+<span class="material-symbols-outlined text-[18px]">dashboard</span> Dashboard
+            </a>
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-sm text-[#dee5ff] opacity-60 hover:opacity-100 hover:bg-[#192540] transition-colors duration-200 tactile press feedback with 2px right-side highlight" href="#">
+<span class="material-symbols-outlined text-[18px]">terminal</span> Terminal
+            </a>
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-sm text-[#dee5ff] opacity-60 hover:opacity-100 hover:bg-[#192540] transition-colors duration-200 tactile press feedback with 2px right-side highlight" href="#">
+<span class="material-symbols-outlined text-[18px]">system_update_alt</span> Updates
+            </a>
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-sm bg-[#141f38] text-[#00F5FF] border-l-4 border-[#00F5FF] tactile press feedback with 2px right-side highlight shadow-[inset_20px_0_20px_rgba(0,245,255,0.02)]" href="#">
+<span class="material-symbols-outlined text-[18px]" style="font-variation-settings: 'FILL' 1;">verified_user</span> Verification
+            </a>
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-sm text-[#dee5ff] opacity-60 hover:opacity-100 hover:bg-[#192540] transition-colors duration-200 tactile press feedback with 2px right-side highlight" href="#">
+<span class="material-symbols-outlined text-[18px]">analytics</span> Device Logs
+            </a>
+</nav>
+<div class="px-6 py-4">
+<button class="w-full bg-surface-container-high border border-outline-variant/20 text-[#dee5ff] hover:bg-[#192540] transition-colors py-2 rounded-sm text-xs font-semibold tracking-wide uppercase flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-[16px]">add</span> New Fleet Group
+            </button>
+</div>
+<div class="mt-auto border-t border-[#141f38]/50 p-3 flex flex-col gap-1">
+<a class="flex items-center gap-3 px-3 py-2 rounded-sm text-[#dee5ff] opacity-60 hover:opacity-100 hover:bg-[#192540] transition-colors text-xs" href="#">
+<span class="material-symbols-outlined text-[16px]">monitor_heart</span> System Health
+            </a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-sm text-[#dee5ff] opacity-60 hover:opacity-100 hover:bg-[#192540] transition-colors text-xs" href="#">
+<span class="material-symbols-outlined text-[16px]">menu_book</span> Documentation
+            </a>
+</div>
+</aside>
+<!-- Main Content Canvas -->
+<main class="pl-64 pt-16 min-h-screen pb-12">
+<div class="p-8 max-w-7xl mx-auto space-y-8">
+<!-- Page Header -->
+<header class="flex justify-between items-end mb-10">
+<div>
+<h1 class="font-headline text-3xl font-bold text-on-surface tracking-tight mb-2 flex items-center gap-3">
+<span class="material-symbols-outlined text-primary text-3xl" style="font-variation-settings: 'FILL' 1;">satellite_alt</span>
+                        OTA Verification Panel
+                    </h1>
+<p class="text-on-surface-variant font-mono text-sm tracking-widest uppercase">Target: ESP32_Fleet_Alpha // Mission Control View</p>
+</div>
+<div class="flex items-center gap-4 bg-surface-container px-4 py-2 rounded-sm border border-outline-variant/15">
+<div class="w-2 h-2 rounded-full bg-secondary animate-pulse"></div>
+<span class="font-mono text-xs text-secondary tracking-widest uppercase">Live Telemetry Active</span>
+</div>
+</header>
+<!-- Global Status Widgets (Asymmetric Row) -->
+<section class="grid grid-cols-1 md:grid-cols-3 gap-6">
+<!-- Stat 1 -->
+<div class="glass-panel p-6 rounded-sm border border-outline-variant/15 relative overflow-hidden group hover:bg-surface-container-high transition-colors">
+<div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary-dim to-transparent opacity-50"></div>
+<div class="flex justify-between items-start mb-4">
+<h3 class="font-headline text-sm text-on-surface-variant uppercase tracking-widest font-semibold">Nodes in Flight</h3>
+<span class="material-symbols-outlined text-on-surface-variant">router</span>
+</div>
+<div class="flex items-baseline gap-2">
+<span class="font-headline text-4xl font-bold text-on-surface">1,204</span>
+<span class="text-xs font-mono text-on-surface-variant">/ 1,250</span>
+</div>
+<div class="w-full bg-surface-container-lowest h-1 mt-4 rounded-sm overflow-hidden">
+<div class="bg-primary h-full w-[96%] box-glow-primary"></div>
+</div>
+</div>
+<!-- Stat 2 -->
+<div class="glass-panel p-6 rounded-sm border border-outline-variant/15 relative overflow-hidden group hover:bg-surface-container-high transition-colors">
+<div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-secondary to-transparent opacity-50"></div>
+<div class="flex justify-between items-start mb-4">
+<h3 class="font-headline text-sm text-on-surface-variant uppercase tracking-widest font-semibold">Hash Integrity</h3>
+<span class="material-symbols-outlined text-secondary">verified</span>
+</div>
+<div class="flex items-baseline gap-2">
+<span class="font-headline text-4xl font-bold text-secondary text-glow-primary">99.8%</span>
+</div>
+<p class="text-xs font-mono text-on-surface-variant mt-3 flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px] text-secondary">check_circle</span> SHA-256 Passed
+                    </p>
+</div>
+<!-- Stat 3 -->
+<div class="glass-panel p-6 rounded-sm border border-outline-variant/15 relative overflow-hidden group hover:bg-surface-container-high transition-colors">
+<div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-tertiary-dim to-transparent opacity-50"></div>
+<div class="flex justify-between items-start mb-4">
+<h3 class="font-headline text-sm text-on-surface-variant uppercase tracking-widest font-semibold">Decryption Rate</h3>
+<span class="material-symbols-outlined text-on-surface-variant">key</span>
+</div>
+<div class="flex items-baseline gap-2">
+<span class="font-headline text-4xl font-bold text-on-surface">45</span>
+<span class="text-xs font-mono text-on-surface-variant">nodes/sec</span>
+</div>
+<p class="text-xs font-mono text-on-surface-variant mt-3">AES-256-GCM Engine Active</p>
+</div>
+</section>
+<!-- Main Dashboard Area (Bento Grid) -->
+<section class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+<!-- Left Column: Node Deployment Progress (Large Canvas) -->
+<div class="lg:col-span-8 flex flex-col gap-6">
+<div class="bg-surface-container-low rounded-sm flex-1 flex flex-col relative">
+<div class="p-5 border-b border-surface-container-high flex justify-between items-center bg-surface-container-high/50 rounded-t-sm">
+<h2 class="font-headline font-bold text-on-surface flex items-center gap-2">
+<span class="material-symbols-outlined text-[20px] text-primary">data_table</span>
+                                Deployment Telemetry
+                            </h2>
+<div class="flex gap-2">
+<span class="px-2 py-1 bg-surface-container border border-outline-variant/30 text-[10px] font-mono text-on-surface-variant rounded-sm uppercase tracking-wider">Filter: Active</span>
+<span class="px-2 py-1 bg-surface-container border border-outline-variant/30 text-[10px] font-mono text-on-surface-variant rounded-sm uppercase tracking-wider">Sort: Status</span>
+</div>
+</div>
+<div class="p-2 flex-1 overflow-auto">
+<!-- Tactical List without heavy borders, using tonal shifts and spacing -->
+<div class="flex flex-col gap-2 p-3">
+<!-- Node Row 1 (Verifying) -->
+<div class="bg-surface-container hover:bg-surface-container-high transition-colors p-4 rounded-sm flex items-center justify-between group">
+<div class="flex items-center gap-4 w-1/3">
+<div class="w-8 h-8 bg-surface-container-lowest border border-outline-variant/20 rounded flex items-center justify-center">
+<span class="material-symbols-outlined text-primary text-[18px]">memory</span>
+</div>
+<div>
+<div class="font-mono text-sm font-semibold text-on-surface">ESP32-A142</div>
+<div class="text-[10px] font-mono text-on-surface-variant uppercase tracking-widest mt-0.5">IP: 192.168.1.42</div>
+</div>
+</div>
+<div class="flex-1 px-8">
+<div class="flex justify-between text-xs font-mono mb-1.5">
+<span class="text-primary font-semibold">VERIFYING HASH...</span>
+<span class="text-on-surface-variant">85%</span>
+</div>
+<div class="w-full bg-surface-container-lowest h-1.5 rounded-sm overflow-hidden">
+<div class="bg-gradient-to-r from-primary to-primary-dim h-full w-[85%] box-glow-primary relative">
+<div class="absolute inset-0 bg-[linear-gradient(45deg,transparent_25%,rgba(255,255,255,0.2)_50%,transparent_75%,transparent_100%)] bg-[length:20px_20px] animate-[slide_1s_linear_infinite]"></div>
+</div>
+</div>
+</div>
+<div class="w-24 text-right">
+<span class="text-xs font-mono text-primary animate-pulse">Processing</span>
+</div>
+</div>
+<!-- Node Row 2 (Complete) -->
+<div class="bg-surface-container hover:bg-surface-container-high transition-colors p-4 rounded-sm flex items-center justify-between group">
+<div class="flex items-center gap-4 w-1/3">
+<div class="w-8 h-8 bg-surface-container-lowest border border-outline-variant/20 rounded flex items-center justify-center">
+<span class="material-symbols-outlined text-secondary text-[18px]">memory</span>
+</div>
+<div>
+<div class="font-mono text-sm font-semibold text-on-surface">ESP32-B091</div>
+<div class="text-[10px] font-mono text-on-surface-variant uppercase tracking-widest mt-0.5">IP: 192.168.1.91</div>
+</div>
+</div>
+<div class="flex-1 px-8">
+<div class="flex justify-between text-xs font-mono mb-1.5">
+<span class="text-secondary font-semibold">SECURE REBOOT</span>
+<span class="text-on-surface-variant">100%</span>
+</div>
+<div class="w-full bg-surface-container-lowest h-1.5 rounded-sm overflow-hidden">
+<div class="bg-secondary h-full w-full opacity-80"></div>
+</div>
+</div>
+<div class="w-24 text-right flex justify-end">
+<span class="material-symbols-outlined text-secondary" style="font-variation-settings: 'FILL' 1;">gpp_good</span>
+</div>
+</div>
+<!-- Node Row 3 (Decrypting) -->
+<div class="bg-surface-container hover:bg-surface-container-high transition-colors p-4 rounded-sm flex items-center justify-between group">
+<div class="flex items-center gap-4 w-1/3">
+<div class="w-8 h-8 bg-surface-container-lowest border border-outline-variant/20 rounded flex items-center justify-center">
+<span class="material-symbols-outlined text-tertiary-dim text-[18px]">memory</span>
+</div>
+<div>
+<div class="font-mono text-sm font-semibold text-on-surface">ESP32-C330</div>
+<div class="text-[10px] font-mono text-on-surface-variant uppercase tracking-widest mt-0.5">IP: 192.168.2.30</div>
+</div>
+</div>
+<div class="flex-1 px-8">
+<div class="flex justify-between text-xs font-mono mb-1.5">
+<span class="text-tertiary-dim font-semibold">AES DECRYPTION</span>
+<span class="text-on-surface-variant">42%</span>
+</div>
+<div class="w-full bg-surface-container-lowest h-1.5 rounded-sm overflow-hidden">
+<div class="bg-tertiary-dim h-full w-[42%]"></div>
+</div>
+</div>
+<div class="w-24 text-right">
+<span class="text-xs font-mono text-tertiary-dim">Active</span>
+</div>
+</div>
+<!-- Node Row 4 (Error) -->
+<div class="bg-error-container/10 border border-error/20 hover:bg-error-container/20 transition-colors p-4 rounded-sm flex items-center justify-between group relative overflow-hidden">
+<div class="absolute left-0 top-0 h-full w-1 bg-error"></div>
+<div class="flex items-center gap-4 w-1/3 pl-2">
+<div class="w-8 h-8 bg-surface-container-lowest border border-error/30 rounded flex items-center justify-center">
+<span class="material-symbols-outlined text-error text-[18px]">memory</span>
+</div>
+<div>
+<div class="font-mono text-sm font-semibold text-error">ESP32-D005</div>
+<div class="text-[10px] font-mono text-on-surface-variant uppercase tracking-widest mt-0.5">IP: 192.168.1.05</div>
+</div>
+</div>
+<div class="flex-1 px-8">
+<div class="flex justify-between text-xs font-mono mb-1.5">
+<span class="text-error font-semibold">HASH MISMATCH ERROR</span>
+<span class="text-error-dim">FAIL</span>
+</div>
+<div class="w-full bg-surface-container-lowest h-1.5 rounded-sm overflow-hidden">
+<div class="bg-error h-full w-full"></div>
+</div>
+</div>
+<div class="w-24 text-right flex justify-end">
+<span class="material-symbols-outlined text-error">warning</span>
+</div>
+</div>
+<!-- Node Row 5 (Downloading) -->
+<div class="bg-surface-container hover:bg-surface-container-high transition-colors p-4 rounded-sm flex items-center justify-between group">
+<div class="flex items-center gap-4 w-1/3">
+<div class="w-8 h-8 bg-surface-container-lowest border border-outline-variant/20 rounded flex items-center justify-center">
+<span class="material-symbols-outlined text-surface-variant text-[18px]">memory</span>
+</div>
+<div>
+<div class="font-mono text-sm font-semibold text-on-surface-variant">ESP32-E112</div>
+<div class="text-[10px] font-mono text-on-surface-variant uppercase tracking-widest mt-0.5">IP: 192.168.3.12</div>
+</div>
+</div>
+<div class="flex-1 px-8">
+<div class="flex justify-between text-xs font-mono mb-1.5">
+<span class="text-on-surface-variant font-semibold">DOWNLOADING PAYLOAD</span>
+<span class="text-on-surface-variant">12%</span>
+</div>
+<div class="w-full bg-surface-container-lowest h-1.5 rounded-sm overflow-hidden border border-outline-variant/10">
+<div class="bg-surface-variant h-full w-[12%]"></div>
+</div>
+</div>
+<div class="w-24 text-right">
+<span class="text-xs font-mono text-on-surface-variant">Transfer</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- AES Status Visualizer (Bottom span) -->
+<div class="bg-surface-container-low rounded-sm p-6 border border-surface-container-high flex gap-8 items-center">
+<div class="flex-shrink-0">
+<h3 class="font-headline font-bold text-on-surface mb-1">AES-256 Engine</h3>
+<p class="text-xs font-mono text-secondary">STATUS: OPTIMAL</p>
+</div>
+<div class="flex-1 grid grid-cols-8 gap-2">
+<!-- Visual block representations -->
+<div class="h-8 bg-secondary/20 border border-secondary/50 rounded-sm relative overflow-hidden flex items-center justify-center">
+<span class="absolute inset-0 bg-secondary/10 animate-pulse"></span>
+<span class="font-mono text-[8px] text-secondary">B0</span>
+</div>
+<div class="h-8 bg-secondary/20 border border-secondary/50 rounded-sm flex items-center justify-center"><span class="font-mono text-[8px] text-secondary">B1</span></div>
+<div class="h-8 bg-secondary/20 border border-secondary/50 rounded-sm flex items-center justify-center"><span class="font-mono text-[8px] text-secondary">B2</span></div>
+<div class="h-8 bg-primary/20 border border-primary/50 rounded-sm flex items-center justify-center"><span class="font-mono text-[8px] text-primary">B3</span></div>
+<div class="h-8 bg-surface-container border border-outline-variant/30 rounded-sm flex items-center justify-center"><span class="font-mono text-[8px] text-on-surface-variant">B4</span></div>
+<div class="h-8 bg-surface-container border border-outline-variant/30 rounded-sm flex items-center justify-center"><span class="font-mono text-[8px] text-on-surface-variant">B5</span></div>
+<div class="h-8 bg-surface-container border border-outline-variant/30 rounded-sm flex items-center justify-center"><span class="font-mono text-[8px] text-on-surface-variant">B6</span></div>
+<div class="h-8 bg-surface-container border border-outline-variant/30 rounded-sm flex items-center justify-center"><span class="font-mono text-[8px] text-on-surface-variant">B7</span></div>
+</div>
+<div class="flex flex-col gap-1 text-right">
+<span class="text-[10px] font-mono text-on-surface-variant uppercase">Key Slot: <span class="text-primary">0x4F</span></span>
+<span class="text-[10px] font-mono text-on-surface-variant uppercase">IV: <span class="text-on-surface">GENERATED</span></span>
+</div>
+</div>
+</div>
+<!-- Right Column: Terminal Module (Tall Canvas) -->
+<div class="lg:col-span-4 flex flex-col h-full min-h-[600px]">
+<div class="bg-surface-container-lowest rounded-sm border border-outline-variant/20 flex-1 flex flex-col overflow-hidden shadow-[inset_0_0_40px_rgba(0,0,0,0.5)]">
+<!-- Terminal Header -->
+<div class="bg-[#1a1a1a] px-4 py-2 border-b border-[#333] flex justify-between items-center relative">
+<div class="absolute left-0 top-0 h-full w-0.5 bg-primary"></div>
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[14px] text-primary">terminal</span>
+<span class="font-mono text-xs text-on-surface font-semibold tracking-wider">CRYPTOGRAPHIC LOG</span>
+</div>
+<div class="flex gap-1.5">
+<div class="w-2 h-2 rounded-full bg-surface-variant border border-outline-variant"></div>
+<div class="w-2 h-2 rounded-full bg-surface-variant border border-outline-variant"></div>
+<div class="w-2 h-2 rounded-full bg-surface-variant border border-outline-variant"></div>
+</div>
+</div>
+<!-- Terminal Body -->
+<div class="p-4 font-mono text-[11px] leading-relaxed text-on-surface-variant flex-1 overflow-y-auto font-mono flex flex-col justify-end space-y-1">
+<div><span class="text-[#555]">[14:02:41.002]</span> <span class="text-primary">SYS:</span> Initiating OTA Payload verification...</div>
+<div><span class="text-[#555]">[14:02:41.045]</span> <span class="text-tertiary-dim">KEY:</span> Fetching public key from secure enclave... <span class="text-secondary">OK</span></div>
+<div><span class="text-[#555]">[14:02:42.110]</span> <span class="text-primary">NODE [ESP32-B091]:</span> Decryption complete. Generating SHA-256...</div>
+<div class="pl-4 break-all text-[#888]">Hash: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855</div>
+<div><span class="text-[#555]">[14:02:42.301]</span> <span class="text-primary">NODE [ESP32-B091]:</span> Signature verification... <span class="text-secondary font-bold">MATCH (SECURE)</span></div>
+<div class="py-1"></div>
+<div><span class="text-[#555]">[14:02:43.055]</span> <span class="text-primary">NODE [ESP32-A142]:</span> Payload received (1.2MB).</div>
+<div><span class="text-[#555]">[14:02:43.102]</span> <span class="text-primary">NODE [ESP32-A142]:</span> Initializing AES-GCM engine... <span class="text-secondary">OK</span></div>
+<div><span class="text-[#555]">[14:02:43.882]</span> <span class="text-primary">NODE [ESP32-A142]:</span> Decrypting block [0x00 - 0xFF]...</div>
+<div class="py-1"></div>
+<div><span class="text-[#555]">[14:02:44.201]</span> <span class="text-error">NODE [ESP32-D005]:</span> <span class="text-error font-bold">FATAL_ERROR</span></div>
+<div class="pl-4 text-error-dim">Reason: Hash mismatch detected. Expected signature invalid.</div>
+<div class="pl-4 text-error-dim">Action: Aborting OTA. Locking bootloader.</div>
+<div class="py-1"></div>
+<div><span class="text-[#555]">[14:02:45.001]</span> <span class="text-primary">NODE [ESP32-C330]:</span> Beginning decryption stream...</div>
+<div class="flex items-center gap-2 mt-2">
+<span class="text-primary animate-pulse">_</span>
+</div>
+</div>
+</div>
+</div>
+</section>
+</div>
+</main>
+<style>
+        @keyframes slide {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(20px); }
+        }
+    </style>
+</body></html>
