@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>GUARDIAN-OTA Terminal Command</title>
+<!-- Google Fonts: Space Grotesk for Display/Headers, Inter for Body/Data, Roboto Mono for Terminal -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Space+Grotesk:wght@400;500;600;700&amp;family=Roboto+Mono:wght@400;500&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Tailwind Configuration (The Sentinel Directive) -->
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+                "inverse-on-surface": "#4d556b",
+                "on-tertiary-fixed-variant": "#4e5c71",
+                "tertiary-container": "#d5e3fd",
+                "primary-fixed": "#00f4fe",
+                "secondary": "#69f6b8",
+                "secondary-dim": "#58e7ab",
+                "surface-container-low": "#091328",
+                "error-dim": "#d7383b",
+                "surface-container-lowest": "#000000",
+                "on-primary-fixed": "#004346",
+                "on-primary-fixed-variant": "#006266",
+                "on-primary-container": "#00575b",
+                "inverse-primary": "#006a6e",
+                "secondary-fixed": "#69f6b8",
+                "on-tertiary": "#4d5b70",
+                "surface-container-high": "#141f38",
+                "surface-variant": "#192540",
+                "on-tertiary-fixed": "#324054",
+                "primary": "#a1faff",
+                "tertiary-dim": "#c7d5ee",
+                "primary-fixed-dim": "#00e5ee",
+                "outline-variant": "#40485d",
+                "tertiary-fixed-dim": "#c7d5ee",
+                "secondary-container": "#006c49",
+                "on-background": "#dee5ff",
+                "tertiary": "#ebf1ff",
+                "on-error-container": "#ffa8a3",
+                "on-error": "#490006",
+                "surface-tint": "#a1faff",
+                "inverse-surface": "#faf8ff",
+                "error": "#ff716c",
+                "surface-container": "#0f1930",
+                "outline": "#6d758c",
+                "surface-container-highest": "#192540",
+                "on-secondary-fixed": "#00452d",
+                "error-container": "#9f0519",
+                "on-surface": "#dee5ff",
+                "secondary-fixed-dim": "#58e7ab",
+                "on-surface-variant": "#a3aac4",
+                "on-tertiary-container": "#455367",
+                "on-secondary-fixed-variant": "#006544",
+                "surface": "#060e20",
+                "tertiary-fixed": "#d5e3fd",
+                "surface-dim": "#060e20",
+                "surface-bright": "#1f2b49",
+                "on-secondary-container": "#e1ffec",
+                "on-primary": "#006165",
+                "on-secondary": "#005a3c",
+                "background": "#060e20",
+                "primary-dim": "#00e5ee",
+                "primary-container": "#00f4fe"
+            },
+            borderRadius: {
+                "DEFAULT": "0.125rem",
+                "lg": "0.25rem",
+                "xl": "0.5rem",
+                "full": "0.75rem"
+            },
+            fontFamily: {
+                "headline": ["Space Grotesk", "sans-serif"],
+                "body": ["Inter", "sans-serif"],
+                "mono": ["Roboto Mono", "monospace"]
+            }
+          }
+        }
+      }
+    </script>
+<style>
+        /* Custom Utilities for The Sentinel Directive */
+        .glass-panel {
+            background-color: rgba(25, 37, 64, 0.6); /* surface-variant */
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+        }
+        .text-glow-primary {
+            text-shadow: 0 0 12px rgba(161, 250, 255, 0.3); /* primary color */
+        }
+        .box-glow-primary {
+            box-shadow: 0 0 12px rgba(161, 250, 255, 0.1);
+        }
+        /* Custom scrollbar for terminal */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #141f38; /* surface-container-high */
+            border-radius: 2px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #40485d; /* outline-variant */
+        }
+    </style>
+</head>
+<body class="bg-surface text-on-surface font-body h-screen w-screen overflow-hidden flex">
+<!-- Shared Component: SideNavBar -->
+<!-- Applying exact style_* keys from JSON and mapping structure -->
+<nav class="fixed left-0 top-0 h-full flex flex-col z-40 docked left-0 h-full w-64 border-r border-[#141f38] bg-[#091328] dark:bg-[#091328]">
+<!-- Header -->
+<div class="px-6 py-8 flex flex-col gap-1 relative">
+<!-- Ghost accent for monolithic feel -->
+<div class="absolute left-0 top-0 h-full w-1 bg-surface-container-high"></div>
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-primary text-2xl" data-weight="fill" style="font-variation-settings: 'FILL' 1;">router</span>
+<div>
+<h2 class="font-headline font-bold text-lg tracking-tight text-on-surface">NODE_01</h2>
+<p class="text-[0.65rem] font-medium tracking-widest text-secondary mt-0.5">CONNECTED / SECURE</p>
+</div>
+</div>
+<!-- style_brand_logo: hidden -->
+<div class="hidden text-xl font-bold uppercase tracking-widest text-[#00F5FF]">SENTINEL COMMAND</div>
+</div>
+<!-- Main Navigation -->
+<div class="flex-1 px-3 py-4 flex flex-col gap-1 overflow-y-auto">
+<!-- Inactive Tab -->
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-sm text-[#dee5ff] opacity-60 hover:opacity-100 hover:bg-[#192540] transition-colors duration-200 tactile press feedback with 2px right-side highlight group relative" href="#">
+<span class="material-symbols-outlined text-xl transition-colors group-hover:text-primary">dashboard</span>
+<span class="font-['Inter'] font-medium text-sm">Dashboard</span>
+<div class="absolute right-0 top-1/2 -translate-y-1/2 w-0.5 h-0 bg-primary group-hover:h-3/4 transition-all"></div>
+</a>
+<!-- Active Tab (Terminal) -->
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-sm bg-[#141f38] text-[#00F5FF] border-l-4 border-[#00F5FF] group relative" href="#">
+<span class="material-symbols-outlined text-xl" data-weight="fill" style="font-variation-settings: 'FILL' 1;">terminal</span>
+<span class="font-['Inter'] font-medium text-sm tracking-wide">Terminal</span>
+<!-- Text Glow for active state -->
+<div class="absolute right-3 top-1/2 -translate-y-1/2 w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></div>
+</a>
+<!-- Inactive Tab -->
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-sm text-[#dee5ff] opacity-60 hover:opacity-100 hover:bg-[#192540] transition-colors duration-200 group relative mt-2" href="#">
+<span class="material-symbols-outlined text-xl transition-colors group-hover:text-primary">system_update_alt</span>
+<span class="font-['Inter'] font-medium text-sm">Updates</span>
+<div class="absolute right-0 top-1/2 -translate-y-1/2 w-0.5 h-0 bg-primary group-hover:h-3/4 transition-all"></div>
+</a>
+<!-- Inactive Tab -->
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-sm text-[#dee5ff] opacity-60 hover:opacity-100 hover:bg-[#192540] transition-colors duration-200 group relative" href="#">
+<span class="material-symbols-outlined text-xl transition-colors group-hover:text-primary">verified_user</span>
+<span class="font-['Inter'] font-medium text-sm">Verification</span>
+<div class="absolute right-0 top-1/2 -translate-y-1/2 w-0.5 h-0 bg-primary group-hover:h-3/4 transition-all"></div>
+</a>
+<!-- Inactive Tab -->
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-sm text-[#dee5ff] opacity-60 hover:opacity-100 hover:bg-[#192540] transition-colors duration-200 group relative" href="#">
+<span class="material-symbols-outlined text-xl transition-colors group-hover:text-primary">analytics</span>
+<span class="font-['Inter'] font-medium text-sm">Device Logs</span>
+<div class="absolute right-0 top-1/2 -translate-y-1/2 w-0.5 h-0 bg-primary group-hover:h-3/4 transition-all"></div>
+</a>
+</div>
+<!-- Footer / CTA -->
+<div class="p-4 flex flex-col gap-4 border-t border-outline-variant/10">
+<button class="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-sm bg-gradient-to-br from-primary to-primary-dim text-on-primary-fixed font-medium text-sm shadow-[0_0_15px_rgba(161,250,255,0.15)] hover:shadow-[0_0_20px_rgba(161,250,255,0.3)] transition-all">
+<span class="material-symbols-outlined text-lg">add</span>
+                New Fleet Group
+            </button>
+<div class="flex flex-col gap-1 mt-2">
+<a class="flex items-center gap-3 px-3 py-2 rounded-sm text-on-surface-variant opacity-80 hover:opacity-100 hover:bg-surface-container-highest transition-colors" href="#">
+<span class="material-symbols-outlined text-[1.1rem]">monitor_heart</span>
+<span class="font-body text-xs">System Health</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-sm text-on-surface-variant opacity-80 hover:opacity-100 hover:bg-surface-container-highest transition-colors" href="#">
+<span class="material-symbols-outlined text-[1.1rem]">menu_book</span>
+<span class="font-body text-xs">Documentation</span>
+</a>
+</div>
+</div>
+</nav>
+<!-- Main Content Wrapper (Offset for SideNav) -->
+<div class="ml-64 flex-1 flex flex-col h-full bg-surface relative">
+<!-- Shared Component: TopNavBar -->
+<header class="flex justify-between items-center w-full px-6 h-16 docked full-width top-0 border-b border-[#141f38] bg-[#060e20] dark:bg-[#060e20] tonal shifts with surface_container_low bg-opacity-60 backdrop-blur-md sticky z-30">
+<!-- Left: Logo/Title (Since nav is secondary, we'll put the product name here) -->
+<div class="flex items-center gap-4">
+<h1 class="text-xl font-bold uppercase tracking-widest text-[#00F5FF] font-['Space_Grotesk'] tracking-tight">SENTINEL COMMAND</h1>
+</div>
+<!-- Center: Navigation Links (Inactive contextually as we are in Terminal) -->
+<div class="hidden lg:flex items-center gap-8">
+<a class="text-[#dee5ff] opacity-70 font-['Space_Grotesk'] tracking-tight text-sm hover:text-[#a1faff] transition-all" href="#">Fleet Metrics</a>
+<a class="text-[#dee5ff] opacity-70 font-['Space_Grotesk'] tracking-tight text-sm hover:text-[#a1faff] transition-all" href="#">Firmware Repo</a>
+<a class="text-[#dee5ff] opacity-70 font-['Space_Grotesk'] tracking-tight text-sm hover:text-[#a1faff] transition-all" href="#">Crypto Audit</a>
+</div>
+<!-- Right: Actions -->
+<div class="flex items-center gap-4">
+<div class="flex items-center gap-2 mr-2"><button class="p-1.5 rounded-sm text-on-surface-variant hover:text-primary hover:bg-surface-container-high transition-colors group relative">
+<span class="material-symbols-outlined text-[1.2rem] group-hover:rotate-45 transition-transform duration-500">light_mode</span>
+<div class="absolute -bottom-1 left-1/2 -translate-x-1/2 w-0.5 h-0.5 bg-primary rounded-full opacity-0 group-hover:opacity-100 transition-opacity"></div>
+</button>
+<button class="p-1.5 rounded-sm text-on-surface-variant hover:text-primary hover:bg-surface-container-high transition-colors">
+<span class="material-symbols-outlined text-[1.2rem]">rss_feed</span>
+</button>
+<button class="p-1.5 rounded-sm text-on-surface-variant hover:text-primary hover:bg-surface-container-high transition-colors">
+<span class="material-symbols-outlined text-[1.2rem]">settings_input_component</span>
+</button>
+<button class="p-1.5 rounded-sm text-on-surface-variant hover:text-primary hover:bg-surface-container-high transition-colors relative">
+<span class="material-symbols-outlined text-[1.2rem]">notifications</span>
+<span class="absolute top-1.5 right-1.5 w-1.5 h-1.5 bg-error rounded-full"></span>
+</button>
+</div>
+<!-- Primary / Secondary Actions -->
+<button class="px-4 py-1.5 border border-outline-variant/30 text-on-surface font-body text-xs font-medium rounded-sm hover:bg-surface-container-highest transition-colors">
+                    Emergency Stop
+                </button>
+<button class="px-4 py-1.5 bg-gradient-to-br from-primary to-primary-dim text-on-primary-fixed font-body text-xs font-medium rounded-sm shadow-[0_0_10px_rgba(161,250,255,0.1)] hover:shadow-[0_0_15px_rgba(161,250,255,0.2)] transition-all">
+                    Deploy Update
+                </button>
+<!-- Profile -->
+<div class="ml-2 w-8 h-8 rounded-sm bg-surface-container-high ring-1 ring-outline-variant/20 overflow-hidden flex items-center justify-center">
+<span class="material-symbols-outlined text-primary text-sm">person</span>
+</div>
+</div>
+</header>
+<!-- Main Workspace (Intentional Asymmetry & Monolithic Layering) -->
+<main class="flex-1 p-6 flex flex-col overflow-hidden min-h-0 bg-surface">
+<!-- Page Header (Tactical Anchor) -->
+<div class="flex justify-between items-end mb-6 shrink-0">
+<div>
+<div class="flex items-center gap-2 mb-1">
+<span class="text-xs font-mono text-primary/70 uppercase tracking-wider">Session ID: x8f-992a</span>
+<span class="w-1 h-1 bg-outline-variant rounded-full"></span>
+<span class="text-xs font-mono text-secondary uppercase tracking-wider flex items-center gap-1">
+<span class="w-1.5 h-1.5 bg-secondary rounded-full animate-pulse"></span> Live
+                        </span>
+</div>
+<h2 class="font-headline text-3xl font-bold tracking-tight text-on-surface text-glow-primary">Terminal Override</h2>
+</div>
+<div class="text-right">
+<p class="font-mono text-sm text-on-surface-variant">Uplink: <span class="text-on-surface">1.2 Gbps</span></p>
+<p class="font-mono text-sm text-on-surface-variant">Latency: <span class="text-on-surface">12ms</span></p>
+</div>
+</div>
+<!-- Asymmetric Grid Layout -->
+<div class="grid grid-cols-1 xl:grid-cols-12 gap-6 flex-1 min-h-0">
+<!-- LEFT COLUMN: Main Terminal Window (Col 1-8 or 1-9) -->
+<!-- Use surface-container-lowest (#000000) for specialty terminal feel -->
+<div class="xl:col-span-8 flex flex-col rounded-sm bg-surface-container-lowest ring-1 ring-outline-variant/15 relative overflow-hidden shadow-2xl">
+<!-- Tactical Status Bar (Left Edge) -->
+<div class="absolute left-0 top-0 bottom-0 w-[2px] bg-secondary z-10 shadow-[0_0_8px_#69f6b8]"></div>
+<!-- Terminal Header -->
+<div class="h-10 bg-surface-container-high/50 border-b border-outline-variant/10 flex items-center justify-between px-4 z-10">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-[1rem] text-primary/70">terminal</span>
+<span class="font-mono text-xs text-on-surface-variant tracking-wider">root@guardian-core:~#</span>
+</div>
+<div class="flex items-center gap-4">
+<div class="flex items-center gap-1.5">
+<span class="w-2 h-2 rounded-full bg-error-dim"></span>
+<span class="w-2 h-2 rounded-full bg-surface-bright"></span>
+<span class="w-2 h-2 rounded-full bg-secondary-dim"></span>
+</div>
+</div>
+</div>
+<!-- Terminal Output Canvas -->
+<div class="flex-1 p-5 overflow-y-auto font-mono text-[0.85rem] leading-relaxed text-on-surface-variant z-0 relative">
+<!-- Watermark/Texture (Optional abstract background element for depth) -->
+<div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-[0.02] pointer-events-none select-none">
+<span class="material-symbols-outlined text-[30rem]">security</span>
+</div>
+<!-- Boot Sequence Text -->
+<div class="mb-4 opacity-50">
+<p>Guardian OS v4.2.1-stable [x86_64]</p>
+<p>Initializing cryptographic modules... OK</p>
+<p>Establishing secure channel to Fleet Registry... OK</p>
+<p>Authentication token verified. Access granted.</p>
+</div>
+<!-- Example Session 1: Signing -->
+<div class="mb-6">
+<div class="flex gap-2 text-on-surface">
+<span class="text-primary font-medium shrink-0">root@guardian-core:/opt/ota$</span>
+<span class="text-on-surface break-all">guard-ota --sign firmware.bin</span>
+</div>
+<div class="pl-4 mt-1 border-l border-outline-variant/20 py-1 space-y-1">
+<p class="text-on-tertiary-container">[INFO] Reading target binary 'firmware.bin' (4.2 MB)</p>
+<p class="text-on-tertiary-container">[INFO] Computing SHA-256 hash...</p>
+<p class="text-secondary font-medium">Hash: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855</p>
+<p class="text-on-tertiary-container">[INFO] Applying ECDSA-P384 signature using key alias 'fleet-prod-01'</p>
+<p class="text-secondary font-medium">[SUCCESS] Payload signed successfully. Created 'firmware.signed.bin'</p>
+</div>
+</div>
+<!-- Example Session 2: Deployment -->
+<div class="mb-6">
+<div class="flex gap-2 text-on-surface">
+<span class="text-primary font-medium shrink-0">root@guardian-core:/opt/ota$</span>
+<span class="text-on-surface break-all">guard-ota --deploy --target NODE_01 --payload firmware.signed.bin</span>
+</div>
+<div class="pl-4 mt-1 border-l border-outline-variant/20 py-1 space-y-1">
+<p class="text-on-tertiary-container">[INFO] Initiating deployment sequence for target: NODE_01</p>
+<p class="text-on-tertiary-container">[INFO] Handshake initiated (TLS 1.3)...</p>
+<p class="text-secondary">[OK] Mutual authentication verified.</p>
+<p class="text-on-tertiary-container">[INFO] Transferring payload chunks [======&gt;     ] 60%</p>
+<p class="text-on-tertiary-container">[INFO] Transferring payload chunks [==========] 100%</p>
+<p class="text-on-tertiary-container">[INFO] Verifying checksum on remote device...</p>
+<p class="text-secondary font-medium">[SUCCESS] Deployment committed. NODE_01 rebooting into new firmware.</p>
+</div>
+</div>
+<!-- Floating Glassmorphism Alert (Demonstrating layered depth) -->
+<div class="my-6 max-w-md glass-panel p-4 rounded-sm border-l-2 border-primary ring-1 ring-primary/20 flex gap-4 items-start shadow-[0_10px_40px_rgba(0,0,0,0.5)]">
+<span class="material-symbols-outlined text-primary text-xl mt-0.5">info</span>
+<div>
+<h4 class="font-headline font-semibold text-primary text-sm mb-1 uppercase tracking-wide">System Notice</h4>
+<p class="text-xs text-on-surface-variant leading-relaxed">Network protocol upgrade scheduled for 03:00 UTC. Expect a brief disruption in remote terminal connectivity.</p>
+</div>
+</div>
+<!-- Active Input Prompt -->
+<div class="flex gap-2 text-on-surface mt-2">
+<span class="text-primary font-medium shrink-0">root@guardian-core:/opt/ota$</span>
+<span class="relative flex items-center">
+<span class="w-2 h-[1em] bg-primary animate-[pulse_1s_ease-in-out_infinite] shadow-[0_0_8px_rgba(161,250,255,0.8)] inline-block align-middle ml-1"></span>
+</span>
+</div>
+</div>
+</div>
+<!-- RIGHT COLUMN: Tools & Settings (Col 9-12) -->
+<!-- Stacking surface-container-high inside surface-container-low for natural lift -->
+<div class="xl:col-span-4 flex flex-col gap-6 min-h-0">
+<!-- Command History Panel -->
+<div class="flex-1 min-h-[200px] flex flex-col bg-surface-container-low rounded-sm ring-1 ring-outline-variant/15 overflow-hidden">
+<!-- Panel Header -->
+<div class="px-5 py-4 border-b border-surface-container-high flex justify-between items-center bg-surface-container-low/50">
+<h3 class="font-headline font-semibold text-sm tracking-wide text-on-surface flex items-center gap-2">
+<span class="material-symbols-outlined text-[1.1rem] text-primary">history</span>
+                                COMMAND HISTORY
+                            </h3>
+<button class="text-[0.65rem] font-bold tracking-widest text-on-surface-variant hover:text-primary transition-colors uppercase">Clear</button>
+</div>
+<!-- History List (No dividers, use spacing) -->
+<div class="flex-1 overflow-y-auto p-3 space-y-1">
+<div class="group px-3 py-2.5 rounded-sm hover:bg-surface-container-high transition-colors cursor-pointer flex justify-between items-center">
+<code class="font-mono text-xs text-on-surface group-hover:text-primary transition-colors">guard-ota --deploy --target...</code>
+<span class="text-[0.65rem] text-on-surface-variant opacity-0 group-hover:opacity-100 transition-opacity">Just now</span>
+</div>
+<div class="group px-3 py-2.5 rounded-sm hover:bg-surface-container-high transition-colors cursor-pointer flex justify-between items-center">
+<code class="font-mono text-xs text-on-surface group-hover:text-primary transition-colors">guard-ota --sign firmware.bin</code>
+<span class="text-[0.65rem] text-on-surface-variant opacity-0 group-hover:opacity-100 transition-opacity">2m ago</span>
+</div>
+<div class="group px-3 py-2.5 rounded-sm hover:bg-surface-container-high transition-colors cursor-pointer flex justify-between items-center">
+<code class="font-mono text-xs text-on-surface-variant group-hover:text-primary transition-colors">ping fleet-registry.internal</code>
+<span class="text-[0.65rem] text-on-surface-variant opacity-0 group-hover:opacity-100 transition-opacity">15m ago</span>
+</div>
+<div class="group px-3 py-2.5 rounded-sm hover:bg-surface-container-high transition-colors cursor-pointer flex justify-between items-center">
+<code class="font-mono text-xs text-error group-hover:text-error-dim transition-colors">sysctl restart netd</code>
+<span class="text-[0.65rem] text-on-surface-variant opacity-0 group-hover:opacity-100 transition-opacity">1h ago</span>
+</div>
+<div class="group px-3 py-2.5 rounded-sm hover:bg-surface-container-high transition-colors cursor-pointer flex justify-between items-center">
+<code class="font-mono text-xs text-on-surface-variant group-hover:text-primary transition-colors">tail -f /var/log/auth.log</code>
+<span class="text-[0.65rem] text-on-surface-variant opacity-0 group-hover:opacity-100 transition-opacity">2h ago</span>
+</div>
+<div class="group px-3 py-2.5 rounded-sm hover:bg-surface-container-high transition-colors cursor-pointer flex justify-between items-center">
+<code class="font-mono text-xs text-on-surface-variant group-hover:text-primary transition-colors">cat /etc/guardian/config.yaml</code>
+<span class="text-[0.65rem] text-on-surface-variant opacity-0 group-hover:opacity-100 transition-opacity">Yesterday</span>
+</div>
+</div>
+</div>
+<!-- Terminal Settings Sidebar -->
+<div class="shrink-0 flex flex-col bg-surface-container-low rounded-sm ring-1 ring-outline-variant/15 overflow-hidden">
+<!-- Panel Header -->
+<div class="px-5 py-4 border-b border-surface-container-high bg-surface-container-low/50">
+<h3 class="font-headline font-semibold text-sm tracking-wide text-on-surface flex items-center gap-2">
+<span class="material-symbols-outlined text-[1.1rem] text-on-surface-variant">tune</span>
+                                SESSION CONFIG
+                            </h3>
+</div>
+<div class="p-5 space-y-5">
+<!-- Toggle Item 1 -->
+<div class="flex items-center justify-between">
+<div>
+<p class="text-sm font-medium text-on-surface">Verbose Logging</p>
+<p class="text-[0.65rem] text-on-surface-variant font-mono mt-0.5">DEBUG level outputs</p>
+</div>
+<!-- Custom Toggle: Active State -->
+<button class="w-10 h-5 rounded-full bg-primary/20 relative flex items-center px-0.5 ring-1 ring-primary/50 transition-colors">
+<div class="w-4 h-4 rounded-full bg-primary shadow-[0_0_8px_rgba(161,250,255,0.6)] translate-x-5 transition-transform"></div>
+</button>
+</div>
+<!-- Toggle Item 2 -->
+<div class="flex items-center justify-between">
+<div>
+<p class="text-sm font-medium text-on-surface">Auto-Deploy Signatures</p>
+<p class="text-[0.65rem] text-on-surface-variant font-mono mt-0.5">Skip manual confirmation</p>
+</div>
+<!-- Custom Toggle: Inactive State -->
+<button class="w-10 h-5 rounded-full bg-surface-container-highest relative flex items-center px-0.5 ring-1 ring-outline-variant/30 transition-colors">
+<div class="w-4 h-4 rounded-full bg-outline-variant transition-transform"></div>
+</button>
+</div>
+<!-- Dropdown / Select Input equivalent -->
+<div class="pt-2">
+<label class="block text-xs font-medium text-on-surface-variant mb-2 uppercase tracking-wider">Baud Rate / Uplink Limit</label>
+<div class="relative group">
+<select class="w-full appearance-none bg-surface-container-high border-none ring-1 ring-outline-variant/20 rounded-sm py-2 px-3 text-sm font-mono text-on-surface focus:ring-primary focus:ring-2 focus:outline-none transition-all cursor-pointer">
+<option value="115200">115200 bps (Standard)</option>
+<option value="9600">9600 bps (Failsafe)</option>
+<option selected="" value="unlimited">Unlimited (LAN)</option>
+</select>
+<span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant pointer-events-none group-focus-within:text-primary transition-colors">expand_more</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+</div>
+</body></html>
