@@ -85,14 +85,31 @@ const CAR_MODELS: Record<CarVariant, CarModelDef> = {
 function ECUComponent({ def, isActive, variantScale }: { def: ECUDef; isActive: boolean; variantScale: number }) {
   const scaledPos = [def.position[0] * variantScale, def.position[1] * variantScale, def.position[2] * variantScale] as [number, number, number];
 
-  // Only render dynamic light, no visible shapes
   return (
     <>
+      {/* Dynamic lighting */}
       {isActive && (
         <>
           <pointLight position={scaledPos} intensity={4.5} color={def.color} distance={5.0} decay={2} />
           <pointLight position={[scaledPos[0], scaledPos[1] - 0.3, scaledPos[2]]} intensity={3.5} color={def.color} distance={4.5} decay={2} />
         </>
+      )}
+
+      {/* Visible block only when active */}
+      {isActive && (
+        <mesh position={scaledPos}>
+          <boxGeometry args={[0.8, 0.6, 0.6]} />
+          <meshPhysicalMaterial 
+            color={def.color} 
+            emissive={def.color}
+            emissiveIntensity={0.6}
+            transparent 
+            opacity={0.45}
+            metalness={0.7}
+            roughness={0.3}
+            side={THREE.DoubleSide}
+          />
+        </mesh>
       )}
     </>
   );
