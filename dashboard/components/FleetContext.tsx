@@ -27,6 +27,7 @@ interface FleetContextValue {
   selectVehicle: (id: string) => void;
   goToDashboard: () => void;
   addDevice: (id: string, name: string) => void;
+  deleteDevice: (deviceId: string) => void;
   toggleEncryption: (vehicleId: string) => void;
 }
 
@@ -116,6 +117,12 @@ export function FleetProvider({ children }: { children: ReactNode }) {
     setFleet(prev => [...prev, createDefaultVehicle(id, name, randomCarVariant())]);
   }, []);
 
+  const deleteDevice = useCallback((deviceId: string) => {
+    setFleet(prev => prev.filter(v => v.deviceId !== deviceId));
+    setSelectedVehicleId(null);
+    setCurrentView("fleet");
+  }, []);
+
   const toggleEncryption = useCallback((vehicleId: string) => {
     setFleet(prev =>
       prev.map(v =>
@@ -129,7 +136,7 @@ export function FleetProvider({ children }: { children: ReactNode }) {
   return (
     <FleetContext.Provider value={{
       fleet, setFleet, currentView, selectedVehicleId, activeEcu,
-      setActiveEcu, selectVehicle, goToDashboard, addDevice, toggleEncryption,
+      setActiveEcu, selectVehicle, goToDashboard, addDevice, deleteDevice, toggleEncryption,
     }}>
       {children}
     </FleetContext.Provider>

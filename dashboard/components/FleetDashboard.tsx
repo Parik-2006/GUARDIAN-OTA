@@ -14,7 +14,7 @@ const MODEL_ICONS: Record<string, string> = {
 };
 
 export default function FleetDashboard() {
-  const { fleet, selectVehicle } = useFleet();
+  const { fleet, selectVehicle, deleteDevice } = useFleet();
 
   return (
     <div style={{ flex: 1, overflowY: "auto", padding: "24px 28px" }}>
@@ -101,16 +101,39 @@ export default function FleetDashboard() {
                     }}>{v.model.toUpperCase()} · {v.deviceId}</span>
                   </div>
                 </div>
-                <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
-                  <div style={{
-                    width: 6, height: 6, borderRadius: "50%",
-                    background: statusCol,
-                    boxShadow: `0 0 6px ${statusCol}`,
-                  }} />
-                  <span style={{
-                    fontFamily: "'JetBrains Mono',monospace", fontSize: "0.52rem",
-                    color: statusCol, textTransform: "uppercase", letterSpacing: "0.1em",
-                  }}>{v.status}</span>
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
+                    <div style={{
+                      width: 6, height: 6, borderRadius: "50%",
+                      background: statusCol,
+                      boxShadow: `0 0 6px ${statusCol}`,
+                    }} />
+                    <span style={{
+                      fontFamily: "'JetBrains Mono',monospace", fontSize: "0.52rem",
+                      color: statusCol, textTransform: "uppercase", letterSpacing: "0.1em",
+                    }}>{v.status}</span>
+                  </div>
+                  {/* Delete Button */}
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      deleteDevice(v.deviceId);
+                    }}
+                    style={{
+                      background: "transparent", border: "none", cursor: "pointer",
+                      padding: "4px", borderRadius: 3, transition: "all 0.2s",
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                    }}
+                    onMouseEnter={e => {
+                      e.currentTarget.style.background = "rgba(196,107,107,0.2)";
+                    }}
+                    onMouseLeave={e => {
+                      e.currentTarget.style.background = "transparent";
+                    }}
+                    title="Delete device"
+                  >
+                    <I n="delete" sz={16} col={P.burg} />
+                  </button>
                 </div>
               </div>
 
