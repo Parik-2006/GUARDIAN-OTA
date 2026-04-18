@@ -10,6 +10,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/joho/godotenv"
 
 	"sdv-ota/backend/api"
 	"sdv-ota/backend/campaign"
@@ -20,6 +21,8 @@ import (
 )
 
 func main() {
+	_ = godotenv.Load() // Load from .env if present
+
 	slog.SetDefault(slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
 		Level: slog.LevelInfo,
 	})))
