@@ -34,7 +34,7 @@ type Tab = "security" | "verification" | "updates";
 export default function VehicleInsight() {
   const { fleet, selectedVehicleId, goToDashboard } = useFleet();
   const [activeTab, setActiveTab] = useState<Tab>("security");
-  const [carVariant, setCarVariant] = useState<CarVariant>("audi-a8");
+  const [carVariant, setCarVariant] = useState<CarVariant>("bmw-m3");
 
   const vehicle = fleet.find(v => v.deviceId === selectedVehicleId);
   if (!vehicle) return null;
@@ -155,7 +155,7 @@ export default function VehicleInsight() {
             fontFamily: "'JetBrains Mono',monospace", fontSize: "0.52rem",
           }}>
             <div style={{ color: P.whisper, marginBottom: 4 }}>VEHICLE:</div>
-            {(["audi-a8", "bmw-i7", "mercedes-s"] as const).map(variant => (
+            {(["bmw-m3", "bmw-m5", "bmw-i8"] as const).map(variant => (
               <button
                 key={variant}
                 onClick={() => setCarVariant(variant)}
@@ -181,9 +181,9 @@ export default function VehicleInsight() {
                   }
                 }}
               >
-                {variant === "audi-a8" && "Audi A8"}
-                {variant === "bmw-i7" && "BMW i7"}
-                {variant === "mercedes-s" && "Merc S"}
+                {variant === "bmw-m3" && "BMW M3"}
+                {variant === "bmw-m5" && "BMW M5"}
+                {variant === "bmw-i8" && "BMW i8"}
               </button>
             ))}
           </div>
