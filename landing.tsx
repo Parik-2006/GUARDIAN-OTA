@@ -722,10 +722,7 @@ export default function Landing({ onEnterDashboard }: { onEnterDashboard: () => 
           <p className="lp-section-label">02 · Security Controls</p>
           <h2 className="lp-section-h2">Cryptographic <em>Defense</em> Chain</h2>
           <p className="lp-section-body">
-            Every layer of the update pipeline is hardened — from hardware identity
-            pinning on the ESP32 eFuse MAC, through TLS transport and ECC payload
-            verification, to automatic rollback on health-check failure.
-          </Multi-layer hardening across the entire update pipeline — from eFuse hardware identity pinning and TLS transport encryption, through ECC payload authentication and SHA-256 integrity verification, to pre-update safety validation and automatic dual-partition rollback on failure.
+            Multi-layer hardening across the entire update pipeline — from eFuse hardware identity pinning and TLS transport encryption, through ECC payload authentication and SHA-256 integrity verification, to pre-update safety validation and automatic dual-partition rollback on failure.
           </p>
           <SecurityBadges />
           <FeatureRow items={[
@@ -734,20 +731,23 @@ export default function Landing({ onEnterDashboard }: { onEnterDashboard: () => 
             { icon: "🛡", title: "Pre-Update Safety Gate", desc: "OTA execution blocked when brake ECU reports UNSAFE state. Prevents firmware updates during active safety-critical vehicle operation." },
             { icon: "↩", title: "Dual-Partition Rollback", desc: "ESP-IDF dual OTA slot with automatic revert on health-check failure. Prevents bricking and ensures safe recovery to verified firmware." },
             { icon: "📡", title: "TLS MQTT Transport", desc: "All OTA commands encrypted over MQTT 8883 with certificate validation. Blocks MITM interception, command injection, and replay attacks." },
-            { icon: "🪪", title: "eFuse MAC Device Identity", desc: "Immutable hardware MAC-based device identifier stored in ESP32 eFuse. Eliminates logical node spoofing and supports fine-grained access control
+            { icon: "🪪", title: "eFuse MAC Device Identity", desc: "Immutable hardware MAC-based device identifier stored in ESP32 eFuse. Eliminates logical node spoofing and supports fine-grained access control." },
+          ]} />
+        </section>
+
         <div className="lp-divider" />
 
         {/* STACK */}
         <section className="lp-section" id="stack">
           <p className="lp-section-label">03 · Technology Stack</p>
-          <h2 className="lp-section-h2">Full-Stack <em>Embedded</em> Platform</h2>
+          <h2 className="lp-section-h2">Full-Stack <em>Production</em> Platform</h2>
           <p className="lp-section-body">
-            From bare-metal C on ESP-IDF through Go microservices to a cinematic
-            Next.js dashboard — every layer chosen for production readiness and
-            security posture.
-          </p>Production</em> Platform</h2>
-          <p className="lp-section-body">
-            Battle-tested technologies across every layer — from bare-metal FreeRTOS task runtime and mbedTLS cryptography on ESP32, through Go microservices with PostgreSQL persistence, to a production-grade Next.js dashboard with real-time WebSocket telemetry and cinematic motion graphicsivider" />
+            Battle-tested technologies across every layer — from bare-metal FreeRTOS task runtime and mbedTLS cryptography on ESP32, through Go microservices with PostgreSQL persistence, to a production-grade Next.js dashboard with real-time WebSocket telemetry and cinematic motion graphics.
+          </p>
+          <StackRow />
+        </section>
+
+        <div className="lp-divider" />
 
         {/* FOOTER CTA */}
         <section style={{ position: "relative", zIndex: 1, padding: "80px 32px", textAlign: "center" }}>
