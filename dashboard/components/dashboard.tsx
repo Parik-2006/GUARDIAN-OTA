@@ -99,7 +99,7 @@ function GlassCard({ children, style, onClick, hover = true }: {
   );
 }
 
-function Label({ children, color = C.muted, size = "0.6rem" }: {
+function Label({ children, color = C.textMuted, size = "0.6rem" }: {
   children: React.ReactNode; color?: string; size?: string;
 }) {
   return (
@@ -107,6 +107,260 @@ function Label({ children, color = C.muted, size = "0.6rem" }: {
       fontFamily: "'JetBrains Mono', monospace", fontSize: size,
       color, letterSpacing: "0.12em", textTransform: "uppercase",
     }}>{children}</span>
+  );
+}
+
+/* ─── CONNECTED DEVICES NAVIGATION BAR ─── */
+function ConnectedDevicesBar({ devices }: { devices: DeviceState[] }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: -20 }}
+      animate={{ opacity: 1, y: 0 }}
+      style={{
+        position: "fixed", top: 0, left: 0, right: 0, zIndex: 40,
+        height: "48px", paddingLeft: "20px", paddingRight: "20px",
+        background: C.surface,
+        backdropFilter: "blur(20px)",
+        WebkitBackdropFilter: "blur(20px)",
+        borderBottom: `1px solid ${C.border}`,
+        display: "flex", alignItems: "center", gap: "16px",
+        overflow: "x-auto",
+      }}
+    >
+      <Label color={C.textDim} size="0.55rem">ACTIVE DEVICES</Label>
+      <div style={{ display: "flex", gap: "12px", flex: 1, overflow: "auto" }}>
+        {devices.slice(0, 12).map(d => (
+          <motion.div
+            key={d.deviceId}
+            whileHover={{ scale: 1.05 }}
+            style={{
+              display: "flex", alignItems: "center", gap: "6px",
+              padding: "4px 10px", borderRadius: "3px",
+              background: C.panel,
+              border: `1px solid ${C.border}`,
+              whiteSpace: "nowrap", fontSize: "0.7rem",
+              color: C.cream,
+            }}
+          >
+            <span
+              style={{
+                width: "1px", height: "6px",
+                background: d.safetyState === "SAFE" ? "#5A8C5E" : "#B85050",
+                borderRadius: "0.5px",
+                animation: "pulse 2s ease-in-out infinite",
+              }}
+            />
+            <span>{d.deviceId.substring(0, 8)}</span>
+          </motion.div>
+        ))}
+      </div>
+    </motion.div>
+  );
+}
+
+/* ─── TACTICAL GLASS MODAL — ADD NEW DEVICE ─── */
+function TacticalGlassModal({
+  isOpen, onClose, onSubmit,
+}: { isOpen: boolean; onClose: () => void; onSubmit: (data: any) => void }) {
+  const [deviceId, setDeviceId] = useState("");
+  const [vehicleModel, setVehicleModel] = useState(CARS[0].id);
+  const [status, setStatus] = useState("ACTIVE");
+
+  const handleSubmit = () => {
+    if (deviceId.trim()) {
+      onSubmit({ deviceId, vehicleModel, status });
+      setDeviceId("");
+      onClose();
+    }
+  };
+
+  return (
+    <AnimatePresence>
+      {isOpen && (
+        <>
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={onClose}
+            style={{
+              position: "fixed", inset: 0, zIndex: 50,
+              background: "rgba(0,0,0,0.6)",
+              backdropFilter: "blur(8px)",
+            }}
+          />
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95, y: 20 }}
+            style={{
+              position: "fixed", top: "50%", left: "50%",
+              transform: "translate(-50%, -50%)", zIndex: 51,
+              width: "90%", maxWidth: "420px",
+              background: C.surface,
+              backdropFilter: "blur(20px)",
+              WebkitBackdropFilter: "blur(20px)",
+              border: `1px solid ${C.borderHi}`,
+              borderRadius: "8px",
+              padding: "28px", boxShadow: C.shadowHi,
+            }}
+          >
+            <h2 style={{ margin: "0 0 20px", fontSize: "1.1rem", color: C.cream, fontWeight: 600 }}>
+              ADD NEW DEVICE
+            </h2>
+            <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+              {/* Device ID */}
+              <div>
+                <Label size="0.55rem" color={C.textMuted}>Device ID</Label>
+                <input
+                  type="text"
+                  placeholder="e.g., sim-1021"
+                  value={deviceId}
+                  onChange={e => setDeviceId(e.target.value)}
+                  style={{
+                    width: "100%", marginTop: "6px",
+                    padding: "8px 10px", borderRadius: "4px",
+                    background: C.panel,
+                    border: `1px solid ${C.border}`,
+                    color: C.cream, fontSize: "0.85rem",
+                    fontFamily: "'JetBrains Mono', monospace",
+                    outline: "none",
+                    transition: "all 0.2s",
+                  }}
+                  onFocus={e => { e.currentTarget.style.borderColor = C.borderHi; e.currentTarget.style.boxShadow = `0 0 0 2px ${C.goldDim}`; }}
+                  onBlur={e => { e.currentTarget.style.borderColor = C.border; e.currentTarget.style.boxShadow = "none"; }}
+                />
+              </div>
+
+              {/* Vehicle Model */}
+              <div>
+                <Label size="0.55rem" color={C.textMuted}>Vehicle Model</Label>
+                <select
+                  value={vehicleModel}
+                  onChange={e => setVehicleModel(e.target.value)}
+                  style={{
+                    width: "100%", marginTop: "6px",
+                    padding: "8px 10px", borderRadius: "4px",
+                    background: C.panel,
+                    border: `1px solid ${C.border}`,
+                    color: C.cream, fontSize: "0.85rem",
+                    outline: "none",
+                  }}
+                >
+                  {CARS.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                </select>
+              </div>
+
+              {/* Status */}
+              <div>
+                <Label size="0.55rem" color={C.textMuted}>Primary Status</Label>
+                <select
+                  value={status}
+                  onChange={e => setStatus(e.target.value)}
+                  style={{
+                    width: "100%", marginTop: "6px",
+                    padding: "8px 10px", borderRadius: "4px",
+                    background: C.panel,
+                    border: `1px solid ${C.border}`,
+                    color: C.cream, fontSize: "0.85rem",
+                    outline: "none",
+                  }}
+                >
+                  <option value="ACTIVE">Active</option>
+                  <option value="STANDBY">Standby</option>
+                  <option value="MAINTENANCE">Maintenance</option>
+                </select>
+              </div>
+
+              {/* Actions */}
+              <div style={{ display: "flex", gap: "10px", marginTop: "12px" }}>
+                <button
+                  onClick={handleSubmit}
+                  style={{
+                    flex: 1, padding: "8px", borderRadius: "4px",
+                    background: C.goldGlow,
+                    border: `1px solid ${C.gold}`,
+                    color: C.gold, fontSize: "0.75rem", fontWeight: 600,
+                    cursor: "pointer", textTransform: "uppercase", letterSpacing: "0.08em",
+                    transition: "all 0.2s",
+                  }}
+                  onMouseEnter={e => { (e.target as any).style.boxShadow = `0 0 12px ${C.goldGlow}`; }}
+                  onMouseLeave={e => { (e.target as any).style.boxShadow = "none"; }}
+                >
+                  DEPLOY
+                </button>
+                <button
+                  onClick={onClose}
+                  style={{
+                    flex: 1, padding: "8px", borderRadius: "4px",
+                    background: "transparent",
+                    border: `1px solid ${C.border}`,
+                    color: C.textMuted, fontSize: "0.75rem",
+                    cursor: "pointer", textTransform: "uppercase",
+                  }}
+                >
+                  CANCEL
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        </>
+      )}
+    </AnimatePresence>
+  );
+}
+
+/* ─── BORDER IGNITION GLASS CARD ─── */
+function BorderIgnitionCard({
+  children, onClick, style,
+}: { children: React.ReactNode; onClick?: () => void; style?: React.CSSProperties }) {
+  const [hov, setHov] = useState(false);
+  const borderRef = useRef<HTMLDivElement>(null);
+
+  return (
+    <motion.div
+      onMouseEnter={() => setHov(true)}
+      onMouseLeave={() => setHov(false)}
+      onClick={onClick}
+      style={{
+        position: "relative", borderRadius: "6px",
+        cursor: onClick ? "pointer" : "default",
+        ...style,
+      }}
+    >
+      {/* Background glass */}
+      <div
+        style={{
+          position: "absolute", inset: 0, borderRadius: "6px",
+          background: C.surface,
+          border: `1px solid ${hov ? C.borderHi : C.border}`,
+          backdropFilter: "blur(20px)",
+          WebkitBackdropFilter: "blur(20px)",
+          transition: "all 0.25s ease",
+          zIndex: 1,
+        }}
+      />
+
+      {/* Border Ignition animation */}
+      {hov && (
+        <motion.div
+          ref={borderRef}
+          initial={{ strokeDashoffset: 500 }}
+          animate={{ strokeDashoffset: 0 }}
+          transition={{ duration: 1.5, repeat: Infinity }}
+          style={{
+            position: "absolute", inset: 0, borderRadius: "6px",
+            border: `1px solid ${C.gold}`,
+            pointerEvents: "none", zIndex: 2,
+          }}
+        />
+      )}
+
+      {/* Content */}
+      <div style={{ position: "relative", zIndex: 2 }}>
+        {children}
+      </div>
+    </motion.div>
   );
 }
 
@@ -439,10 +693,10 @@ function FleetHeader({ fleet, onAddDevice }: {
         <div>
           <Label color={C.gold}>Connected Devices</Label>
           <div style={{ marginTop: 6, display: "flex", alignItems: "baseline", gap: 8 }}>
-            <span style={{ fontFamily: "'Playfair Display', serif", fontSize: "2.8rem", fontWeight: 700, color: C.bone, lineHeight: 1 }}>
+            <span style={{ fontFamily: "'Playfair Display', serif", fontSize: "2.8rem", fontWeight: 700, color: C.boneText, lineHeight: 1 }}>
               {fleet.length}
             </span>
-            <Label color={C.muted}>fleet nodes</Label>
+            <Label color={C.textMuted}>fleet nodes</Label>
           </div>
           <div style={{ display: "flex", gap: 10, marginTop: 12 }}>
             <StatusPill on={true} label={`${active} active`} />
@@ -472,7 +726,7 @@ function FleetHeader({ fleet, onAddDevice }: {
               fontSize: "0.68rem", letterSpacing: "0.1em", textTransform: "uppercase",
               color: C.gold, fontWeight: 600, transition: "all 0.2s",
             }}
-            onMouseEnter={e => { e.currentTarget.style.background = C.goldGlow; e.currentTarget.style.color = C.goldDark || C.bone; }}
+            onMouseEnter={e => { e.currentTarget.style.background = C.goldGlow; e.currentTarget.style.color = C.goldDark || C.boneText; }}
             onMouseLeave={e => { e.currentTarget.style.background = C.goldDim; e.currentTarget.style.color = C.gold; }}
           >
             + Add Device
@@ -491,7 +745,7 @@ function FleetHeader({ fleet, onAddDevice }: {
               display: "flex", alignItems: "center", gap: 5,
             }}>
               <div style={{ width: 5, height: 5, borderRadius: "50%", background: d.threatLevel === "HIGH" ? C.danger : d.threatLevel === "MEDIUM" ? C.warn : C.safe }} />
-              <Label size="0.52rem" color={d.threatLevel === "HIGH" ? C.danger : d.threatLevel === "MEDIUM" ? C.warn : C.muted}>
+              <Label size="0.52rem" color={d.threatLevel === "HIGH" ? C.danger : d.threatLevel === "MEDIUM" ? C.warn : C.textMuted}>
                 {d.deviceId.replace("sim-", "N-")}
               </Label>
             </div>
@@ -513,7 +767,7 @@ function CarSelectionGrid({ onSelect }: { onSelect: (car: CarModel) => void }) {
     <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 18 }}>
       {CARS.map((car, i) => (
         <motion.div key={car.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.1 }}>
-          <GlassCard style={{ overflow: "hidden" }} onClick={() => onSelect(car)}>
+          <BorderIgnitionCard onClick={() => onSelect(car)} style={{ overflow: "hidden" }}>
             {/* Gold accent top */}
             <div style={{ height: 3, background: `linear-gradient(90deg, ${car.color}, transparent)` }} />
 
@@ -534,12 +788,12 @@ function CarSelectionGrid({ onSelect }: { onSelect: (car: CarModel) => void }) {
             {/* Info */}
             <div style={{ padding: "14px 18px" }}>
               <div style={{ marginBottom: 8 }}>
-                <h3 style={{ fontFamily: "'Playfair Display', serif", fontSize: "1.15rem", fontWeight: 700, color: C.bone, margin: "0 0 3px" }}>
+                <h3 style={{ fontFamily: "'Playfair Display', serif", fontSize: "1.15rem", fontWeight: 700, color: C.boneText, margin: "0 0 3px" }}>
                   {car.name}
                 </h3>
                 <Label color={car.colorDark} size="0.58rem">{car.subtitle}</Label>
               </div>
-              <p style={{ fontSize: "0.78rem", color: C.muted, lineHeight: 1.6, margin: "0 0 14px" }}>{car.role}</p>
+              <p style={{ fontSize: "0.78rem", color: C.textMuted, lineHeight: 1.6, margin: "0 0 14px" }}>{car.role}</p>
               <div style={{ display: "flex", gap: 6, marginBottom: 14 }}>
                 <span style={{ padding: "3px 8px", background: C.goldDim, borderRadius: 6, border: `1px solid ${C.border}` }}>
                   <Label color={C.gold} size="0.5rem">{car.category}</Label>
@@ -566,7 +820,7 @@ function CarSelectionGrid({ onSelect }: { onSelect: (car: CarModel) => void }) {
                 {car.name} — Enter Cockpit →
               </button>
             </div>
-          </GlassCard>
+          </BorderIgnitionCard>
         </motion.div>
       ))}
     </div>
@@ -614,7 +868,7 @@ function VerificationOverlay({ onClose, car }: { onClose: () => void; car: CarMo
             </div>
             <div style={{ padding: "12px 16px", background: done ? C.safeDim : C.goldDim, borderRadius: 10, border: `1px solid ${done ? "rgba(90,140,94,0.25)" : "rgba(196,146,42,0.25)"}`, marginBottom: 14 }}>
               <Label color={done ? C.safe : C.gold} size="0.62rem">{phases[phase].label}</Label>
-              <p style={{ fontSize: "0.74rem", color: C.muted, margin: "4px 0 0", lineHeight: 1.5 }}>{phases[phase].detail}</p>
+              <p style={{ fontSize: "0.74rem", color: C.textMuted, margin: "4px 0 0", lineHeight: 1.5 }}>{phases[phase].detail}</p>
             </div>
             <AnimatePresence>
               {phases.slice(0, phase + 1).map((p, i) => (
@@ -622,7 +876,7 @@ function VerificationOverlay({ onClose, car }: { onClose: () => void; car: CarMo
                   style={{ display: "flex", gap: 10, marginBottom: 6, alignItems: "center" }}
                 >
                   <span style={{ fontFamily: "monospace", fontSize: 11, color: C.safe }}>✓</span>
-                  <span style={{ fontFamily: "monospace", fontSize: 11, color: C.boneDim }}>{p.detail}</span>
+                  <span style={{ fontFamily: "monospace", fontSize: 11, color: C.textDim }}>{p.detail}</span>
                 </motion.div>
               ))}
             </AnimatePresence>
@@ -677,16 +931,16 @@ function CarDetailView({ car, fleet, onBack }: { car: CarModel; fleet: DeviceSta
       {/* Back + title */}
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 20 }}>
         <button onClick={onBack}
-          style={{ padding: "7px 14px", background: C.surface, border: `1px solid ${C.border}`, borderRadius: 10, cursor: "pointer", fontFamily: "'JetBrains Mono', monospace", fontSize: "0.6rem", color: C.boneDim, transition: "all 0.15s" }}
-          onMouseEnter={e => { e.currentTarget.style.background = C.goldDim; e.currentTarget.style.color = C.bone; }}
-          onMouseLeave={e => { e.currentTarget.style.background = C.surface; e.currentTarget.style.color = C.boneDim; }}
+          style={{ padding: "7px 14px", background: C.surface, border: `1px solid ${C.border}`, borderRadius: 10, cursor: "pointer", fontFamily: "'JetBrains Mono', monospace", fontSize: "0.6rem", color: C.textDim, transition: "all 0.15s" }}
+          onMouseEnter={e => { e.currentTarget.style.background = C.goldDim; e.currentTarget.style.color = C.boneText; }}
+          onMouseLeave={e => { e.currentTarget.style.background = C.surface; e.currentTarget.style.color = C.textDim; }}
         >← BACK</button>
         <div style={{ height: 1, width: 16, background: C.border }} />
         <div>
           <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: "1.3rem", fontWeight: 700, color: car.color, margin: 0 }}>
-            {car.name} <span style={{ color: C.boneDim, fontWeight: 400, fontSize: "0.9rem" }}>System Cockpit</span>
+            {car.name} <span style={{ color: C.textDim, fontWeight: 400, fontSize: "0.9rem" }}>System Cockpit</span>
           </h2>
-          <Label color={C.muted} size="0.55rem">{car.subtitle} · Interactive ECU Model</Label>
+          <Label color={C.textMuted} size="0.55rem">{car.subtitle} · Interactive ECU Model</Label>
         </div>
       </motion.div>
 
@@ -697,7 +951,7 @@ function CarDetailView({ car, fleet, onBack }: { car: CarModel; fleet: DeviceSta
           <GlassCard style={{ height: 380, overflow: "hidden" }} hover={false}>
             <div style={{ padding: "10px 16px", borderBottom: `1px solid ${C.border}`, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <Label color={car.color}>Interactive 3D Model — Drag to rotate · Scroll to zoom · Click ECU</Label>
-              <Label color={C.muted} size="0.5rem">X-Ray Mode Active</Label>
+              <Label color={C.textMuted} size="0.5rem">X-Ray Mode Active</Label>
             </div>
             <div style={{ height: "calc(100% - 40px)" }}>
               <CarCanvas3D carId={car.id} activeEcu={activeEcu} onEcuClick={setActiveEcu} />
@@ -731,11 +985,11 @@ function CarDetailView({ car, fleet, onBack }: { car: CarModel; fleet: DeviceSta
                         boxShadow: isActive ? `0 0 8px ${ecu.color}` : "none",
                         transition: "all 0.3s",
                       }} />
-                      <span style={{ fontSize: "0.75rem", fontWeight: 600, color: isActive ? ecu.color : C.bone }}>
+                      <span style={{ fontSize: "0.75rem", fontWeight: 600, color: isActive ? ecu.color : C.boneText }}>
                         {ecu.name}
                       </span>
                     </div>
-                    <Label color={isActive ? ecu.color : C.muted} size="0.5rem">
+                    <Label color={isActive ? ecu.color : C.textMuted} size="0.5rem">
                       {isActive ? "● ACTIVE" : "○ STANDBY"}
                     </Label>
                   </motion.div>
@@ -764,7 +1018,7 @@ function CarDetailView({ car, fleet, onBack }: { car: CarModel; fleet: DeviceSta
                     border: `1px solid ${showEncMenu ? C.borderHi : C.border}`,
                     borderRadius: 10, cursor: "pointer",
                     fontFamily: "'JetBrains Mono', monospace", fontSize: "0.62rem",
-                    color: C.boneDim, transition: "all 0.2s",
+                    color: C.textDim, transition: "all 0.2s",
                     display: "flex", justifyContent: "space-between", alignItems: "center",
                   }}
                 >
@@ -779,19 +1033,19 @@ function CarDetailView({ car, fleet, onBack }: { car: CarModel; fleet: DeviceSta
                       <div style={{ padding: "10px 12px", background: C.goldDim, borderRadius: "0 0 10px 10px", border: `1px solid ${C.border}`, borderTop: "none" }}>
                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
                           <div>
-                            <div style={{ fontSize: "0.78rem", color: C.bone, fontWeight: 600, marginBottom: 2 }}>Payload Encryption</div>
-                            <Label color={C.muted} size="0.54rem">ECC P-256 + AES-256-GCM</Label>
+                            <div style={{ fontSize: "0.78rem", color: C.boneText, fontWeight: 600, marginBottom: 2 }}>Payload Encryption</div>
+                            <Label color={C.textMuted} size="0.54rem">ECC P-256 + AES-256-GCM</Label>
                           </div>
                           <div onClick={() => setEncEnabled(v => !v)}
                             style={{ width: 38, height: 20, borderRadius: 10, background: encEnabled ? C.safeDim : C.border, border: `1px solid ${encEnabled ? C.safe : C.border}`, position: "relative", cursor: "pointer", transition: "all 0.25s", padding: "2px" }}
                           >
-                            <div style={{ width: 14, height: 14, borderRadius: "50%", background: encEnabled ? C.safe : C.muted, transform: encEnabled ? "translateX(18px)" : "translateX(0)", transition: "all 0.25s" }} />
+                            <div style={{ width: 14, height: 14, borderRadius: "50%", background: encEnabled ? C.safe : C.textMuted, transform: encEnabled ? "translateX(18px)" : "translateX(0)", transition: "all 0.25s" }} />
                           </div>
                         </div>
                         {[["Algorithm", "ECC P-256"], ["Cipher", "AES-256-GCM"], ["MAC", "HMAC-SHA256"]].map(([k, v]) => (
                           <div key={k} style={{ display: "flex", justifyContent: "space-between", padding: "3px 0", borderBottom: `1px solid ${C.border}` }}>
-                            <Label color={C.muted} size="0.54rem">{k}</Label>
-                            <Label color={encEnabled ? C.boneDim : C.muted} size="0.54rem">{v}</Label>
+                            <Label color={C.textMuted} size="0.54rem">{k}</Label>
+                            <Label color={encEnabled ? C.textDim : C.textMuted} size="0.54rem">{v}</Label>
                           </div>
                         ))}
                         <div style={{ marginTop: 6, padding: "4px 8px", background: encEnabled ? C.safeDim : C.dangerDim, borderRadius: 6, border: `1px solid ${encEnabled ? "rgba(90,140,94,0.2)" : "rgba(184,80,80,0.2)"}` }}>
@@ -811,7 +1065,7 @@ function CarDetailView({ car, fleet, onBack }: { car: CarModel; fleet: DeviceSta
                   width: "100%", padding: "9px 12px", background: "transparent",
                   border: `1px solid ${C.border}`, borderRadius: 10, cursor: "pointer",
                   fontFamily: "'JetBrains Mono', monospace", fontSize: "0.62rem",
-                  color: C.boneDim, transition: "all 0.2s",
+                  color: C.textDim, transition: "all 0.2s",
                   display: "flex", justifyContent: "space-between", alignItems: "center",
                 }}
                 onMouseEnter={e => { e.currentTarget.style.background = C.goldDim; e.currentTarget.style.borderColor = C.borderHi; }}
@@ -847,7 +1101,7 @@ function CarDetailView({ car, fleet, onBack }: { car: CarModel; fleet: DeviceSta
             <div style={{ padding: "14px 16px", display: "flex", flexDirection: "column", gap: 12 }}>
               {/* File picker */}
               <div>
-                <Label color={C.muted} size="0.54rem">Firmware Binary</Label>
+                <Label color={C.textMuted} size="0.54rem">Firmware Binary</Label>
                 <div onClick={() => fileRef.current?.click()}
                   style={{
                     marginTop: 5, padding: "12px", borderRadius: 10,
@@ -864,7 +1118,7 @@ function CarDetailView({ car, fleet, onBack }: { car: CarModel; fleet: DeviceSta
                     <Label color={C.safe} size="0.6rem">{pickedFile}</Label></>
                   ) : (
                     <><div style={{ color: C.gold, fontSize: "1.2rem", marginBottom: 2 }}>⊕</div>
-                    <Label color={C.muted} size="0.6rem">Drop .bin / .hex or click</Label></>
+                    <Label color={C.textMuted} size="0.6rem">Drop .bin / .hex or click</Label></>
                   )}
                 </div>
               </div>
@@ -875,13 +1129,13 @@ function CarDetailView({ car, fleet, onBack }: { car: CarModel; fleet: DeviceSta
                 { label: "MinIO URL", value: firmwareUrl, setter: setFirmwareUrl, ph: "https://minio.local/firmware.bin" },
               ].map(({ label, value, setter, ph }) => (
                 <div key={label}>
-                  <Label color={C.muted} size="0.54rem">{label}</Label>
+                  <Label color={C.textMuted} size="0.54rem">{label}</Label>
                   <input value={value} onChange={e => setter(e.target.value)}
                     placeholder={ph}
                     style={{
                       width: "100%", marginTop: 4, padding: "7px 10px",
                       background: C.glass, border: `1px solid ${C.border}`,
-                      borderRadius: 8, color: C.bone, fontFamily: "'JetBrains Mono', monospace",
+                      borderRadius: 8, color: C.boneText, fontFamily: "'JetBrains Mono', monospace",
                       fontSize: "0.65rem", outline: "none", boxSizing: "border-box", transition: "border-color 0.2s",
                     }}
                     onFocus={e => e.currentTarget.style.borderColor = C.goldGlow}
@@ -893,7 +1147,7 @@ function CarDetailView({ car, fleet, onBack }: { car: CarModel; fleet: DeviceSta
               {/* Canary */}
               <div>
                 <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
-                  <Label color={C.muted} size="0.54rem">Canary Rollout</Label>
+                  <Label color={C.textMuted} size="0.54rem">Canary Rollout</Label>
                   <Label color={C.gold} size="0.58rem">{canary}% of fleet</Label>
                 </div>
                 <input type="range" min={1} max={100} value={canary} onChange={e => setCanary(Number(e.target.value))}
@@ -954,7 +1208,7 @@ function Sidebar({ view, setView, onBack }: { view: string; setView: (v: View) =
             <span style={{ fontSize: 16, color: C.gold }}>◈</span>
           </div>
           <div>
-            <div style={{ fontFamily: "'Playfair Display', serif", fontWeight: 700, fontSize: "0.9rem", color: C.bone, letterSpacing: "0.04em" }}>GUARDIAN</div>
+            <div style={{ fontFamily: "'Playfair Display', serif", fontWeight: 700, fontSize: "0.9rem", color: C.boneText, letterSpacing: "0.04em" }}>GUARDIAN</div>
             <Label color={C.gold} size="0.5rem">OTA Command</Label>
           </div>
         </div>
@@ -965,7 +1219,7 @@ function Sidebar({ view, setView, onBack }: { view: string; setView: (v: View) =
       </div>
       {/* Nav */}
       <div style={{ flex: 1, padding: "10px 8px", display: "flex", flexDirection: "column", gap: 3 }}>
-        <div style={{ padding: "6px 8px 3px" }}><Label color={C.muted} size="0.48rem">NAVIGATION</Label></div>
+        <div style={{ padding: "6px 8px 3px" }}><Label color={C.textMuted} size="0.48rem">NAVIGATION</Label></div>
         {items.map(item => {
           const active = view === item.id;
           return (
@@ -975,10 +1229,10 @@ function Sidebar({ view, setView, onBack }: { view: string; setView: (v: View) =
                 borderRadius: 10, cursor: "pointer", transition: "all 0.15s",
                 background: active ? C.goldDim : "transparent",
                 borderLeft: `2px solid ${active ? C.gold : "transparent"}`,
-                color: active ? C.bone : C.boneDim, fontSize: "0.84rem",
+                color: active ? C.boneText : C.textDim, fontSize: "0.84rem",
               }}
             >
-              <span style={{ fontSize: 13, color: active ? C.gold : C.muted }}>{item.icon}</span>
+              <span style={{ fontSize: 13, color: active ? C.gold : C.textMuted }}>{item.icon}</span>
               <span>{item.label}</span>
             </div>
           );
@@ -988,9 +1242,9 @@ function Sidebar({ view, setView, onBack }: { view: string; setView: (v: View) =
       <div style={{ padding: "8px", borderTop: `1px solid ${C.border}` }}>
         {onBack && (
           <div onClick={onBack}
-            style={{ display: "flex", alignItems: "center", gap: 9, padding: "8px 12px", borderRadius: 10, cursor: "pointer", color: C.muted, fontSize: "0.78rem", transition: "all 0.15s" }}
-            onMouseEnter={e => { e.currentTarget.style.background = C.goldDim; e.currentTarget.style.color = C.bone; }}
-            onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = C.muted; }}
+            style={{ display: "flex", alignItems: "center", gap: 9, padding: "8px 12px", borderRadius: 10, cursor: "pointer", color: C.textMuted, fontSize: "0.78rem", transition: "all 0.15s" }}
+            onMouseEnter={e => { e.currentTarget.style.background = C.goldDim; e.currentTarget.style.color = C.boneText; }}
+            onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = C.textMuted; }}
           >
             <span style={{ fontSize: 11 }}>←</span>
             <span>Landing Page</span>
@@ -1017,13 +1271,13 @@ function TopBar({ connected, title }: { connected: boolean; title: string }) {
       padding: "0 20px", flexShrink: 0,
     }}>
       <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-        <Label color={C.muted} size="0.52rem">GUARDIAN·OTA</Label>
+        <Label color={C.textMuted} size="0.52rem">GUARDIAN·OTA</Label>
         <span style={{ color: C.border }}>›</span>
-        <Label color={C.boneDim} size="0.52rem">{title}</Label>
+        <Label color={C.textDim} size="0.52rem">{title}</Label>
       </div>
       <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
         <StatusPill on={connected} label={connected ? "LIVE" : "DEMO"} />
-        {clock && <Label color={C.muted}>{clock}</Label>}
+        {clock && <Label color={C.textMuted}>{clock}</Label>}
         <button style={{ padding: "4px 12px", background: C.dangerDim, color: C.danger, border: "1px solid rgba(184,80,80,0.3)", borderRadius: 8, cursor: "pointer", fontFamily: "'JetBrains Mono', monospace", fontSize: "0.6rem" }}>
           Emergency Stop
         </button>
@@ -1038,6 +1292,7 @@ export default function Dashboard({ onBackToLanding }: { onBackToLanding?: () =>
   const [selectedCar, setSelectedCar] = useState<CarModel | null>(null);
   const [fleet, setFleet] = useState<DeviceState[]>([]);
   const [connected, setConnected] = useState(false);
+  const [showAddDeviceModal, setShowAddDeviceModal] = useState(false);
 
   useEffect(() => {
     const sim = Array.from({ length: 20 }, (_, i) => ({
@@ -1066,12 +1321,15 @@ export default function Dashboard({ onBackToLanding }: { onBackToLanding?: () =>
     } catch { return () => clearInterval(iv); }
   }, []);
 
-  function addDevice() {
-    const newId = `sim-${1001 + fleet.length}`;
+  function addDevice(data?: any) {
+    const carModel = data?.vehicleModel ? CARS.find(c => c.id === data.vehicleModel) : CARS[Math.floor(Math.random() * CARS.length)];
+    const newId = data?.deviceId || `sim-${1001 + fleet.length}`;
     setFleet(p => [...p, {
       deviceId: newId, primary: false, otaVersion: "1.0.0",
-      safetyState: "SAFE", ecuStates: { brake: "green", powertrain: "green", sensor: "green", infotainment: "green" },
-      lastSeen: new Date().toISOString(), threatLevel: "LOW",
+      safetyState: data?.status === "MAINTENANCE" ? "UNSAFE" : "SAFE",
+      ecuStates: { brake: "green", powertrain: "green", sensor: "green", infotainment: "green" },
+      lastSeen: new Date().toISOString(),
+      threatLevel: data?.status === "MAINTENANCE" ? "MEDIUM" : "LOW",
       otaProgress: 0, signatureOk: true, integrityOk: true, tlsHealthy: true, rollbackArmed: true,
     }]);
   }
@@ -1088,17 +1346,27 @@ export default function Dashboard({ onBackToLanding }: { onBackToLanding?: () =>
       <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=JetBrains+Mono:wght@400;500;600&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
       <div style={{
         display: "flex", height: "100vh", width: "100vw", overflow: "hidden",
-        background: C.bg, color: C.bone, fontFamily: "'DM Sans', sans-serif",
+        background: C.bg, color: C.boneText, fontFamily: "'DM Sans', sans-serif",
       }}>
-        {/* Warm texture overlay */}
+        {/* Tactical atmospheric overlay */}
         <div style={{
           position: "fixed", inset: 0, pointerEvents: "none", zIndex: 0,
-          backgroundImage: "radial-gradient(ellipse 80% 60% at 20% 10%, rgba(212,180,100,0.08) 0%, transparent 55%), radial-gradient(ellipse 60% 50% at 85% 90%, rgba(180,160,120,0.06) 0%, transparent 50%)",
+          backgroundImage: "radial-gradient(ellipse 80% 60% at 20% 10%, rgba(212,175,55,0.04) 0%, transparent 55%), radial-gradient(ellipse 60% 50% at 85% 90%, rgba(90,140,94,0.03) 0%, transparent 50%)",
         }} />
+
+        {/* Connected Devices Navigation Bar */}
+        <ConnectedDevicesBar devices={fleet} />
+
+        {/* Tactical Glass Modal */}
+        <TacticalGlassModal
+          isOpen={showAddDeviceModal}
+          onClose={() => setShowAddDeviceModal(false)}
+          onSubmit={data => { addDevice(data); }}
+        />
 
         <Sidebar view={view} setView={v => { setView(v); setSelectedCar(null); }} onBack={onBackToLanding} />
 
-        <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", position: "relative", zIndex: 1 }}>
+        <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", position: "relative", zIndex: 1, paddingTop: "48px" }}>
           <TopBar connected={connected} title={titles[view] || "Dashboard"} />
 
           <AnimatePresence mode="wait">
@@ -1109,10 +1377,10 @@ export default function Dashboard({ onBackToLanding }: { onBackToLanding?: () =>
             >
               {view === "fleet" && (
                 <div style={{ flex: 1, overflowY: "auto", padding: "20px 24px" }}>
-                  <FleetHeader fleet={fleet} onAddDevice={addDevice} />
+                  <FleetHeader fleet={fleet} onAddDevice={() => setShowAddDeviceModal(true)} />
                   <div style={{ marginBottom: 16 }}>
-                    <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: "1.2rem", fontWeight: 700, color: C.bone, margin: "0 0 4px" }}>Vehicle Platform Registry</h2>
-                    <Label color={C.muted} size="0.58rem">Select a vehicle to open the system integration cockpit</Label>
+                    <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: "1.2rem", fontWeight: 700, color: C.boneText, margin: "0 0 4px" }}>Vehicle Platform Registry</h2>
+                    <Label color={C.textMuted} size="0.58rem">Select a vehicle to open the system integration cockpit</Label>
                   </div>
                   <CarSelectionGrid onSelect={selectCar} />
                 </div>
