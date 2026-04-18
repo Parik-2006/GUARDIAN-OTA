@@ -34,7 +34,6 @@ type Tab = "security" | "verification" | "updates";
 export default function VehicleInsight() {
   const { fleet, selectedVehicleId, goToDashboard } = useFleet();
   const [activeTab, setActiveTab] = useState<Tab>("security");
-  const [carVariant, setCarVariant] = useState<CarVariant>("bmw-m3");
 
   const vehicle = fleet.find(v => v.deviceId === selectedVehicleId);
   if (!vehicle) return null;
@@ -145,7 +144,7 @@ export default function VehicleInsight() {
               }}>Loading 3D Model...</span>
             </div>
           }>
-            <CarModel3D variant={carVariant} />
+            <CarModel3D variant={vehicle.carVariant} />
           </Suspense>
 
           {/* ECU Panel overlay */}

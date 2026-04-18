@@ -14,17 +14,39 @@ interface ECUDef {
   color: string;
 }
 
-const ECU_DEFS: ECUDef[] = [
-  { name: "Telematics",     position: [0, 0.5, 1.2],      geometry: "sphere",      scale: [0.35, 0.35, 0.35], color: "#6A9DB8" },
-  { name: "Brake ECU",      position: [-1.8, -0.1, -0.6], geometry: "box",         scale: [0.4, 0.3, 0.3],    color: "#C46B6B" },
-  { name: "Powertrain",     position: [-2.2, -0.7, 0.3],  geometry: "cylinder",    scale: [0.35, 0.45, 0.35], color: "#D4A96A" },
-  { name: "Sensor Array",   position: [0, 1.0, 0.2],      geometry: "octahedron",  scale: [0.35, 0.35, 0.35], color: "#7AB88A" },
-  { name: "Infotainment",   position: [1.4, 0.2, 0.2],    geometry: "box",         scale: [0.4, 0.25, 0.25],  color: "#D4956A" },
-  { name: "ADAS",           position: [0.1, 0.6, 1.3],    geometry: "sphere",      scale: [0.3, 0.3, 0.3],    color: "#B87C3A" },
-];
+export type CarVariant = "audi-a8" | "mercedes-s" | "bmw-m5";
 
-export { ECU_DEFS };
-export type CarVariant = "bmw-m3" | "bmw-m5" | "bmw-i8";
+// ECU definitions per variant
+const ECU_DEFS_BY_VARIANT: Record<CarVariant, ECUDef[]> = {
+  "audi-a8": [
+    { name: "Telematics",     position: [0.2, 0.6, 1.3],    geometry: "sphere",      scale: [0.35, 0.35, 0.35], color: "#6A9DB8" },
+    { name: "Brake ECU",      position: [-2.0, 0.0, -0.7],  geometry: "box",         scale: [0.4, 0.3, 0.3],    color: "#C46B6B" },
+    { name: "Powertrain",     position: [-2.4, -0.6, 0.2],  geometry: "cylinder",    scale: [0.35, 0.45, 0.35], color: "#D4A96A" },
+    { name: "Sensor Array",   position: [0, 1.1, 0.3],      geometry: "octahedron",  scale: [0.35, 0.35, 0.35], color: "#7AB88A" },
+    { name: "Infotainment",   position: [1.6, 0.3, 0.3],    geometry: "box",         scale: [0.4, 0.25, 0.25],  color: "#D4956A" },
+    { name: "ADAS",           position: [0, 0.7, 1.4],      geometry: "sphere",      scale: [0.3, 0.3, 0.3],    color: "#B87C3A" },
+  ],
+  "mercedes-s": [
+    { name: "Telematics",     position: [0.1, 0.55, 1.35],  geometry: "sphere",      scale: [0.35, 0.35, 0.35], color: "#6A9DB8" },
+    { name: "Brake ECU",      position: [-2.1, 0.05, -0.8], geometry: "box",         scale: [0.4, 0.3, 0.3],    color: "#C46B6B" },
+    { name: "Powertrain",     position: [-2.5, -0.55, 0.1], geometry: "cylinder",    scale: [0.35, 0.45, 0.35], color: "#D4A96A" },
+    { name: "Sensor Array",   position: [0, 1.15, 0.25],    geometry: "octahedron",  scale: [0.35, 0.35, 0.35], color: "#7AB88A" },
+    { name: "Infotainment",   position: [1.7, 0.35, 0.25],  geometry: "box",         scale: [0.4, 0.25, 0.25],  color: "#D4956A" },
+    { name: "ADAS",           position: [0.05, 0.75, 1.45], geometry: "sphere",      scale: [0.3, 0.3, 0.3],    color: "#B87C3A" },
+  ],
+  "bmw-m5": [
+    { name: "Telematics",     position: [0, 0.5, 1.2],      geometry: "sphere",      scale: [0.35, 0.35, 0.35], color: "#6A9DB8" },
+    { name: "Brake ECU",      position: [-1.8, -0.1, -0.6], geometry: "box",         scale: [0.4, 0.3, 0.3],    color: "#C46B6B" },
+    { name: "Powertrain",     position: [-2.2, -0.7, 0.3],  geometry: "cylinder",    scale: [0.35, 0.45, 0.35], color: "#D4A96A" },
+    { name: "Sensor Array",   position: [0, 1.0, 0.2],      geometry: "octahedron",  scale: [0.35, 0.35, 0.35], color: "#7AB88A" },
+    { name: "Infotainment",   position: [1.4, 0.2, 0.2],    geometry: "box",         scale: [0.4, 0.25, 0.25],  color: "#D4956A" },
+    { name: "ADAS",           position: [0.1, 0.6, 1.3],    geometry: "sphere",      scale: [0.3, 0.3, 0.3],    color: "#B87C3A" },
+  ],
+};
+
+export function getECUDefs(variant: CarVariant): ECUDef[] {
+  return ECU_DEFS_BY_VARIANT[variant];
+}
 
 interface CarModelDef {
   name: string;
@@ -41,23 +63,36 @@ interface CarModelDef {
 }
 
 const CAR_MODELS: Record<CarVariant, CarModelDef> = {
-  "bmw-m3": {
-    name: "BMW M3 Competition",
-    bodyColor: "#2C3E50",
-    accentColor: "#FF6B6B",
-    wheelColor: "#34495E",
-    scale: 0.95,
-    bodyDim: [3.6, 0.7, 1.6],
-    hoodDim: [1.3, 0.35, 1.55],
-    cabinDim: [2.1, 0.65, 1.35],
-    trunkDim: [0.85, 0.4, 1.55],
-    wheelOffset: 1.15,
-    wheelRadius: 0.26
+  "audi-a8": {
+    name: "Audi A8 e-tron",
+    bodyColor: "#1E3A5F",
+    accentColor: "#FF9500",
+    wheelColor: "#2C3E50",
+    scale: 0.98,
+    bodyDim: [3.85, 0.76, 1.68],
+    hoodDim: [1.45, 0.38, 1.65],
+    cabinDim: [2.25, 0.70, 1.42],
+    trunkDim: [0.92, 0.42, 1.65],
+    wheelOffset: 1.25,
+    wheelRadius: 0.29
+  },
+  "mercedes-s": {
+    name: "Mercedes-AMG S63",
+    bodyColor: "#1C1C2E",
+    accentColor: "#00D4FF",
+    wheelColor: "#3D3D3D",
+    scale: 1.02,
+    bodyDim: [3.92, 0.78, 1.71],
+    hoodDim: [1.52, 0.40, 1.68],
+    cabinDim: [2.35, 0.72, 1.48],
+    trunkDim: [0.98, 0.44, 1.68],
+    wheelOffset: 1.30,
+    wheelRadius: 0.30
   },
   "bmw-m5": {
     name: "BMW M5 Sedan",
     bodyColor: "#1A472A",
-    accentColor: "#00D4FF",
+    accentColor: "#FFD700",
     wheelColor: "#2C3E50",
     scale: 1.0,
     bodyDim: [3.8, 0.75, 1.65],
@@ -66,19 +101,6 @@ const CAR_MODELS: Record<CarVariant, CarModelDef> = {
     trunkDim: [0.9, 0.42, 1.62],
     wheelOffset: 1.2,
     wheelRadius: 0.28
-  },
-  "bmw-i8": {
-    name: "BMW i8 Roadster",
-    bodyColor: "#1C1C1C",
-    accentColor: "#FFD700",
-    wheelColor: "#3D3D3D",
-    scale: 1.08,
-    bodyDim: [4.1, 0.72, 1.62],
-    hoodDim: [1.5, 0.36, 1.58],
-    cabinDim: [2.35, 0.63, 1.38],
-    trunkDim: [0.95, 0.39, 1.58],
-    wheelOffset: 1.28,
-    wheelRadius: 0.30
   }
 };
 
@@ -274,7 +296,7 @@ export default function CarModel3D({ variant = "bmw-m3" }: CarModel3DProps) {
 
         <group ref={rotationRef}>
           <CarShell variant={variant} />
-          {ECU_DEFS.map(def => (
+          {getECUDefs(variant).map(def => (
             <ECUComponent key={def.name} def={def} isActive={activeEcu === def.name} variantScale={CAR_MODELS[variant].scale} />
           ))}
         </group>

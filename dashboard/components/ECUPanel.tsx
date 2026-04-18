@@ -3,10 +3,15 @@
 import { P } from "./theme";
 import I from "./Icon";
 import { useFleet } from "./FleetContext";
-import { ECU_DEFS } from "./CarModel3D";
+import { getECUDefs } from "./CarModel3D";
 
 export default function ECUPanel() {
-  const { activeEcu, setActiveEcu } = useFleet();
+  const { activeEcu, setActiveEcu, fleet, selectedVehicleId } = useFleet();
+  
+  // Get the selected vehicle to find its carVariant
+  const selectedVehicle = fleet.find(v => v.deviceId === selectedVehicleId);
+  const carVariant = selectedVehicle?.carVariant || "bmw-m5";
+  const ecuDefs = getECUDefs(carVariant);
 
   return (
     <div style={{
@@ -34,7 +39,7 @@ export default function ECUPanel() {
 
       {/* List */}
       <div style={{ padding: "6px 6px" }}>
-        {ECU_DEFS.map(ecu => {
+        {ecuDefs.map(ecu => {
           const isActive = activeEcu === ecu.name;
           return (
             <div
