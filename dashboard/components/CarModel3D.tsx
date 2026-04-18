@@ -92,7 +92,7 @@ const CAR_MODELS: Record<CarVariant, CarModelDef> = {
   "bmw-m5": {
     name: "BMW M5 Sedan",
     bodyColor: "#1A472A",
-    accentColor: "#FFD700",
+    accentColor: "#E74C3C",
     wheelColor: "#2C3E50",
     scale: 1.0,
     bodyDim: [3.8, 0.75, 1.65],
