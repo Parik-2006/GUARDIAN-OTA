@@ -71,9 +71,9 @@ function createDefaultVehicle(id: string, name: string): FleetVehicle {
 ═══════════════════════════════════════════════════════════════ */
 export function createDefaultFleet(): FleetVehicle[] {
   const defaults: { id: string; name: string; model: FleetVehicle["model"]; primary: boolean }[] = [
-    { id: "VEH-001", name: "Interceptor Alpha", model: "Interceptor", primary: true },
-    { id: "VEH-002", name: "Sentinel Prime",    model: "Sentinel",    primary: false },
-    { id: "VEH-003", name: "Voyager One",       model: "Voyager",     primary: false },
+    { id: "VEH-001", name: "BMW M3 Competition", model: "Interceptor", primary: true },
+    { id: "VEH-002", name: "BMW M5 Sedan",      model: "Sentinel",    primary: false },
+    { id: "VEH-003", name: "BMW i8 Roadster",   model: "Voyager",     primary: false },
   ];
   return defaults.map(d => ({
     ...createDefaultVehicle(d.id, d.name),
