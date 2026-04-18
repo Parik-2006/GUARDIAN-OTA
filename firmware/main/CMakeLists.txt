@@ -1,5 +1,23 @@
 idf_component_register(
-    SRCS "main.c"
+    SRCS
+        "main.c"
+        "ecu_tasks.c"
+        "security.c"
+        "ota_handler.c"
+        "mqtt_transport.c"
+        "wifi_connect.c"
     INCLUDE_DIRS "."
+    REQUIRES
+        esp_wifi
+        esp_event
+        nvs_flash
+        esp_https_ota
+        mqtt
+        mbedtls
+        esp_http_client
+        esp_netif
+        efuse
+        cjson
+        app_update
+        esp_partition
 )
-
