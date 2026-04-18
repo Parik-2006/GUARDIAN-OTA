@@ -703,18 +703,15 @@ export default function Landing({ onEnterDashboard }: { onEnterDashboard: () => 
           <p className="lp-section-label">01 · Architecture</p>
           <h2 className="lp-section-h2">End-to-End <em>Secure</em> Pipeline</h2>
           <p className="lp-section-body">
-            A single ESP32 hosts the full edge runtime — four virtual ECUs communicating
-            over a simulated CAN bus, with the OTA task safety-gated by the brake ECU.
-            The Go backend orchestrates canary campaigns, persists events to PostgreSQL,
-            and streams state to the dashboard over WebSockets.
+            A single ESP32 hosts the complete edge gateway runtime — brake, powertrain, sensor, and infotainment ECU tasks with simulated CAN bus queue transport. The Go backend orchestrates canary OTA campaigns, persists events to PostgreSQL, and broadcasts live fleet state to the dashboard via WebSocket bridge.
           </p>
           <FeatureRow items={[
-            { icon: "◈", title: "ESP32 Edge Gateway", desc: "FreeRTOS task mesh with simulated CAN queue transport. Brake, powertrain, sensor and infotainment ECUs running concurrently." },
-            { icon: "⬡", title: "Mosquitto MQTT Broker", desc: "TLS-encrypted command channel on port 8883. OTA commands published to sdv/ota/command topic with QoS 1." },
-            { icon: "◎", title: "MinIO Firmware Store", desc: "S3-compatible artifact hosting for signed firmware binaries and ECC manifests. Separate from broker plane." },
-            { icon: "▣", title: "Go Control Plane", desc: "Canary target selection, event persistence, WebSocket broadcast hub. CORS-enabled REST API at :8080." },
-            { icon: "⬥", title: "PostgreSQL Audit Log", desc: "Immutable ota_events table with JSONB payloads. Every deployment and fleet tick recorded for compliance." },
-            { icon: "◇", title: "Next.js Dashboard", desc: "App Router cockpit with live WebSocket feed, Framer Motion animations, and 3D SVG fleet visualisations." },
+            { icon: "◈", title: "ESP32 Edge Gateway", desc: "FreeRTOS task architecture with virtual CAN queue transport. Four concurrent ECUs (brake, powertrain, sensor, infotainment) with OTA safety-gated by brake ECU state." },
+            { icon: "⬡", title: "Mosquitto MQTT Broker", desc: "TLS-encrypted command plane on port 8883. Commands published to sdv/ota/command with device MAC filtering and QoS 1 delivery guarantee." },
+            { icon: "◎", title: "MinIO S3 Artifact Store", desc: "Firmware binary and signed manifest hosting. ECC signature verification and SHA-256 integrity checksums embedded in OTA payloads." },
+            { icon: "▣", title: "Go Backend Service", desc: "Canary deployment orchestration, event audit log persistence, WebSocket broadcast to connected dashboards. CORS-enabled REST API at :8080." },
+            { icon: "⬥", title: "PostgreSQL Event Log", desc: "Immutable ota_events table with full JSONB payloads. Deployment history, fleet snapshots, and security events indexed for compliance audits." },
+            { icon: "◇", title: "Next.js Dashboard", desc: "Real-time fleet visualization with live WebSocket feed, Framer Motion cinematic interactions, and 3D SVG orbital car model rendering." },
           ]} />
         </section>
 
@@ -728,18 +725,16 @@ export default function Landing({ onEnterDashboard }: { onEnterDashboard: () => 
             Every layer of the update pipeline is hardened — from hardware identity
             pinning on the ESP32 eFuse MAC, through TLS transport and ECC payload
             verification, to automatic rollback on health-check failure.
+          </Multi-layer hardening across the entire update pipeline — from eFuse hardware identity pinning and TLS transport encryption, through ECC payload authentication and SHA-256 integrity verification, to pre-update safety validation and automatic dual-partition rollback on failure.
           </p>
           <SecurityBadges />
           <FeatureRow items={[
-            { icon: "🔐", title: "ECC P-256 Signature", desc: "mbedTLS verifies OTA payload against embedded public key. Prevents forged firmware and supply-chain tampering." },
-            { icon: "🔑", title: "SHA-256 Integrity", desc: "Firmware binary hash compared to signed manifest. Prevents corruption replay and altered binary attacks." },
-            { icon: "🛡", title: "Safety Gate", desc: "OTA blocked when brake ECU reports UNSAFE state. No updates during active safety-critical conditions." },
-            { icon: "↩", title: "Automatic Rollback", desc: "ESP-IDF dual-partition scheme — failed health-check triggers esp_ota_mark_app_invalid_rollback_and_reboot." },
-            { icon: "📡", title: "TLS MQTT Transport", desc: "Encrypted command channel prevents MITM sniffing and injection on OTA command topics." },
-            { icon: "🪪", title: "eFuse MAC Identity", desc: "Device-specific identity derived from immutable hardware MAC. Prevents logical node spoofing." },
-          ]} />
-        </section>
-
+            { icon: "🔐", title: "ECC P-256 Signature Verification", desc: "mbedTLS verifies firmware payload against embedded public key before any OTA acceptance. Blocks forged and supply-chain backdoor attacks." },
+            { icon: "🔑", title: "SHA-256 Binary Integrity", desc: "Firmware hash verified against signed manifest before installation. Detects corruption, replay, and altered binary attacks at reception." },
+            { icon: "🛡", title: "Pre-Update Safety Gate", desc: "OTA execution blocked when brake ECU reports UNSAFE state. Prevents firmware updates during active safety-critical vehicle operation." },
+            { icon: "↩", title: "Dual-Partition Rollback", desc: "ESP-IDF dual OTA slot with automatic revert on health-check failure. Prevents bricking and ensures safe recovery to verified firmware." },
+            { icon: "📡", title: "TLS MQTT Transport", desc: "All OTA commands encrypted over MQTT 8883 with certificate validation. Blocks MITM interception, command injection, and replay attacks." },
+            { icon: "🪪", title: "eFuse MAC Device Identity", desc: "Immutable hardware MAC-based device identifier stored in ESP32 eFuse. Eliminates logical node spoofing and supports fine-grained access control
         <div className="lp-divider" />
 
         {/* STACK */}
@@ -750,11 +745,9 @@ export default function Landing({ onEnterDashboard }: { onEnterDashboard: () => 
             From bare-metal C on ESP-IDF through Go microservices to a cinematic
             Next.js dashboard — every layer chosen for production readiness and
             security posture.
-          </p>
-          <StackRow />
-        </section>
-
-        <div className="lp-divider" />
+          </p>Production</em> Platform</h2>
+          <p className="lp-section-body">
+            Battle-tested technologies across every layer — from bare-metal FreeRTOS task runtime and mbedTLS cryptography on ESP32, through Go microservices with PostgreSQL persistence, to a production-grade Next.js dashboard with real-time WebSocket telemetry and cinematic motion graphicsivider" />
 
         {/* FOOTER CTA */}
         <section style={{ position: "relative", zIndex: 1, padding: "80px 32px", textAlign: "center" }}>
