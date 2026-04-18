@@ -262,7 +262,7 @@ interface CarModel3DProps {
   variant?: CarVariant;
 }
 
-export default function CarModel3D({ variant = "bmw-m3" }: CarModel3DProps) {
+export default function CarModel3D({ variant = "bmw-m5" }: CarModel3DProps) {
   const { activeEcu } = useFleet();
   const [rotation, setRotation] = useState(0);
   const rotationRef = useRef<THREE.Group>(null!);
