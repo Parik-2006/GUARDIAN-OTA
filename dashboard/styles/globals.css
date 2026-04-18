@@ -358,11 +358,14 @@ body::after {
 
 .lp-grid-bg {
   position: fixed; inset: 0;
-  background-image:
-    linear-gradient(rgba(240,235,224,0.022) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(240,235,224,0.022) 1px, transparent 1px);
-  background-size: 56px 56px;
+  background: linear-gradient(135deg, #09080A 0%, #0f0e12 50%, #09080A 100%);
   pointer-events: none; z-index: 0;
+  animation: drift-subtle 8s ease-in-out infinite;
+}
+
+@keyframes drift-subtle {
+  0%, 100% { background-position: 0% 0%; }
+  50% { background-position: 2% 2%; }
 }
 
 /* NAV */
