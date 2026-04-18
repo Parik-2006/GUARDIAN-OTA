@@ -5,9 +5,11 @@
 @tailwind utilities;
 
 /* ─────────────────────────────────────────────
-   DESIGN TOKENS — Cream Tactical
+   DESIGN TOKENS — Cream Tactical (Landing)
+   +  Obsidian Glass (Dashboard)
 ───────────────────────────────────────────── */
 :root {
+  /* Landing / shared */
   --cream-50:  #FDFAF4;
   --cream-100: #F0EBE0;
   --cream-200: #E0D8CA;
@@ -40,6 +42,29 @@
   --lp-border:      rgba(240,235,224,0.07);
   --lp-gold-border: rgba(212,169,106,0.25);
 
+  /* Dashboard / Obsidian Glass tokens */
+  --obs-bg:        #020617;
+  --obs-surface:   #060C1A;
+  --obs-elevated:  #0A1020;
+  --obs-panel:     #0F172A;
+  --obs-card:      #1A2338;
+  --obs-bone:      #F8FAFC;
+  --obs-bone-dim:  #E2E8F0;
+  --obs-slate:     #64748B;
+  --obs-slate-lt:  #94A3B8;
+  --obs-steel:     #3B82F6;
+  --obs-steel-dim: rgba(59,130,246,0.15);
+  --obs-steel-glow:rgba(59,130,246,0.35);
+  --obs-safe:      #10B981;
+  --obs-safe-dim:  rgba(16,185,129,0.15);
+  --obs-warn:      #F59E0B;
+  --obs-warn-dim:  rgba(245,158,11,0.15);
+  --obs-danger:    #EF4444;
+  --obs-danger-dim:rgba(239,68,68,0.15);
+  --obs-border:    rgba(248,250,252,0.06);
+  --obs-border-mid:rgba(248,250,252,0.12);
+  --obs-border-hi: rgba(59,130,246,0.45);
+
   color-scheme: dark;
 }
 
@@ -69,13 +94,23 @@ body::before {
 }
 
 /* ─────────────────────────────────────────────
-   DASHBOARD BACKGROUND GRID
+   DASHBOARD BG GRID
 ───────────────────────────────────────────── */
 .c-bg-grid {
   position: fixed; inset: 0;
   background-image:
     linear-gradient(rgba(240,235,224,0.025) 1px, transparent 1px),
     linear-gradient(90deg, rgba(240,235,224,0.025) 1px, transparent 1px);
+  background-size: 52px 52px;
+  pointer-events: none; z-index: 0;
+}
+
+/* Obsidian dashboard bg grid variant */
+.obs-bg-grid {
+  position: fixed; inset: 0;
+  background-image:
+    linear-gradient(rgba(248,250,252,0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(248,250,252,0.025) 1px, transparent 1px);
   background-size: 52px 52px;
   pointer-events: none; z-index: 0;
 }
@@ -124,7 +159,7 @@ body::after {
 }
 
 /* ─────────────────────────────────────────────
-   GLASS CARD
+   GLASS CARD  (cream / landing)
 ───────────────────────────────────────────── */
 .c-card {
   background: var(--surface);
@@ -147,6 +182,36 @@ body::after {
 .c-card--sel {
   border-color: rgba(212,169,106,0.45);
   box-shadow: 0 0 0 1px rgba(212,169,106,0.45), 0 0 24px rgba(212,169,106,0.08), inset 0 1px 0 rgba(212,169,106,0.06);
+}
+
+/* ─────────────────────────────────────────────
+   OBSIDIAN GLASS CARD  (dashboard)
+───────────────────────────────────────────── */
+.obs-card {
+  background: var(--obs-surface);
+  border: 1px solid var(--obs-border);
+  backdrop-filter: blur(20px) saturate(160%);
+  -webkit-backdrop-filter: blur(20px) saturate(160%);
+  border-radius: 8px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.5), inset 0 1px 0 rgba(248,250,252,0.02);
+  position: relative;
+}
+.obs-card:hover {
+  border-color: var(--obs-border-hi);
+  box-shadow: 0 0 0 1px var(--obs-border-hi), 0 8px 32px rgba(0,0,0,0.5);
+}
+.obs-card--steel {
+  border-color: rgba(59,130,246,0.3);
+  box-shadow: 0 0 0 1px rgba(59,130,246,0.3), 0 0 20px rgba(59,130,246,0.08);
+}
+.obs-card--safe {
+  border-color: rgba(16,185,129,0.3);
+  box-shadow: 0 0 0 1px rgba(16,185,129,0.3), 0 0 20px rgba(16,185,129,0.06);
+}
+.obs-card--danger {
+  border-color: rgba(239,68,68,0.3);
+  box-shadow: 0 0 0 1px rgba(239,68,68,0.3), 0 0 20px rgba(239,68,68,0.06);
 }
 
 /* ─────────────────────────────────────────────
@@ -181,6 +246,23 @@ body::after {
   text-transform: uppercase; color: rgba(212,169,106,0.55); white-space: nowrap;
 }
 
+/* Obsidian variant */
+.obs-section-label {
+  display: flex; align-items: center; gap: 10px; margin-bottom: 14px;
+}
+.obs-section-label::before {
+  content: ''; width: 14px; height: 1px;
+  background: var(--obs-steel); opacity: 0.5; flex-shrink: 0;
+}
+.obs-section-label::after {
+  content: ''; flex: 1; height: 1px; background: var(--obs-border);
+}
+.obs-section-label span {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.6rem; letter-spacing: 0.2em;
+  text-transform: uppercase; color: var(--obs-steel); opacity: 0.7; white-space: nowrap;
+}
+
 /* ─────────────────────────────────────────────
    HUD LINE
 ───────────────────────────────────────────── */
@@ -200,6 +282,22 @@ body::after {
   60%, 100% { background-position: 138% 0%; }
 }
 
+/* Obsidian HUD line (steel) */
+.obs-hud-line {
+  position: relative; height: 1px;
+  background: var(--obs-border); overflow: visible;
+}
+.obs-hud-line::after {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
+  background: linear-gradient(90deg, transparent 0%, rgba(59,130,246,0) 15%, rgba(59,130,246,0.8) 48%, rgba(248,250,252,0.9) 50%, rgba(59,130,246,0.8) 52%, rgba(59,130,246,0) 85%, transparent 100%);
+  background-size: 38% 100%; background-repeat: no-repeat;
+  animation: obs-hud-sweep 5s ease-in-out infinite;
+}
+@keyframes obs-hud-sweep {
+  0%        { background-position: -38% 0%; }
+  60%, 100% { background-position: 138% 0%; }
+}
+
 /* ─────────────────────────────────────────────
    TYPOGRAPHY
 ───────────────────────────────────────────── */
@@ -211,6 +309,15 @@ body::after {
   font-size: 0.6rem; letter-spacing: 0.16em;
   text-transform: uppercase; color: var(--cream-400);
 }
+
+/* Obsidian typography */
+.obs-mono   { font-family: 'JetBrains Mono', monospace; color: var(--obs-slate-lt); }
+.obs-label  { font-family: 'JetBrains Mono', monospace; font-size: 0.58rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--obs-slate); }
+.obs-bone   { color: var(--obs-bone); }
+.obs-steel  { color: var(--obs-steel); }
+.obs-safe   { color: var(--obs-safe); }
+.obs-warn   { color: var(--obs-warn); }
+.obs-danger { color: var(--obs-danger); }
 
 /* ─────────────────────────────────────────────
    PILL
@@ -237,6 +344,12 @@ body::after {
 .badge-high    { background: rgba(196,107,107,0.1);  border: 1px solid rgba(196,107,107,0.22); color: #C46B6B; }
 .badge-primary { background: rgba(212,169,106,0.1);  border: 1px solid rgba(212,169,106,0.22); color: var(--gold); }
 
+/* Obsidian badges */
+.obs-badge-steel  { background: rgba(59,130,246,0.12);  border: 1px solid rgba(59,130,246,0.22);  color: #3B82F6; border-radius: 3px; font-family: 'JetBrains Mono', monospace; font-size: 0.6rem; padding: 2px 7px; }
+.obs-badge-safe   { background: rgba(16,185,129,0.12);  border: 1px solid rgba(16,185,129,0.22);  color: #10B981; border-radius: 3px; font-family: 'JetBrains Mono', monospace; font-size: 0.6rem; padding: 2px 7px; }
+.obs-badge-danger { background: rgba(239,68,68,0.12);   border: 1px solid rgba(239,68,68,0.22);   color: #EF4444; border-radius: 3px; font-family: 'JetBrains Mono', monospace; font-size: 0.6rem; padding: 2px 7px; }
+.obs-badge-warn   { background: rgba(245,158,11,0.12);  border: 1px solid rgba(245,158,11,0.22);  color: #F59E0B; border-radius: 3px; font-family: 'JetBrains Mono', monospace; font-size: 0.6rem; padding: 2px 7px; }
+
 /* ─────────────────────────────────────────────
    INPUT
 ───────────────────────────────────────────── */
@@ -251,6 +364,19 @@ body::after {
 }
 .c-input:focus { border-color: rgba(212,169,106,0.45); box-shadow: 0 0 0 3px rgba(212,169,106,0.06); }
 .c-input::placeholder { color: rgba(240,235,224,0.18); }
+
+/* Obsidian input */
+.obs-input {
+  background: var(--obs-elevated);
+  border: 1px solid var(--obs-border);
+  color: var(--obs-bone);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.72rem; padding: 9px 12px;
+  border-radius: 4px; width: 100%; outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.obs-input:focus { border-color: var(--obs-border-hi); box-shadow: 0 0 0 3px rgba(59,130,246,0.06); }
+.obs-input::placeholder { color: var(--obs-slate); }
 
 /* ─────────────────────────────────────────────
    SLIDER
@@ -274,7 +400,7 @@ body::after {
 }
 
 /* ─────────────────────────────────────────────
-   DEPLOY BUTTON
+   DEPLOY BUTTON (cream)
 ───────────────────────────────────────────── */
 .c-btn-deploy {
   background: rgba(212,169,106,0.1);
@@ -293,6 +419,34 @@ body::after {
 }
 .c-btn-deploy:disabled { opacity: 0.5; cursor: not-allowed; }
 
+/* Obsidian deploy button */
+.obs-btn-deploy {
+  background: var(--obs-steel-dim);
+  border: 1px solid var(--obs-steel-glow);
+  color: var(--obs-steel);
+  font-family: 'JetBrains Mono', monospace; font-weight: 700;
+  font-size: 0.72rem; letter-spacing: 0.1em; text-transform: uppercase;
+  padding: 12px 24px; border-radius: 5px; cursor: pointer;
+  width: 100%; transition: all 0.22s ease;
+}
+.obs-btn-deploy:not(:disabled):hover {
+  background: rgba(59,130,246,0.25);
+  border-color: var(--obs-steel);
+  color: var(--obs-bone);
+  box-shadow: 0 0 20px rgba(59,130,246,0.2);
+}
+.obs-btn-deploy:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* Border Ignition — hover state for interactive elements */
+.border-ignite {
+  border: 1px solid var(--obs-border);
+  transition: border-color 0.18s, box-shadow 0.18s;
+}
+.border-ignite:hover {
+  border-color: var(--obs-border-hi);
+  box-shadow: 0 0 0 1px var(--obs-border-hi), 0 0 12px rgba(59,130,246,0.12);
+}
+
 /* ─────────────────────────────────────────────
    LOG STREAM
 ───────────────────────────────────────────── */
@@ -310,13 +464,56 @@ body::after {
   100% { opacity: 1; filter: blur(0); }
 }
 
+/* Obsidian log scroll */
+.obs-log-scroll {
+  overflow-y: auto;
+  scrollbar-width: thin; scrollbar-color: rgba(59,130,246,0.2) transparent;
+}
+.obs-log-scroll::-webkit-scrollbar { width: 3px; }
+.obs-log-scroll::-webkit-scrollbar-track { background: transparent; }
+.obs-log-scroll::-webkit-scrollbar-thumb { background: rgba(59,130,246,0.2); border-radius: 2px; }
+
 /* ─────────────────────────────────────────────
-   SCROLLBAR (fleet grid)
+   SCROLLBAR
 ───────────────────────────────────────────── */
 .c-scroll { scrollbar-width: thin; scrollbar-color: rgba(212,169,106,0.18) transparent; }
 .c-scroll::-webkit-scrollbar { width: 3px; }
 .c-scroll::-webkit-scrollbar-track { background: transparent; }
 .c-scroll::-webkit-scrollbar-thumb { background: rgba(212,169,106,0.2); border-radius: 2px; }
+
+.obs-scroll { scrollbar-width: thin; scrollbar-color: rgba(59,130,246,0.18) transparent; }
+.obs-scroll::-webkit-scrollbar { width: 3px; }
+.obs-scroll::-webkit-scrollbar-track { background: transparent; }
+.obs-scroll::-webkit-scrollbar-thumb { background: rgba(59,130,246,0.18); border-radius: 2px; }
+
+/* ─────────────────────────────────────────────
+   STATUS DOT ANIMATIONS
+───────────────────────────────────────────── */
+.obs-dot-pulse {
+  width: 6px; height: 6px; border-radius: 50%;
+  animation: obs-dot-pulse 2.4s ease-in-out infinite;
+}
+@keyframes obs-dot-pulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50%       { transform: scale(1.6); opacity: 0.4; }
+}
+
+/* ─────────────────────────────────────────────
+   DROPZONE
+───────────────────────────────────────────── */
+.obs-dropzone {
+  border: 1px dashed var(--obs-border-mid);
+  border-radius: 6px; cursor: pointer;
+  transition: border-color 0.2s, background 0.2s;
+}
+.obs-dropzone:hover {
+  border-color: var(--obs-steel);
+  background: var(--obs-steel-dim);
+}
+.obs-dropzone--active {
+  border-color: var(--obs-safe);
+  background: var(--obs-safe-dim);
+}
 
 /* ─────────────────────────────────────────────
    GATE BOX
@@ -333,11 +530,19 @@ body::after {
 }
 @media (max-width: 768px) { .c-root { padding: 14px; } }
 
-::selection { background: rgba(212,169,106,0.2); color: var(--cream-50); }
+::selection { background: rgba(59,130,246,0.25); color: #F8FAFC; }
+
+/* ─────────────────────────────────────────────
+   SPIN ANIMATION (for deploy button)
+───────────────────────────────────────────── */
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+.spin { animation: spin 1s linear infinite; }
 
 /* ═══════════════════════════════════════════════════════════════
-   LANDING PAGE — lp- prefixed styles (moved here from inline
-   <style> tag to fix Next.js hydration mismatch with SSR)
+   LANDING PAGE — lp- prefixed styles
 ═══════════════════════════════════════════════════════════════ */
 
 .lp-root {
