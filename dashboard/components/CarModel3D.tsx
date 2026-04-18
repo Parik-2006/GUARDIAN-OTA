@@ -138,112 +138,331 @@ function ECUComponent({ def, isActive, variantScale }: { def: ECUDef; isActive: 
 }
 
 function CarShell({ variant }: { variant: CarVariant }) {
-  const model = CAR_MODELS[variant];
-  const groupRef = useRef<THREE.Group>(null!);
+  switch (variant) {
+    case "audi-a8":
+      return <AudiA8Model />;
+    case "mercedes-s":
+      return <MercedesSModel />;
+    case "bmw-m5":
+      return <BMWM5Model />;
+    default:
+      return <BMWM5Model />;
+  }
+}
+
+function AudiA8Model() {
+  const model = CAR_MODELS["audi-a8"];
   const [bodyL, bodyH, bodyW] = model.bodyDim;
-  const [hoodL, hoodH, hoodW] = model.hoodDim;
-  const [cabinL, cabinH, cabinW] = model.cabinDim;
-  const [trunkL, trunkH, trunkW] = model.trunkDim;
 
   return (
-    <group ref={groupRef}>
-      <mesh position={[0, 0, 0]}>
-        <boxGeometry args={[bodyL, bodyH, bodyW]} />
-        <meshPhysicalMaterial color={model.bodyColor} transparent opacity={0.12} wireframe={false} roughness={0.1} metalness={0.9} transmission={0.5} thickness={0.8} side={THREE.DoubleSide} />
+    <group>
+      {/* Lower main body - extended */}
+      <mesh position={[0, -0.1, 0]}>
+        <boxGeometry args={[bodyL * 0.92, bodyH * 0.65, bodyW]} />
+        <meshPhysicalMaterial color={model.bodyColor} metalness={0.88} roughness={0.12} transparent opacity={0.18} />
       </mesh>
-
-      <mesh position={[0, 0, 0]}>
-        <boxGeometry args={[bodyL, bodyH, bodyW]} />
-        <meshBasicMaterial color={model.accentColor} wireframe transparent opacity={0.25} />
-      </mesh>
-
-      <mesh position={[-(bodyL / 2.7), 0.2, 0]} rotation={[0.15, 0, 0]}>
-        <boxGeometry args={[hoodL, hoodH, hoodW]} />
-        <meshStandardMaterial color={model.bodyColor} metalness={0.95} roughness={0.08} transparent opacity={0.15} />
-      </mesh>
-
-      <mesh position={[-(bodyL / 2.7), 0.2, 0]} rotation={[0.15, 0, 0]}>
-        <boxGeometry args={[hoodL, hoodH, hoodW]} />
+      <mesh position={[0, -0.1, 0]}>
+        <boxGeometry args={[bodyL * 0.92, bodyH * 0.65, bodyW]} />
         <meshBasicMaterial color={model.accentColor} wireframe transparent opacity={0.2} />
       </mesh>
 
-      <mesh position={[bodyL / 35, 0.45, 0]}>
-        <boxGeometry args={[cabinL, cabinH, cabinW]} />
-        <meshPhysicalMaterial color={model.bodyColor} transparent opacity={0.08} wireframe={false} roughness={0.15} metalness={0.85} transmission={0.8} thickness={0.4} side={THREE.DoubleSide} />
+      {/* Elegant sloped hood - Audi signature */}
+      <mesh position={[-(bodyL / 2.3), 0.35, 0]} rotation={[0.22, 0, 0]}>
+        <boxGeometry args={[bodyL * 0.28, bodyH * 0.4, bodyW * 0.95]} />
+        <meshStandardMaterial color={model.bodyColor} metalness={0.92} roughness={0.1} transparent opacity={0.16} />
+      </mesh>
+      <mesh position={[-(bodyL / 2.3), 0.35, 0]} rotation={[0.22, 0, 0]}>
+        <boxGeometry args={[bodyL * 0.28, bodyH * 0.4, bodyW * 0.95]} />
+        <meshBasicMaterial color={model.accentColor} wireframe transparent opacity={0.18} />
       </mesh>
 
-      <mesh position={[bodyL / 35, 0.45, 0]}>
-        <boxGeometry args={[cabinL, cabinH, cabinW]} />
+      {/* Tall, elegant cabin - Audi hallmark */}
+      <mesh position={[0.05, 0.52, 0]}>
+        <boxGeometry args={[bodyL * 0.58, bodyH * 0.75, bodyW * 0.92]} />
+        <meshPhysicalMaterial color={model.bodyColor} transparent opacity={0.1} wireframe={false} roughness={0.18} metalness={0.82} transmission={0.85} thickness={0.3} side={THREE.DoubleSide} />
+      </mesh>
+      <mesh position={[0.05, 0.52, 0]}>
+        <boxGeometry args={[bodyL * 0.58, bodyH * 0.75, bodyW * 0.92]} />
+        <meshBasicMaterial color={model.accentColor} wireframe transparent opacity={0.19} />
+      </mesh>
+
+      {/* Sloped trunk - graceful taper */}
+      <mesh position={[bodyL / 2.2, 0.25, 0]} rotation={[-0.18, 0, 0]}>
+        <boxGeometry args={[bodyL * 0.25, bodyH * 0.35, bodyW * 0.93]} />
+        <meshStandardMaterial color={model.bodyColor} metalness={0.89} roughness={0.11} transparent opacity={0.15} />
+      </mesh>
+      <mesh position={[bodyL / 2.2, 0.25, 0]} rotation={[-0.18, 0, 0]}>
+        <boxGeometry args={[bodyL * 0.25, bodyH * 0.35, bodyW * 0.93]} />
+        <meshBasicMaterial color={model.accentColor} wireframe transparent opacity={0.18} />
+      </mesh>
+
+      {/* Front fenders - sculpted sides */}
+      <mesh position={[-(bodyL / 3.2), 0.1, bodyW / 2.15]}>
+        <boxGeometry args={[bodyL * 0.75, bodyH * 0.5, 0.12]} />
+        <meshStandardMaterial color={model.accentColor} metalness={0.85} roughness={0.15} transparent opacity={0.25} />
+      </mesh>
+      <mesh position={[-(bodyL / 3.2), 0.1, -bodyW / 2.15]}>
+        <boxGeometry args={[bodyL * 0.75, bodyH * 0.5, 0.12]} />
+        <meshStandardMaterial color={model.accentColor} metalness={0.85} roughness={0.15} transparent opacity={0.25} />
+      </mesh>
+
+      {/* Wheels - refined Audi style */}
+      {[[-model.wheelOffset, -0.48, bodyW / 2.2], [-model.wheelOffset, -0.48, -bodyW / 2.2], [model.wheelOffset, -0.48, bodyW / 2.2], [model.wheelOffset, -0.48, -bodyW / 2.2]].map((pos, i) => (
+        <group key={i} position={pos as [number, number, number]}>
+          <mesh rotation={[Math.PI / 2, 0, 0]}>
+            <torusGeometry args={[model.wheelRadius, 0.11, 8, 20]} />
+            <meshStandardMaterial color={model.wheelColor} metalness={0.92} roughness={0.12} />
+          </mesh>
+          <mesh rotation={[Math.PI / 2, 0, 0]}>
+            <torusGeometry args={[model.wheelRadius + 0.045, 0.14, 8, 20]} />
+            <meshStandardMaterial color="#0d0d0d" metalness={0.08} roughness={0.85} />
+          </mesh>
+          {[0, 1, 2, 3, 4].map(spoke => (
+            <mesh key={spoke} rotation={[Math.PI / 2, (spoke / 5) * Math.PI * 2, 0]}>
+              <cylinderGeometry args={[0.018, 0.018, model.wheelRadius * 1.7, 6]} />
+              <meshStandardMaterial color={model.wheelColor} metalness={0.88} />
+            </mesh>
+          ))}
+          <mesh rotation={[Math.PI / 2, 0, 0]}>
+            <circleGeometry args={[0.068, 16]} />
+            <meshStandardMaterial color={model.accentColor} metalness={1} roughness={0.06} />
+          </mesh>
+        </group>
+      ))}
+
+      {/* Axles */}
+      <mesh position={[-model.wheelOffset, -0.48, 0]} rotation={[Math.PI / 2, 0, 0]}>
+        <cylinderGeometry args={[0.038, 0.038, bodyW, 8]} />
+        <meshStandardMaterial color={model.wheelColor} metalness={0.78} roughness={0.22} transparent opacity={0.35} />
+      </mesh>
+      <mesh position={[model.wheelOffset, -0.48, 0]} rotation={[Math.PI / 2, 0, 0]}>
+        <cylinderGeometry args={[0.038, 0.038, bodyW, 8]} />
+        <meshStandardMaterial color={model.wheelColor} metalness={0.78} roughness={0.22} transparent opacity={0.35} />
+      </mesh>
+
+      {/* Audi lighting strip */}
+      <mesh position={[-(bodyL / 2.5), 0.25, bodyW / 2.08]}>
+        <boxGeometry args={[bodyL * 0.2, 0.06, 0.05]} />
+        <meshBasicMaterial color={model.accentColor} transparent opacity={0.5} />
+      </mesh>
+      <mesh position={[bodyL / 2.3, 0.3, bodyW / 2.08]}>
+        <boxGeometry args={[bodyL * 0.18, 0.05, 0.05]} />
+        <meshBasicMaterial color={model.accentColor} transparent opacity={0.5} />
+      </mesh>
+
+      <pointLight position={[0, -0.6, 0]} color={model.accentColor} intensity={1.3} distance={3.2} />
+      <gridHelper args={[10, 20, model.accentColor, "#2E2820"]} position={[0, -0.8, 0]} />
+    </group>
+  );
+}
+
+function MercedesSModel() {
+  const model = CAR_MODELS["mercedes-s"];
+  const [bodyL, bodyH, bodyW] = model.bodyDim;
+
+  return (
+    <group>
+      {/* Wide, low main body - Mercedes aggressive stance */}
+      <mesh position={[0, -0.15, 0]}>
+        <boxGeometry args={[bodyL * 0.94, bodyH * 0.6, bodyW * 1.02]} />
+        <meshPhysicalMaterial color={model.bodyColor} metalness={0.9} roughness={0.1} transparent opacity={0.19} />
+      </mesh>
+      <mesh position={[0, -0.15, 0]}>
+        <boxGeometry args={[bodyL * 0.94, bodyH * 0.6, bodyW * 1.02]} />
+        <meshBasicMaterial color={model.accentColor} wireframe transparent opacity={0.21} />
+      </mesh>
+
+      {/* Aggressive sloped hood - Mercedes performance */}
+      <mesh position={[-(bodyL / 2.15), 0.32, 0]} rotation={[0.28, 0, 0]}>
+        <boxGeometry args={[bodyL * 0.32, bodyH * 0.38, bodyW * 0.98]} />
+        <meshStandardMaterial color={model.bodyColor} metalness={0.95} roughness={0.08} transparent opacity={0.17} />
+      </mesh>
+      <mesh position={[-(bodyL / 2.15), 0.32, 0]} rotation={[0.28, 0, 0]}>
+        <boxGeometry args={[bodyL * 0.32, bodyH * 0.38, bodyW * 0.98]} />
+        <meshBasicMaterial color={model.accentColor} wireframe transparent opacity={0.19} />
+      </mesh>
+
+      {/* Sleek cabin - shorter but wider for sporty look */}
+      <mesh position={[0.1, 0.48, 0]}>
+        <boxGeometry args={[bodyL * 0.56, bodyH * 0.68, bodyW * 0.96]} />
+        <meshPhysicalMaterial color={model.bodyColor} transparent opacity={0.12} wireframe={false} roughness={0.16} metalness={0.85} transmission={0.8} thickness={0.35} side={THREE.DoubleSide} />
+      </mesh>
+      <mesh position={[0.1, 0.48, 0]}>
+        <boxGeometry args={[bodyL * 0.56, bodyH * 0.68, bodyW * 0.96]} />
+        <meshBasicMaterial color={model.accentColor} wireframe transparent opacity={0.2} />
+      </mesh>
+
+      {/* Sharp trunk - Mercedes power stance */}
+      <mesh position={[bodyL / 2.1, 0.2, 0]} rotation={[-0.25, 0, 0]}>
+        <boxGeometry args={[bodyL * 0.28, bodyH * 0.32, bodyW * 0.96]} />
+        <meshStandardMaterial color={model.bodyColor} metalness={0.91} roughness={0.09} transparent opacity={0.16} />
+      </mesh>
+      <mesh position={[bodyL / 2.1, 0.2, 0]} rotation={[-0.25, 0, 0]}>
+        <boxGeometry args={[bodyL * 0.28, bodyH * 0.32, bodyW * 0.96]} />
+        <meshBasicMaterial color={model.accentColor} wireframe transparent opacity={0.19} />
+      </mesh>
+
+      {/* Wide muscular fenders */}
+      <mesh position={[-(bodyL / 3.1), 0.05, bodyW / 2.1]}>
+        <boxGeometry args={[bodyL * 0.8, bodyH * 0.55, 0.14]} />
+        <meshStandardMaterial color={model.accentColor} metalness={0.88} roughness={0.13} transparent opacity={0.28} />
+      </mesh>
+      <mesh position={[-(bodyL / 3.1), 0.05, -bodyW / 2.1]}>
+        <boxGeometry args={[bodyL * 0.8, bodyH * 0.55, 0.14]} />
+        <meshStandardMaterial color={model.accentColor} metalness={0.88} roughness={0.13} transparent opacity={0.28} />
+      </mesh>
+
+      {/* Performance wheels - larger profile */}
+      {[[-model.wheelOffset, -0.5, bodyW / 2.2], [-model.wheelOffset, -0.5, -bodyW / 2.2], [model.wheelOffset, -0.5, bodyW / 2.2], [model.wheelOffset, -0.5, -bodyW / 2.2]].map((pos, i) => (
+        <group key={i} position={pos as [number, number, number]}>
+          <mesh rotation={[Math.PI / 2, 0, 0]}>
+            <torusGeometry args={[model.wheelRadius, 0.115, 8, 20]} />
+            <meshStandardMaterial color={model.wheelColor} metalness={0.94} roughness={0.1} />
+          </mesh>
+          <mesh rotation={[Math.PI / 2, 0, 0]}>
+            <torusGeometry args={[model.wheelRadius + 0.048, 0.15, 8, 20]} />
+            <meshStandardMaterial color="#0a0a0a" metalness={0.05} roughness={0.9} />
+          </mesh>
+          {[0, 1, 2, 3, 4, 5].map(spoke => (
+            <mesh key={spoke} rotation={[Math.PI / 2, (spoke / 6) * Math.PI * 2, 0]}>
+              <cylinderGeometry args={[0.02, 0.02, model.wheelRadius * 1.8, 6]} />
+              <meshStandardMaterial color={model.wheelColor} metalness={0.9} />
+            </mesh>
+          ))}
+          <mesh rotation={[Math.PI / 2, 0, 0]}>
+            <circleGeometry args={[0.072, 16]} />
+            <meshStandardMaterial color={model.accentColor} metalness={1} roughness={0.04} />
+          </mesh>
+        </group>
+      ))}
+
+      {/* Axles */}
+      <mesh position={[-model.wheelOffset, -0.5, 0]} rotation={[Math.PI / 2, 0, 0]}>
+        <cylinderGeometry args={[0.04, 0.04, bodyW, 8]} />
+        <meshStandardMaterial color={model.wheelColor} metalness={0.8} roughness={0.2} transparent opacity={0.4} />
+      </mesh>
+      <mesh position={[model.wheelOffset, -0.5, 0]} rotation={[Math.PI / 2, 0, 0]}>
+        <cylinderGeometry args={[0.04, 0.04, bodyW, 8]} />
+        <meshStandardMaterial color={model.wheelColor} metalness={0.8} roughness={0.2} transparent opacity={0.4} />
+      </mesh>
+
+      {/* Mercedes LED lighting */}
+      <mesh position={[-(bodyL / 2.4), 0.22, bodyW / 2.09]}>
+        <boxGeometry args={[bodyL * 0.22, 0.08, 0.06]} />
+        <meshBasicMaterial color={model.accentColor} transparent opacity={0.6} />
+      </mesh>
+      <mesh position={[bodyL / 2.2, 0.28, bodyW / 2.09]}>
+        <boxGeometry args={[bodyL * 0.2, 0.07, 0.06]} />
+        <meshBasicMaterial color={model.accentColor} transparent opacity={0.6} />
+      </mesh>
+
+      <pointLight position={[0, -0.65, 0]} color={model.accentColor} intensity={1.4} distance={3.3} />
+      <gridHelper args={[10, 20, model.accentColor, "#2E2820"]} position={[0, -0.8, 0]} />
+    </group>
+  );
+}
+
+function BMWM5Model() {
+  const model = CAR_MODELS["bmw-m5"];
+  const [bodyL, bodyH, bodyW] = model.bodyDim;
+
+  return (
+    <group>
+      {/* Athletic muscular body - BMW M stance */}
+      <mesh position={[0, -0.05, 0]}>
+        <boxGeometry args={[bodyL * 0.9, bodyH * 0.7, bodyW * 1.0]} />
+        <meshPhysicalMaterial color={model.bodyColor} metalness={0.87} roughness={0.14} transparent opacity={0.17} />
+      </mesh>
+      <mesh position={[0, -0.05, 0]}>
+        <boxGeometry args={[bodyL * 0.9, bodyH * 0.7, bodyW * 1.0]} />
         <meshBasicMaterial color={model.accentColor} wireframe transparent opacity={0.22} />
       </mesh>
 
-      <mesh position={[bodyL / 2.5, 0.15, 0]} rotation={[-0.1, 0, 0]}>
-        <boxGeometry args={[trunkL, trunkH, trunkW]} />
-        <meshStandardMaterial color={model.bodyColor} metalness={0.92} roughness={0.12} transparent opacity={0.15} />
+      {/* Pronounced hood - BMW M sport aggression */}
+      <mesh position={[-(bodyL / 2.25), 0.38, 0]} rotation={[0.19, 0, 0]}>
+        <boxGeometry args={[bodyL * 0.3, bodyH * 0.42, bodyW * 0.97]} />
+        <meshStandardMaterial color={model.bodyColor} metalness={0.93} roughness={0.11} transparent opacity={0.16} />
       </mesh>
-
-      <mesh position={[bodyL / 2.5, 0.15, 0]} rotation={[-0.1, 0, 0]}>
-        <boxGeometry args={[trunkL, trunkH, trunkW]} />
+      <mesh position={[-(bodyL / 2.25), 0.38, 0]} rotation={[0.19, 0, 0]}>
+        <boxGeometry args={[bodyL * 0.3, bodyH * 0.42, bodyW * 0.97]} />
         <meshBasicMaterial color={model.accentColor} wireframe transparent opacity={0.2} />
       </mesh>
 
-      <mesh position={[-(bodyL / 3.1), -0.15, 0]}>
-        <boxGeometry args={[0.4, 0.25, bodyW]} />
-        <meshStandardMaterial color={model.accentColor} metalness={1} roughness={0.05} transparent opacity={0.3} />
+      {/* Sport cabin - balanced proportions */}
+      <mesh position={[0, 0.5, 0]}>
+        <boxGeometry args={[bodyL * 0.6, bodyH * 0.7, bodyW * 0.94]} />
+        <meshPhysicalMaterial color={model.bodyColor} transparent opacity={0.11} wireframe={false} roughness={0.17} metalness={0.83} transmission={0.82} thickness={0.32} side={THREE.DoubleSide} />
+      </mesh>
+      <mesh position={[0, 0.5, 0]}>
+        <boxGeometry args={[bodyL * 0.6, bodyH * 0.7, bodyW * 0.94]} />
+        <meshBasicMaterial color={model.accentColor} wireframe transparent opacity={0.21} />
       </mesh>
 
-      <mesh position={[bodyL / 3.1, -0.15, 0]}>
-        <boxGeometry args={[0.35, 0.25, bodyW]} />
-        <meshStandardMaterial color={model.accentColor} metalness={1} roughness={0.05} transparent opacity={0.3} />
+      {/* Assertive trunk - M sport character */}
+      <mesh position={[bodyL / 2.3, 0.18, 0]} rotation={[-0.12, 0, 0]}>
+        <boxGeometry args={[bodyL * 0.26, bodyH * 0.38, bodyW * 0.95]} />
+        <meshStandardMaterial color={model.bodyColor} metalness={0.9} roughness={0.12} transparent opacity={0.15} />
+      </mesh>
+      <mesh position={[bodyL / 2.3, 0.18, 0]} rotation={[-0.12, 0, 0]}>
+        <boxGeometry args={[bodyL * 0.26, bodyH * 0.38, bodyW * 0.95]} />
+        <meshBasicMaterial color={model.accentColor} wireframe transparent opacity={0.2} />
       </mesh>
 
-      {[[-model.wheelOffset, -0.45, bodyW / 2.2], [-model.wheelOffset, -0.45, -bodyW / 2.2], [model.wheelOffset, -0.45, bodyW / 2.2], [model.wheelOffset, -0.45, -bodyW / 2.2]].map((pos, i) => (
+      {/* Sculpted M fenders - performance-ready */}
+      <mesh position={[-(bodyL / 3.0), 0.08, bodyW / 2.12]}>
+        <boxGeometry args={[bodyL * 0.77, bodyH * 0.52, 0.13]} />
+        <meshStandardMaterial color={model.accentColor} metalness={0.86} roughness={0.14} transparent opacity={0.26} />
+      </mesh>
+      <mesh position={[-(bodyL / 3.0), 0.08, -bodyW / 2.12]}>
+        <boxGeometry args={[bodyL * 0.77, bodyH * 0.52, 0.13]} />
+        <meshStandardMaterial color={model.accentColor} metalness={0.86} roughness={0.14} transparent opacity={0.26} />
+      </mesh>
+
+      {/* M Performance wheels */}
+      {[[-model.wheelOffset, -0.46, bodyW / 2.2], [-model.wheelOffset, -0.46, -bodyW / 2.2], [model.wheelOffset, -0.46, bodyW / 2.2], [model.wheelOffset, -0.46, -bodyW / 2.2]].map((pos, i) => (
         <group key={i} position={pos as [number, number, number]}>
           <mesh rotation={[Math.PI / 2, 0, 0]}>
-            <torusGeometry args={[model.wheelRadius, 0.1, 8, 20]} />
-            <meshStandardMaterial color={model.wheelColor} metalness={0.9} roughness={0.15} />
+            <torusGeometry args={[model.wheelRadius, 0.11, 8, 20]} />
+            <meshStandardMaterial color={model.wheelColor} metalness={0.91} roughness={0.13} />
           </mesh>
-
           <mesh rotation={[Math.PI / 2, 0, 0]}>
-            <torusGeometry args={[model.wheelRadius + 0.04, 0.12, 8, 20]} />
-            <meshStandardMaterial color="#1a1a1a" metalness={0.1} roughness={0.8} />
+            <torusGeometry args={[model.wheelRadius + 0.042, 0.13, 8, 20]} />
+            <meshStandardMaterial color="#0f0f0f" metalness={0.07} roughness={0.87} />
           </mesh>
-
           {[0, 1, 2, 3, 4].map(spoke => (
-            <mesh key={spoke} position={[0, 0, 0]} rotation={[Math.PI / 2, (spoke / 5) * Math.PI * 2, 0]}>
-              <cylinderGeometry args={[0.015, 0.015, model.wheelRadius * 1.6, 6]} />
-              <meshStandardMaterial color={model.wheelColor} metalness={0.85} />
+            <mesh key={spoke} rotation={[Math.PI / 2, (spoke / 5) * Math.PI * 2, 0]}>
+              <cylinderGeometry args={[0.017, 0.017, model.wheelRadius * 1.6, 6]} />
+              <meshStandardMaterial color={model.wheelColor} metalness={0.87} />
             </mesh>
           ))}
-
-          <mesh rotation={[Math.PI / 2, 0, 0]} position={[0, 0, 0]}>
-            <circleGeometry args={[0.06, 16]} />
+          <mesh rotation={[Math.PI / 2, 0, 0]}>
+            <circleGeometry args={[0.065, 16]} />
             <meshStandardMaterial color={model.accentColor} metalness={1} roughness={0.05} />
           </mesh>
         </group>
       ))}
 
-      <mesh position={[-model.wheelOffset, -0.45, 0]} rotation={[Math.PI / 2, 0, 0]}>
-        <cylinderGeometry args={[0.035, 0.035, bodyW, 8]} />
-        <meshStandardMaterial color={model.wheelColor} metalness={0.8} roughness={0.2} transparent opacity={0.4} />
+      {/* Axles */}
+      <mesh position={[-model.wheelOffset, -0.46, 0]} rotation={[Math.PI / 2, 0, 0]}>
+        <cylinderGeometry args={[0.036, 0.036, bodyW, 8]} />
+        <meshStandardMaterial color={model.wheelColor} metalness={0.79} roughness={0.21} transparent opacity={0.38} />
+      </mesh>
+      <mesh position={[model.wheelOffset, -0.46, 0]} rotation={[Math.PI / 2, 0, 0]}>
+        <cylinderGeometry args={[0.036, 0.036, bodyW, 8]} />
+        <meshStandardMaterial color={model.wheelColor} metalness={0.79} roughness={0.21} transparent opacity={0.38} />
       </mesh>
 
-      <mesh position={[model.wheelOffset, -0.45, 0]} rotation={[Math.PI / 2, 0, 0]}>
-        <cylinderGeometry args={[0.035, 0.035, bodyW, 8]} />
-        <meshStandardMaterial color={model.wheelColor} metalness={0.8} roughness={0.2} transparent opacity={0.4} />
+      {/* M Sport lighting signature */}
+      <mesh position={[-(bodyL / 2.45), 0.28, bodyW / 2.09]}>
+        <boxGeometry args={[bodyL * 0.21, 0.07, 0.05]} />
+        <meshBasicMaterial color={model.accentColor} transparent opacity={0.55} />
+      </mesh>
+      <mesh position={[bodyL / 2.25, 0.32, bodyW / 2.09]}>
+        <boxGeometry args={[bodyL * 0.19, 0.06, 0.05]} />
+        <meshBasicMaterial color={model.accentColor} transparent opacity={0.55} />
       </mesh>
 
-      <mesh position={[bodyL / 7.6, 0.1, bodyW / 2.1]}>
-        <boxGeometry args={[bodyL * 0.84, 0.05, 0.08]} />
-        <meshBasicMaterial color={model.accentColor} transparent opacity={0.4} />
-      </mesh>
-
-      <mesh position={[bodyL / 7.6, 0.1, -bodyW / 2.1]}>
-        <boxGeometry args={[bodyL * 0.84, 0.05, 0.08]} />
-        <meshBasicMaterial color={model.accentColor} transparent opacity={0.4} />
-      </mesh>
-
-      <pointLight position={[0, -0.55, 0]} color={model.accentColor} intensity={1.2} distance={3} />
+      <pointLight position={[0, -0.58, 0]} color={model.accentColor} intensity={1.25} distance={3.1} />
       <gridHelper args={[10, 20, model.accentColor, "#2E2820"]} position={[0, -0.8, 0]} />
     </group>
   );
