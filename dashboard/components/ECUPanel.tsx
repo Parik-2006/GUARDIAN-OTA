@@ -44,8 +44,8 @@ export default function ECUPanel() {
                 display: "flex", alignItems: "center", gap: 8,
                 padding: "7px 10px", borderRadius: 3, cursor: "pointer",
                 transition: "all 0.2s",
-                background: isActive ? "rgba(0,255,136,0.08)" : "transparent",
-                borderLeft: `2px solid ${isActive ? "#00FF88" : "transparent"}`,
+                background: isActive ? `${ecu.color}15` : "transparent",
+                borderLeft: `2px solid ${isActive ? ecu.color : "transparent"}`,
               }}
               onMouseEnter={e => {
                 if (!isActive) {
@@ -61,15 +61,15 @@ export default function ECUPanel() {
               {/* Status dot */}
               <div style={{
                 width: 7, height: 7, borderRadius: "50%",
-                background: isActive ? "#00FF88" : ecu.color,
-                boxShadow: isActive ? "0 0 8px #00FF88" : "none",
+                background: ecu.color,
+                boxShadow: isActive ? `0 0 8px ${ecu.color}` : "none",
                 transition: "all 0.3s",
                 flexShrink: 0,
               }} />
               {/* Name */}
               <span style={{
                 fontFamily: "'JetBrains Mono',monospace", fontSize: "0.62rem",
-                color: isActive ? "#00FF88" : P.champagne,
+                color: isActive ? ecu.color : P.champagne,
                 fontWeight: isActive ? 600 : 400,
                 transition: "color 0.3s",
               }}>{ecu.name}</span>

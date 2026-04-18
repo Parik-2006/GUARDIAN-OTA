@@ -92,14 +92,14 @@ function ECUComponent({ def, isActive, variantScale }: { def: ECUDef; isActive: 
 
   useFrame(() => {
     if (matRef.current) {
-      const targetColor = new THREE.Color(isActive ? "#00FF88" : def.color);
-      const targetEmissive = new THREE.Color(isActive ? "#00FF88" : "#000000");
+      const targetColor = new THREE.Color(def.color);
+      const targetEmissive = new THREE.Color(isActive ? def.color : "#000000");
       
       matRef.current.color.lerp(targetColor, 0.1);
       matRef.current.emissive.lerp(targetEmissive, 0.1);
       matRef.current.emissiveIntensity = THREE.MathUtils.lerp(
         matRef.current.emissiveIntensity,
-        isActive ? 1.0 : 0,
+        isActive ? 1.2 : 0.1,
         0.1
       );
     }
@@ -133,9 +133,9 @@ function ECUComponent({ def, isActive, variantScale }: { def: ECUDef; isActive: 
       />
       
       {isActive && (
-        <mesh ref={glowMeshRef} position={[0, 0, 0]} scale={[1.4, 1.4, 1.4]}>
+        <mesh ref={glowMeshRef} position={[0, 0, 0]} scale={[1.6, 1.6, 1.6]}>
           {geo}
-          <meshBasicMaterial color="#00FF88" transparent opacity={0.25} toneMapped={false} />
+          <meshBasicMaterial color={def.color} transparent opacity={0.35} toneMapped={false} />
         </mesh>
       )}
     </mesh>
