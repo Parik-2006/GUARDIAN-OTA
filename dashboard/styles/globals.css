@@ -655,3 +655,49 @@ body::after {
   0%        { background-position: -36% 0%; }
   60%, 100% { background-position: 136% 0%; }
 }
+
+/* ─────────────────────────────────────────────
+   CAR BACKGROUND — architecture to stack scroll effect
+───────────────────────────────────────────── */
+.lp-car-background {
+  position: fixed;
+  bottom: 0;
+  right: -10%;
+  width: 60vw;
+  max-width: 900px;
+  height: 60vh;
+  max-height: 600px;
+  z-index: 2;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.08s ease-out;
+  will-change: opacity, transform;
+}
+
+.lp-car-svg {
+  width: 100%;
+  height: 100%;
+  filter: drop-shadow(0 20px 60px rgba(0,0,0,0.6)) drop-shadow(0 -10px 30px rgba(212,169,106,0.08));
+}
+
+.lp-car-body,
+.lp-wheels {
+  mix-blend-mode: screen;
+}
+
+@media (max-width: 1024px) {
+  .lp-car-background {
+    width: 70vw;
+    right: -15%;
+    height: 50vh;
+  }
+}
+
+@media (max-width: 768px) {
+  .lp-car-background {
+    width: 100vw;
+    right: -20%;
+    height: 40vh;
+    bottom: 5%;
+  }
+}

@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import GuardianLogo from "./GuardianLogo";
+import { CarBackground } from "./CarBackground";
 
 /* ══════════════════════════════════════════
    PARTICLE FIELD
@@ -230,6 +231,7 @@ export default function Landing({ onEnterDashboard }: { onEnterDashboard: () => 
     <div className="lp-root">
       <ParticleField />
       <div className="lp-grid-bg" aria-hidden />
+      <CarBackground />
       <Nav onNav={onEnterDashboard} />
 
       {/* HERO */}
