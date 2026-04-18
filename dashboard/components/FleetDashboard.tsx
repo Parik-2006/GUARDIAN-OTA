@@ -257,3 +257,6 @@ export default function FleetDashboard() {
           </div>
         </button>
       </motion.div>
+    </div>
+  );
+}
