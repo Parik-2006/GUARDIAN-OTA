@@ -148,46 +148,6 @@ export default function VehicleInsight() {
             <CarModel3D variant={carVariant} />
           </Suspense>
 
-          {/* Car Model Selector */}
-          <div style={{
-            position: "absolute", top: 16, right: 18, zIndex: 10,
-            display: "flex", gap: 6, flexDirection: "column",
-            fontFamily: "'JetBrains Mono',monospace", fontSize: "0.52rem",
-          }}>
-            <div style={{ color: P.whisper, marginBottom: 4 }}>VEHICLE:</div>
-            {(["bmw-m3", "bmw-m5", "bmw-i8"] as const).map(variant => (
-              <button
-                key={variant}
-                onClick={() => setCarVariant(variant)}
-                style={{
-                  padding: "4px 8px", borderRadius: 2,
-                  background: carVariant === variant ? P.cognac : P.cockpit,
-                  border: `1px solid ${carVariant === variant ? P.cognac : P.bMid}`,
-                  color: carVariant === variant ? P.cockpit : P.parchment,
-                  cursor: "pointer", fontFamily: "inherit", fontSize: "inherit",
-                  textTransform: "uppercase", fontWeight: carVariant === variant ? 600 : 400,
-                  transition: "all 0.2s",
-                }}
-                onMouseEnter={e => {
-                  if (carVariant !== variant) {
-                    e.currentTarget.style.borderColor = P.cognac;
-                    e.currentTarget.style.color = P.cognac;
-                  }
-                }}
-                onMouseLeave={e => {
-                  if (carVariant !== variant) {
-                    e.currentTarget.style.borderColor = P.bMid;
-                    e.currentTarget.style.color = P.parchment;
-                  }
-                }}
-              >
-                {variant === "bmw-m3" && "BMW M3"}
-                {variant === "bmw-m5" && "BMW M5"}
-                {variant === "bmw-i8" && "BMW i8"}
-              </button>
-            ))}
-          </div>
-
           {/* ECU Panel overlay */}
           <ECUPanel />
 
