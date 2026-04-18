@@ -16,7 +16,8 @@ firmware/*.map
 *.p12
 *.pfx
 .env*
-! .env.example
+!.env.example
+!.env*.example
 
 # --- NEW: Language & Local Metadata ---
 # Python

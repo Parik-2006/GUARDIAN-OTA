@@ -36,9 +36,14 @@ const FleetContext = createContext<FleetContextValue | null>(null);
    HELPERS
 ═══════════════════════════════════════════════════════════════ */
 const MODELS: FleetVehicle["model"][] = ["Interceptor", "Sentinel", "Voyager", "Phantom", "Eclipse"];
+const CAR_VARIANTS: CarVariant[] = ["audi-a8", "mercedes-s", "bmw-m5"];
 
 function randomModel(): FleetVehicle["model"] {
   return MODELS[Math.floor(Math.random() * MODELS.length)];
+}
+
+function randomCarVariant(): CarVariant {
+  return CAR_VARIANTS[Math.floor(Math.random() * CAR_VARIANTS.length)];
 }
 
 function createDefaultVehicle(id: string, name: string, carVariant: CarVariant): FleetVehicle {
@@ -108,7 +113,7 @@ export function FleetProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const addDevice = useCallback((id: string, name: string) => {
-    setFleet(prev => [...prev, createDefaultVehicle(id, name)]);
+    setFleet(prev => [...prev, createDefaultVehicle(id, name, randomCarVariant())]);
   }, []);
 
   const toggleEncryption = useCallback((vehicleId: string) => {
