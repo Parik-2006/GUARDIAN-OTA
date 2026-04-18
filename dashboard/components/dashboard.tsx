@@ -9,6 +9,7 @@ import DeviceBar from "./DeviceBar";
 import AddDeviceModal from "./AddDeviceModal";
 import FleetDashboard from "./FleetDashboard";
 import VehicleInsight from "./VehicleInsight";
+import Terminal from "./Terminal";
 
 /* ═══════════════════════════════════════════════════════════════
    INNER DASHBOARD — needs FleetProvider context
@@ -86,6 +87,7 @@ function DashboardInner({ onBackToLanding }: { onBackToLanding?: () => void }) {
           >
             {currentView === "fleet" && <FleetDashboard />}
             {currentView === "insight" && <VehicleInsight />}
+            {currentView === "terminal" && <Terminal />}
           </motion.div>
         </AnimatePresence>
       </div>

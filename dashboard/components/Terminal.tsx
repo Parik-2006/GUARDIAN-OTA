@@ -1,0 +1,435 @@
+"use client";
+
+import { useState, useRef, useEffect } from "react";
+import { motion } from "framer-motion";
+import { P } from "./theme";
+import I from "./Icon";
+
+interface CommandResult {
+  command: string;
+  timestamp: string;
+  output: string[];
+  status: "success" | "error" | "running";
+}
+
+export default function Terminal() {
+  const [command, setCommand] = useState("");
+  const [results, setResults] = useState<CommandResult[]>([]);
+  const [history, setHistory] = useState<string[]>([]);
+  const [historyIndex, setHistoryIndex] = useState(-1);
+  const [isRunning, setIsRunning] = useState(false);
+  const outputRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  // Auto-scroll to bottom of terminal
+  useEffect(() => {
+    if (outputRef.current) {
+      outputRef.current.scrollTop = outputRef.current.scrollHeight;
+    }
+  }, [results]);
+
+  const executeCommand = async (cmd: string) => {
+    if (!cmd.trim()) return;
+
+    setIsRunning(true);
+    const newResult: CommandResult = {
+      command: cmd,
+      timestamp: new Date().toLocaleTimeString("en-US", { hour12: false }),
+      output: ["[INFO] Executing command..."],
+      status: "running",
+    };
+
+    setResults(prev => [...prev, newResult]);
+    setHistory(prev => [cmd, ...prev]);
+    setHistoryIndex(-1);
+    setCommand("");
+
+    try {
+      // Call the API endpoint to execute command
+      const response = await fetch("/api/terminal", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ command: cmd }),
+      });
+
+      const data = await response.json();
+
+      setResults(prev => {
+        const updated = [...prev];
+        updated[updated.length - 1] = {
+          ...updated[updated.length - 1],
+          output: data.output || ["No output"],
+          status: data.status || "success",
+        };
+        return updated;
+      });
+    } catch (error) {
+      setResults(prev => {
+        const updated = [...prev];
+        updated[updated.length - 1] = {
+          ...updated[updated.length - 1],
+          output: [`Error: ${error instanceof Error ? error.message : "Unknown error"}`],
+          status: "error",
+        };
+        return updated;
+      });
+    } finally {
+      setIsRunning(false);
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      executeCommand(command);
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      if (historyIndex < history.length - 1) {
+        const nextIndex = historyIndex + 1;
+        setHistoryIndex(nextIndex);
+        setCommand(history[nextIndex]);
+      }
+    } else if (e.key === "ArrowDown") {
+      e.preventDefault();
+      if (historyIndex > 0) {
+        const prevIndex = historyIndex - 1;
+        setHistoryIndex(prevIndex);
+        setCommand(history[prevIndex]);
+      } else if (historyIndex === 0) {
+        setHistoryIndex(-1);
+        setCommand("");
+      }
+    }
+  };
+
+  const clearTerminal = () => {
+    setResults([]);
+  };
+
+  return (
+    <div style={{
+      flex: 1, overflowY: "auto", padding: "24px 28px",
+      display: "flex", flexDirection: "column", gap: 20,
+    }}>
+      {/* Header */}
+      <div style={{ marginBottom: 12 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 8 }}>
+          <div style={{
+            width: 40, height: 40, borderRadius: 6,
+            background: P.cgnDim, border: `1px solid ${P.bHi}`,
+            display: "flex", alignItems: "center", justifyContent: "center",
+          }}>
+            <I n="terminal" sz={20} col={P.cognac} />
+          </div>
+          <div>
+            <h2 style={{
+              fontFamily: "'Cormorant Garamond',serif", fontSize: "2rem",
+              fontWeight: 400, letterSpacing: "-0.01em", color: P.ivory, lineHeight: 1,
+            }}>Terminal Override</h2>
+            <p style={{
+              fontFamily: "'JetBrains Mono',monospace", fontSize: "0.62rem",
+              color: P.whisper, marginTop: 5,
+              display: "flex", alignItems: "center", gap: 8,
+            }}>
+              <span style={{
+                width: 6, height: 6, borderRadius: "50%",
+                background: P.sage, display: "inline-block", boxShadow: `0 0 4px ${P.sage}`,
+              }} />
+              LIVE COMMAND EXECUTION · TYPE HELP FOR COMMANDS
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Main Grid: Terminal + History */}
+      <div style={{
+        display: "grid", gridTemplateColumns: "1fr 300px", gap: 16,
+        flex: 1, minHeight: 0,
+      }}>
+        {/* Terminal Window */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+          style={{
+            background: "rgba(20,20,30,0.95)", border: `1px solid rgba(109,117,140,0.15)`,
+            borderRadius: 8, display: "flex", flexDirection: "column",
+            overflow: "hidden", backdropFilter: "blur(16px)",
+            boxShadow: "0 0 28px rgba(0,0,0,0.4)",
+          }}
+        >
+          {/* Terminal Header */}
+          <div style={{
+            height: 44, background: P.cockpit, borderBottom: `1px solid ${P.bDim}`,
+            display: "flex", alignItems: "center", justifyContent: "space-between",
+            padding: "0 16px", flexShrink: 0,
+          }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+              <I n="terminal" sz={16} col={P.cognac} />
+              <span style={{
+                fontFamily: "'JetBrains Mono',monospace", fontSize: "0.62rem",
+                color: P.whisper, letterSpacing: "0.06em",
+              }}>root@guardian-ota:~#</span>
+            </div>
+            <button
+              onClick={clearTerminal}
+              style={{
+                background: "transparent", border: "none", cursor: "pointer",
+                padding: "4px 8px", borderRadius: 3, transition: "all 0.2s",
+                display: "flex", alignItems: "center", gap: 5,
+              }}
+              onMouseEnter={e => { e.currentTarget.style.background = P.dash; }}
+              onMouseLeave={e => { e.currentTarget.style.background = "transparent"; }}
+              title="Clear terminal"
+            >
+              <I n="delete_sweep" sz={14} col={P.parchment} />
+            </button>
+          </div>
+
+          {/* Terminal Output */}
+          <div
+            ref={outputRef}
+            style={{
+              flex: 1, overflowY: "auto", padding: "16px",
+              fontFamily: "'JetBrains Mono',monospace", fontSize: "0.8rem",
+              lineHeight: 1.6, display: "flex", flexDirection: "column", gap: 8,
+            }}
+          >
+            {results.length === 0 ? (
+              <div style={{
+                color: P.whisper, opacity: 0.5,
+                display: "flex", alignItems: "center", justifyContent: "center",
+                height: "100%",
+              }}>
+                <span>Guardian OTA Terminal • Type commands below</span>
+              </div>
+            ) : (
+              results.map((result, i) => (
+                <div key={i} style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                  {/* Command prompt */}
+                  <div style={{ display: "flex", gap: 8 }}>
+                    <span style={{ color: P.cognac, fontWeight: 600 }}>❯</span>
+                    <span style={{ color: P.ivory, flex: 1, wordBreak: "break-all" }}>{result.command}</span>
+                  </div>
+                  {/* Output */}
+                  <div style={{
+                    display: "flex", flexDirection: "column", gap: 2,
+                    paddingLeft: 16, borderLeft: `1px solid ${P.bMid}`,
+                  }}>
+                    {result.output.map((line, j) => (
+                      <div
+                        key={j}
+                        style={{
+                          color: result.status === "error" ? P.burg : result.status === "success" ? P.sage : P.whisper,
+                          opacity: 0.8,
+                          wordBreak: "break-word",
+                        }}
+                      >
+                        {line}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+
+          {/* Input Area */}
+          <div style={{
+            background: P.cockpit, borderTop: `1px solid ${P.bDim}`,
+            padding: "12px 16px", flexShrink: 0,
+            display: "flex", alignItems: "center", gap: 8,
+          }}>
+            <span style={{ color: P.cognac, fontWeight: 600 }}>❯</span>
+            <input
+              ref={inputRef}
+              value={command}
+              onChange={e => setCommand(e.target.value)}
+              onKeyDown={handleKeyDown}
+              disabled={isRunning}
+              placeholder="Type command (git add, git commit, git push, npm run, etc.)"
+              style={{
+                flex: 1, background: "transparent", border: "none",
+                color: P.ivory, fontFamily: "'JetBrains Mono',monospace", fontSize: "0.8rem",
+                outline: "none", opacity: isRunning ? 0.5 : 1,
+              }}
+            />
+            {isRunning && (
+              <span style={{
+                width: 8, height: 8, borderRadius: "50%",
+                background: P.cognac, animation: "pulse 1s infinite",
+              }} />
+            )}
+          </div>
+        </motion.div>
+
+        {/* Right Sidebar: Command History + Config */}
+        <div style={{
+          display: "flex", flexDirection: "column", gap: 16, minHeight: 0,
+        }}>
+          {/* Command History Panel */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1], delay: 0.1 }}
+            style={{
+              background: "rgba(240,235,224,0.033)", border: `1px solid rgba(240,235,224,0.07)`,
+              borderRadius: 8, overflow: "hidden", backdropFilter: "blur(16px)",
+              flex: 1, minHeight: 0, display: "flex", flexDirection: "column",
+            }}
+          >
+            <div style={{
+              padding: "16px", background: P.cockpit,
+              borderBottom: `1px solid ${P.bDim}`,
+              display: "flex", alignItems: "center", justifyContent: "space-between",
+            }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <I n="history" sz={16} col={P.cognac} />
+                <span style={{
+                  fontFamily: "'JetBrains Mono',monospace", fontSize: "0.65rem",
+                  color: P.whisper, letterSpacing: "0.1em", textTransform: "uppercase",
+                }}>History</span>
+              </div>
+              <span style={{
+                fontFamily: "'JetBrains Mono',monospace", fontSize: "0.55rem",
+                color: P.whisper,
+              }}>{history.length}</span>
+            </div>
+
+            <div style={{
+              flex: 1, overflowY: "auto", padding: "8px",
+              display: "flex", flexDirection: "column", gap: 4,
+            }}>
+              {history.length === 0 ? (
+                <div style={{
+                  color: P.whisper, opacity: 0.4, textAlign: "center",
+                  padding: "24px 8px", fontFamily: "'JetBrains Mono',monospace", fontSize: "0.65rem",
+                }}>
+                  No commands yet
+                </div>
+              ) : (
+                history.map((cmd, i) => (
+                  <button
+                    key={i}
+                    onClick={() => {
+                      setCommand(cmd);
+                      inputRef.current?.focus();
+                    }}
+                    style={{
+                      padding: "8px 12px", background: "transparent",
+                      border: `1px solid ${P.bMid}`, borderRadius: 3,
+                      color: P.parchment, cursor: "pointer",
+                      fontFamily: "'JetBrains Mono',monospace", fontSize: "0.7rem",
+                      textAlign: "left", overflow: "hidden", textOverflow: "ellipsis",
+                      whiteSpace: "nowrap", transition: "all 0.2s",
+                    }}
+                    onMouseEnter={e => {
+                      e.currentTarget.style.background = P.dash;
+                      e.currentTarget.style.color = P.ivory;
+                      e.currentTarget.style.borderColor = P.bHi;
+                    }}
+                    onMouseLeave={e => {
+                      e.currentTarget.style.background = "transparent";
+                      e.currentTarget.style.color = P.parchment;
+                      e.currentTarget.style.borderColor = P.bMid;
+                    }}
+                    title={cmd}
+                  >
+                    {cmd}
+                  </button>
+                ))
+              )}
+            </div>
+          </motion.div>
+
+          {/* Quick Commands Panel */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1], delay: 0.2 }}
+            style={{
+              background: "rgba(240,235,224,0.033)", border: `1px solid rgba(240,235,224,0.07)`,
+              borderRadius: 8, overflow: "hidden", backdropFilter: "blur(16px)",
+              flexShrink: 0,
+            }}
+          >
+            <div style={{
+              padding: "16px", background: P.cockpit,
+              borderBottom: `1px solid ${P.bDim}`,
+            }}>
+              <span style={{
+                fontFamily: "'JetBrains Mono',monospace", fontSize: "0.65rem",
+                color: P.whisper, letterSpacing: "0.1em", textTransform: "uppercase",
+                display: "flex", alignItems: "center", gap: 8,
+              }}>
+                <I n="flash_on" sz={14} col={P.cognac} />
+                Quick Commands
+              </span>
+            </div>
+
+            <div style={{
+              padding: "12px", display: "flex", flexDirection: "column", gap: 8,
+            }}>
+              {[
+                { cmd: "git status", icon: "source_control" },
+                { cmd: "git add .", icon: "add" },
+                { cmd: "git commit -m 'update'", icon: "done" },
+                { cmd: "git push", icon: "upload" },
+                { cmd: "npm run build", icon: "build" },
+                { cmd: "npm start", icon: "play_circle" },
+              ].map((item, i) => (
+                <button
+                  key={i}
+                  onClick={() => executeCommand(item.cmd)}
+                  disabled={isRunning}
+                  style={{
+                    padding: "10px 12px", background: P.cgnDim, color: P.cognac,
+                    border: `1px solid ${P.bHi}`, borderRadius: 3,
+                    cursor: isRunning ? "not-allowed" : "pointer",
+                    fontFamily: "'JetBrains Mono',monospace", fontSize: "0.65rem",
+                    opacity: isRunning ? 0.5 : 1,
+                    transition: "all 0.2s",
+                    display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+                  }}
+                  onMouseEnter={e => {
+                    if (!isRunning) {
+                      e.currentTarget.style.background = P.cgnGlow;
+                      e.currentTarget.style.color = P.ivory;
+                    }
+                  }}
+                  onMouseLeave={e => {
+                    e.currentTarget.style.background = P.cgnDim;
+                    e.currentTarget.style.color = P.cognac;
+                  }}
+                >
+                  <I n={item.icon} sz={12} col="inherit" />
+                  {item.cmd.split(" ")[0]}
+                </button>
+              ))}
+            </div>
+          </motion.div>
+        </div>
+      </div>
+
+      {/* Bottom PSA */}
+      <div style={{
+        background: "rgba(196,107,107,0.08)", border: `1px solid rgba(196,107,107,0.2)`,
+        borderRadius: 6, padding: "14px 16px", display: "flex", alignItems: "start", gap: 12,
+      }}>
+        <I n="warning" sz={18} col={P.burg} style={{ marginTop: 2, flexShrink: 0 }} />
+        <div>
+          <p style={{
+            fontFamily: "'JetBrains Mono',monospace", fontSize: "0.65rem",
+            color: P.burg, fontWeight: 600, letterSpacing: "0.04em",
+            textTransform: "uppercase", marginBottom: 4,
+          }}>⚠️ Command Execution</p>
+          <p style={{
+            fontFamily: "'JetBrains Mono',monospace", fontSize: "0.62rem",
+            color: P.parchment, lineHeight: 1.5,
+          }}>
+            Ensure all commands are validated before execution. Git operations will affect the repository.
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
