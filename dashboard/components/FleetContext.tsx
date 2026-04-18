@@ -27,18 +27,87 @@ interface FleetContextValue {
   selectVehicle: (id: string) => void;
   goToDashboard: () => void;
   goToTerminal: () => void;
-  addDevice: (id: string, name: string) => void;
+  addDevice: (id: string) => void;
   deleteDevice: (deviceId: string) => void;
   toggleEncryption: (vehicleId: string) => void;
+  detectDeviceInfo: (deviceId: string) => { model: FleetVehicle["model"]; variant: CarVariant; name: string };
+  getModelColor: (model: FleetVehicle["model"]) => { primary: string; glow: string; accent: string };
 }
 
 const FleetContext = createContext<FleetContextValue | null>(null);
 
 /* ═══════════════════════════════════════════════════════════════
-   HELPERS
+   HELPERS & AUTO-DETECTION SYSTEM
 ═══════════════════════════════════════════════════════════════ */
 const MODELS: FleetVehicle["model"][] = ["Interceptor", "Sentinel", "Voyager", "Phantom", "Eclipse"];
 const CAR_VARIANTS: CarVariant[] = ["audi-a8", "mercedes-s", "bmw-m5"];
+
+// Device Model Detection & Naming System
+const DEVICE_MODELS_MAP: Record<string, { model: FleetVehicle["model"]; variant: CarVariant; names: string[] }> = {
+  "Interceptor": {
+    model: "Interceptor",
+    variant: "audi-a8",
+    names: ["Audi A8 e-tron", "Audi A8 Quantum", "Audi Guardian Alpha", "Audi A8 Sentinel"],
+  },
+  "Sentinel": {
+    model: "Sentinel",
+    variant: "mercedes-s",
+    names: ["Mercedes-AMG S63", "Mercedes S-Class Guard", "Mercedes Elite Defender", "Mercedes S63 Sentinel"],
+  },
+  "Voyager": {
+    model: "Voyager",
+    variant: "bmw-m5",
+    names: ["BMW M5 Sedan", "BMW M5 Navigator", "BMW M Series Guardian", "BMW M5 Voyager"],
+  },
+  "Phantom": {
+    model: "Phantom",
+    variant: "audi-a8",
+    names: ["Audi A8 Ghost", "Audi Phantom Protocol", "Audi A8 Stealth", "Audi A8 Covert"],
+  },
+  "Eclipse": {
+    model: "Eclipse",
+    variant: "bmw-m5",
+    names: ["BMW M5 Eclipse", "BMW M Series Shadow", "BMW M5 Twilight", "BMW M5 Nova"],
+  },
+};
+
+// Color mapping for models
+const MODEL_COLORS: Record<FleetVehicle["model"], { primary: string; glow: string; accent: string }> = {
+  "Interceptor": { primary: "#D4A96A", glow: "rgba(212,169,106,0.3)", accent: "#E6C88F" },
+  "Sentinel": { primary: "#6A9DB8", glow: "rgba(106,157,184,0.3)", accent: "#8DBBDB" },
+  "Voyager": { primary: "#7AB88A", glow: "rgba(122,184,138,0.3)", accent: "#A3D4A8" },
+  "Phantom": { primary: "#9B7BA3", glow: "rgba(155,123,163,0.3)", accent: "#B8A3C4" },
+  "Eclipse": { primary: "#D4956A", glow: "rgba(212,149,106,0.3)", accent: "#E6B88F" },
+};
+
+// Auto-detect vehicle model based on device ID or sequence
+function detectVehicleModel(deviceId: string, existingFleet: FleetVehicle[]): { model: FleetVehicle["model"]; variant: CarVariant; name: string } {
+  // Extract number from device ID (e.g., VEH-004 -> 4)
+  const match = deviceId.match(/\d+/);
+  const deviceNum = match ? parseInt(match[0]) : Math.floor(Math.random() * 5);
+
+  // Deterministic model assignment based on device number
+  const modelIndex = deviceNum % 5;
+  const modelKey = MODELS[modelIndex];
+  const modelConfig = DEVICE_MODELS_MAP[modelKey];
+
+  // Get a name that isn't already used in the fleet
+  const usedNames = new Set(existingFleet.map(v => v.name));
+  let selectedName = modelConfig.names[0];
+  
+  for (const name of modelConfig.names) {
+    if (!usedNames.has(name)) {
+      selectedName = name;
+      break;
+    }
+  }
+
+  return {
+    model: modelConfig.model,
+    variant: modelConfig.variant,
+    name: selectedName,
+  };
+}
 
 function randomModel(): FleetVehicle["model"] {
   return MODELS[Math.floor(Math.random() * MODELS.length)];
@@ -48,7 +117,7 @@ function randomCarVariant(): CarVariant {
   return CAR_VARIANTS[Math.floor(Math.random() * CAR_VARIANTS.length)];
 }
 
-function createDefaultVehicle(id: string, name: string, carVariant: CarVariant): FleetVehicle {
+function createDefaultVehicle(id: string, name: string, model: FleetVehicle["model"], carVariant: CarVariant): FleetVehicle {
   const ecuStates: Record<ECUKey, string> = {
     brake: "green",
     powertrain: "green",
@@ -58,7 +127,7 @@ function createDefaultVehicle(id: string, name: string, carVariant: CarVariant):
   return {
     deviceId: id,
     name,
-    model: randomModel(),
+    model,
     carVariant,
     status: "online",
     primary: false,
@@ -86,8 +155,7 @@ export function createDefaultFleet(): FleetVehicle[] {
     { id: "VEH-003", name: "BMW M5 Sedan",      model: "Voyager",     carVariant: "bmw-m5",     primary: false },
   ];
   return defaults.map(d => ({
-    ...createDefaultVehicle(d.id, d.name, d.carVariant),
-    model: d.model,
+    ...createDefaultVehicle(d.id, d.name, d.model, d.carVariant),
     primary: d.primary,
     otaVersion: d.primary ? "2.4.1" : "2.4.0",
   }));
@@ -120,8 +188,12 @@ export function FleetProvider({ children }: { children: ReactNode }) {
     setActiveEcu(null);
   }, []);
 
-  const addDevice = useCallback((id: string, name: string) => {
-    setFleet(prev => [...prev, createDefaultVehicle(id, name, randomCarVariant())]);
+  const addDevice = useCallback((id: string) => {
+    setFleet(prev => {
+      // Auto-detect model, variant, and name based on device ID
+      const detectedInfo = detectVehicleModel(id, prev);
+      return [...prev, createDefaultVehicle(id, detectedInfo.name, detectedInfo.model, detectedInfo.variant)];
+    });
   }, []);
 
   const deleteDevice = useCallback((deviceId: string) => {
@@ -140,10 +212,19 @@ export function FleetProvider({ children }: { children: ReactNode }) {
     );
   }, []);
 
+  const detectDeviceInfo = useCallback((deviceId: string) => {
+    return detectVehicleModel(deviceId, fleet);
+  }, [fleet]);
+
+  const getModelColor = useCallback((model: FleetVehicle["model"]) => {
+    return MODEL_COLORS[model];
+  }, []);
+
   return (
     <FleetContext.Provider value={{
       fleet, setFleet, currentView, selectedVehicleId, activeEcu,
       setActiveEcu, selectVehicle, goToDashboard, goToTerminal, addDevice, deleteDevice, toggleEncryption,
+      detectDeviceInfo, getModelColor,
     }}>
       {children}
     </FleetContext.Provider>
