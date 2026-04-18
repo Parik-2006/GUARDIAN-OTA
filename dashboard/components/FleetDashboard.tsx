@@ -5,6 +5,7 @@ import { P } from "./theme";
 import I from "./Icon";
 import BrandLogo from "./BrandLogo";
 import { useFleet } from "./FleetContext";
+import { COMPANY_LOGOS } from "./companyLogos";
 
 export default function FleetDashboard() {
   const { fleet, selectVehicle, deleteDevice } = useFleet();
@@ -82,7 +83,19 @@ export default function FleetDashboard() {
                     display: "flex", alignItems: "center", justifyContent: "center",
                     overflow: "hidden",
                   }}>
+<<<<<<< HEAD
                     <BrandLogo vehicleName={v.name} size={44} />
+=======
+                    <svg 
+                      width="28" 
+                      height="28" 
+                      viewBox="0 0 100 100" 
+                      xmlns="http://www.w3.org/2000/svg"
+                      dangerouslySetInnerHTML={{ 
+                        __html: Object.values(COMPANY_LOGOS)[v.companyLogoIndex % Object.values(COMPANY_LOGOS).length].svg 
+                      }}
+                    />
+>>>>>>> a31d7df (Fix Terminal icon styling - wrap Icon in div for proper style props)
                   </div>
                   <div>
                     <h3 style={{
@@ -92,7 +105,7 @@ export default function FleetDashboard() {
                     <span style={{
                       fontFamily: "'JetBrains Mono',monospace", fontSize: "0.52rem",
                       color: P.whisper, letterSpacing: "0.12em",
-                    }}>{v.model.toUpperCase()} · {v.deviceId}</span>
+                    }}>{Object.values(COMPANY_LOGOS)[v.companyLogoIndex % Object.values(COMPANY_LOGOS).length].name} · {v.deviceId}</span>
                   </div>
                 </div>
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>

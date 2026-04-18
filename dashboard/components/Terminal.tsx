@@ -540,7 +540,9 @@ export default function Terminal() {
         background: "rgba(196,107,107,0.08)", border: `1px solid rgba(196,107,107,0.2)`,
         borderRadius: 6, padding: "14px 16px", display: "flex", alignItems: "start", gap: 12,
       }}>
-        <I n="warning" sz={18} col={P.burg} style={{ marginTop: 2, flexShrink: 0 }} />
+        <div style={{ marginTop: 2, flexShrink: 0 }}>
+          <I n="warning" sz={18} col={P.burg} />
+        </div>
         <div>
           <p style={{
             fontFamily: "'JetBrains Mono',monospace", fontSize: "0.65rem",

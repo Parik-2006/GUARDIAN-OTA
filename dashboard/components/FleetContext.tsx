@@ -13,6 +13,7 @@ export interface FleetVehicle extends DeviceState {
   carVariant: CarVariant;
   status: "online" | "offline" | "updating";
   encryptionEnabled: boolean;
+  companyLogoIndex: number;
 }
 
 export type ViewMode = "fleet" | "insight" | "terminal" | "documentation";
@@ -143,6 +144,7 @@ function createDefaultVehicle(id: string, name: string, model: FleetVehicle["mod
     tlsHealthy: true,
     rollbackArmed: true,
     encryptionEnabled: true,
+    companyLogoIndex: Math.floor(Math.random() * 15),
   };
 }
 
