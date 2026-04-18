@@ -15,7 +15,7 @@ export interface FleetVehicle extends DeviceState {
   encryptionEnabled: boolean;
 }
 
-export type ViewMode = "fleet" | "insight" | "terminal";
+export type ViewMode = "fleet" | "insight" | "terminal" | "documentation";
 
 interface FleetContextValue {
   fleet: FleetVehicle[];
@@ -27,6 +27,7 @@ interface FleetContextValue {
   selectVehicle: (id: string) => void;
   goToDashboard: () => void;
   goToTerminal: () => void;
+  goToDocumentation: () => void;
   addDevice: (id: string) => void;
   deleteDevice: (deviceId: string) => void;
   toggleEncryption: (vehicleId: string) => void;
@@ -188,6 +189,12 @@ export function FleetProvider({ children }: { children: ReactNode }) {
     setActiveEcu(null);
   }, []);
 
+  const goToDocumentation = useCallback(() => {
+    setCurrentView("documentation");
+    setSelectedVehicleId(null);
+    setActiveEcu(null);
+  }, []);
+
   const addDevice = useCallback((id: string) => {
     setFleet(prev => {
       // Auto-detect model, variant, and name based on device ID
@@ -223,7 +230,7 @@ export function FleetProvider({ children }: { children: ReactNode }) {
   return (
     <FleetContext.Provider value={{
       fleet, setFleet, currentView, selectedVehicleId, activeEcu,
-      setActiveEcu, selectVehicle, goToDashboard, goToTerminal, addDevice, deleteDevice, toggleEncryption,
+      setActiveEcu, selectVehicle, goToDashboard, goToTerminal, goToDocumentation, addDevice, deleteDevice, toggleEncryption,
       detectDeviceInfo, getModelColor,
     }}>
       {children}
