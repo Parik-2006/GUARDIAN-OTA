@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>GUARDIAN-OTA - Update Manager</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Space+Grotesk:wght@400;500;600;700&amp;family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "inverse-on-surface": "#4d556b",
+                        "on-tertiary-fixed-variant": "#4e5c71",
+                        "tertiary-container": "#d5e3fd",
+                        "primary-fixed": "#00f4fe",
+                        "secondary": "#69f6b8",
+                        "secondary-dim": "#58e7ab",
+                        "surface-container-low": "#091328",
+                        "error-dim": "#d7383b",
+                        "surface-container-lowest": "#000000",
+                        "on-primary-fixed": "#004346",
+                        "on-primary-fixed-variant": "#006266",
+                        "on-primary-container": "#00575b",
+                        "inverse-primary": "#006a6e",
+                        "secondary-fixed": "#69f6b8",
+                        "on-tertiary": "#4d5b70",
+                        "surface-container-high": "#141f38",
+                        "surface-variant": "#192540",
+                        "on-tertiary-fixed": "#324054",
+                        "primary": "#a1faff",
+                        "tertiary-dim": "#c7d5ee",
+                        "primary-fixed-dim": "#00e5ee",
+                        "outline-variant": "#40485d",
+                        "tertiary-fixed-dim": "#c7d5ee",
+                        "secondary-container": "#006c49",
+                        "on-background": "#dee5ff",
+                        "tertiary": "#ebf1ff",
+                        "on-error-container": "#ffa8a3",
+                        "on-error": "#490006",
+                        "surface-tint": "#a1faff",
+                        "inverse-surface": "#faf8ff",
+                        "error": "#ff716c",
+                        "surface-container": "#0f1930",
+                        "outline": "#6d758c",
+                        "surface-container-highest": "#192540",
+                        "on-secondary-fixed": "#00452d",
+                        "error-container": "#9f0519",
+                        "on-surface": "#dee5ff",
+                        "secondary-fixed-dim": "#58e7ab",
+                        "on-surface-variant": "#a3aac4",
+                        "on-tertiary-container": "#455367",
+                        "on-secondary-fixed-variant": "#006544",
+                        "surface": "#060e20",
+                        "tertiary-fixed": "#d5e3fd",
+                        "surface-dim": "#060e20",
+                        "surface-bright": "#1f2b49",
+                        "on-secondary-container": "#e1ffec",
+                        "on-primary": "#006165",
+                        "on-secondary": "#005a3c",
+                        "background": "#060e20",
+                        "primary-dim": "#00e5ee",
+                        "primary-container": "#00f4fe"
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.5rem",
+                        "lg": "0.75rem",
+                        "xl": "1rem",
+                        "2xl": "1.5rem",
+                        "full": "9999px"
+                    },
+                    fontFamily: {
+                        "headline": ["Space Grotesk", "sans-serif"],
+                        "body": ["Inter", "sans-serif"],
+                        "label": ["Inter", "sans-serif"],
+                        "mono": ["ui-monospace", "SFMono-Regular", "Menlo", "Monaco", "Consolas", "Liberation Mono", "Courier New", "monospace"]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .material-symbols-outlined.filled {
+            font-variation-settings: 'FILL' 1;
+        }
+        
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #091328; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #192540; 
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #40485d; 
+        }
+
+        .glow-focus:focus-within {
+            box-shadow: 0 0 12px 0 rgba(161, 250, 255, 0.1);
+        }
+    </style>
+</head>
+<body class="bg-surface text-on-surface font-body antialiased selection:bg-primary-container selection:text-on-primary-container min-h-screen flex overflow-hidden">
+<!-- SideNavBar -->
+<nav class="hidden md:flex fixed left-0 top-0 h-full w-64 flex-col z-40 bg-surface-container-low border-r border-surface-container-high/50 font-body text-sm">
+<!-- Header -->
+<div class="px-6 py-8 flex flex-col space-y-4">
+<div class="flex items-center space-x-3">
+<div class="w-10 h-10 rounded-xl bg-surface-container-highest flex items-center justify-center text-secondary border border-secondary/20 shadow-[0_0_15px_rgba(105,246,184,0.1)]">
+<span class="material-symbols-outlined filled text-xl">shield</span>
+</div>
+<div>
+<h2 class="font-headline font-bold text-on-surface tracking-wide">NODE_01</h2>
+<p class="text-[0.6875rem] text-secondary font-mono tracking-wider">CONNECTED / SECURE</p>
+</div>
+</div>
+<button class="w-full mt-4 flex items-center justify-center space-x-2 bg-gradient-to-br from-primary to-primary-dim text-on-primary-fixed font-semibold py-2.5 px-4 rounded-xl hover:opacity-90 transition-opacity">
+<span class="material-symbols-outlined text-[18px]">add</span>
+<span>New Fleet Group</span>
+</button>
+</div>
+<!-- Main Tabs -->
+<div class="flex-1 flex flex-col px-3 space-y-1 mt-4">
+<a class="flex items-center space-x-3 px-3 py-2.5 rounded-lg text-on-surface opacity-60 hover:opacity-100 hover:bg-surface-variant transition-colors duration-200" href="#">
+<span class="material-symbols-outlined text-[20px]">dashboard</span>
+<span>Dashboard</span>
+</a>
+<a class="flex items-center space-x-3 px-3 py-2.5 rounded-lg text-on-surface opacity-60 hover:opacity-100 hover:bg-surface-variant transition-colors duration-200" href="#">
+<span class="material-symbols-outlined text-[20px]">terminal</span>
+<span>Terminal</span>
+</a>
+<a class="flex items-center space-x-3 px-3 py-2.5 bg-surface-container-high text-primary border-l-4 border-primary rounded-r-lg transition-colors duration-200 shadow-[2px_0_10px_rgba(161,250,255,0.05)_inset]" href="#">
+<span class="material-symbols-outlined text-[20px] filled">system_update_alt</span>
+<span class="font-medium">Updates</span>
+</a>
+<a class="flex items-center space-x-3 px-3 py-2.5 rounded-lg text-on-surface opacity-60 hover:opacity-100 hover:bg-surface-variant transition-colors duration-200" href="#">
+<span class="material-symbols-outlined text-[20px]">verified_user</span>
+<span>Verification</span>
+</a>
+<a class="flex items-center space-x-3 px-3 py-2.5 rounded-lg text-on-surface opacity-60 hover:opacity-100 hover:bg-surface-variant transition-colors duration-200" href="#">
+<span class="material-symbols-outlined text-[20px]">analytics</span>
+<span>Device Logs</span>
+</a>
+</div>
+<!-- Footer Tabs -->
+<div class="px-3 pb-6 flex flex-col space-y-1">
+<div class="h-px w-full bg-outline-variant/20 mb-2"></div>
+<a class="flex items-center space-x-3 px-3 py-2 rounded-lg text-on-surface opacity-60 hover:opacity-100 hover:bg-surface-variant transition-colors duration-200" href="#">
+<span class="material-symbols-outlined text-[18px]">monitor_heart</span>
+<span>System Health</span>
+</a>
+<a class="flex items-center space-x-3 px-3 py-2 rounded-lg text-on-surface opacity-60 hover:opacity-100 hover:bg-surface-variant transition-colors duration-200" href="#">
+<span class="material-symbols-outlined text-[18px]">menu_book</span>
+<span>Documentation</span>
+</a>
+</div>
+</nav>
+<!-- Main Content Area -->
+<div class="flex-1 ml-0 md:ml-64 flex flex-col h-screen relative bg-surface">
+<!-- TopNavBar -->
+<header class="flex justify-between items-center w-full px-6 h-16 bg-surface/80 backdrop-blur-md border-b border-surface-container-high/50 z-30 sticky top-0">
+<div class="flex items-center space-x-8">
+<h1 class="text-xl font-headline font-bold uppercase tracking-widest text-primary hidden lg:block">
+                    SENTINEL COMMAND
+                </h1>
+<nav class="hidden md:flex space-x-6 h-full items-center font-headline tracking-tight text-sm">
+<a class="text-on-surface opacity-70 hover:text-primary transition-all h-full flex items-center border-b-2 border-transparent hover:bg-surface-container-high/30 px-2" href="#">Fleet Metrics</a>
+<a class="text-primary border-b-2 border-primary h-full flex items-center px-2 bg-surface-container-high/20" href="#">Firmware Repo</a>
+<a class="text-on-surface opacity-70 hover:text-primary transition-all h-full flex items-center border-b-2 border-transparent hover:bg-surface-container-high/30 px-2" href="#">Crypto Audit</a>
+</nav>
+</div>
+<div class="flex items-center space-x-4">
+<div class="flex items-center space-x-2 mr-2">
+<button class="p-2 text-on-surface opacity-70 hover:text-primary hover:bg-surface-container-high rounded-lg transition-all">
+<span class="material-symbols-outlined text-[20px]">light_mode</span>
+</button>
+<button class="p-2 text-on-surface opacity-70 hover:text-primary hover:bg-surface-container-high rounded-lg transition-all">
+<span class="material-symbols-outlined text-[20px]">rss_feed</span>
+</button>
+<button class="p-2 text-on-surface opacity-70 hover:text-primary hover:bg-surface-container-high rounded-lg transition-all">
+<span class="material-symbols-outlined text-[20px]">settings_input_component</span>
+</button>
+<button class="p-2 text-on-surface opacity-70 hover:text-primary hover:bg-surface-container-high rounded-lg transition-all relative">
+<span class="material-symbols-outlined text-[20px]">notifications</span>
+<span class="absolute top-2 right-2 w-1.5 h-1.5 bg-error rounded-full"></span>
+</button>
+</div>
+<button class="hidden lg:flex px-4 py-1.5 border border-outline-variant/30 text-on-surface text-sm font-medium rounded-lg hover:bg-surface-container-high transition-colors">
+                    Emergency Stop
+                </button>
+<button class="bg-gradient-to-br from-primary to-primary-dim text-on-primary-fixed font-bold text-sm px-4 py-1.5 rounded-lg hover:opacity-90 transition-opacity shadow-[0_0_10px_rgba(161,250,255,0.2)]">
+                    Deploy Update
+                </button>
+<div class="w-8 h-8 rounded-lg bg-surface-container-highest border border-outline-variant/30 ml-2 overflow-hidden flex-shrink-0 cursor-pointer">
+<div class="w-full h-full bg-gradient-to-b from-primary/20 to-transparent flex items-center justify-center">
+<span class="material-symbols-outlined text-[16px] text-primary">person</span>
+</div>
+</div>
+</div>
+</header>
+<!-- Canvas -->
+<main class="flex-1 overflow-y-auto p-6 lg:p-8 space-y-6">
+<!-- Page Header -->
+<div class="flex flex-col md:flex-row md:items-end justify-between space-y-4 md:space-y-0 mb-2">
+<div>
+<h2 class="font-headline text-3xl font-bold text-on-surface tracking-tight mb-1">Update Manager</h2>
+<p class="text-on-surface-variant text-sm">Orchestrate and deploy verified firmware payloads across the fleet.</p>
+</div>
+<div class="flex items-center space-x-2 bg-surface-container-lowest px-3 py-1.5 rounded-full border border-secondary/20">
+<span class="w-2 h-2 rounded-full bg-secondary shadow-[0_0_8px_rgba(105,246,184,0.6)] animate-pulse"></span>
+<span class="text-xs font-mono text-secondary tracking-widest">SYSTEM READY</span>
+</div>
+</div>
+<!-- Bento Grid Layout -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+<!-- Left Column -->
+<div class="lg:col-span-8 flex flex-col space-y-6">
+<!-- Firmware Upload Zone -->
+<section class="bg-surface-container-low rounded-2xl p-1 relative overflow-hidden group">
+<div class="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
+<div class="h-48 border border-dashed border-outline-variant/30 rounded-xl flex flex-col items-center justify-center bg-surface-container/50 hover:bg-surface-container transition-colors cursor-pointer relative z-10">
+<div class="w-14 h-14 rounded-full bg-surface-container-highest flex items-center justify-center mb-4 text-primary group-hover:scale-110 transition-transform duration-300 shadow-[0_0_20px_rgba(161,250,255,0.05)]">
+<span class="material-symbols-outlined text-3xl">cloud_upload</span>
+</div>
+<h3 class="font-headline font-semibold text-lg text-on-surface mb-1">Upload Firmware Binary</h3>
+<p class="text-sm text-on-surface-variant max-w-sm text-center">Drag and drop compiled <span class="font-mono text-xs text-on-surface bg-surface-container-highest px-1.5 py-0.5 rounded-md">.bin</span> or <span class="font-mono text-xs text-on-surface bg-surface-container-highest px-1.5 py-0.5 rounded-md">.hex</span> files here.</p>
+<p class="mt-2 text-[10px] text-tertiary uppercase tracking-tighter flex items-center gap-1">
+<span class="material-symbols-outlined text-[12px]">info</span>
+                                Action will redirect to Verification Panel
+                            </p>
+</div>
+</section>
+<!-- Recent Upload Logs Section -->
+<section class="bg-surface-container-low rounded-2xl flex flex-col overflow-hidden border border-outline-variant/10">
+<div class="px-6 py-4 border-b border-outline-variant/15 flex justify-between items-center bg-surface-container/30">
+<h3 class="font-headline font-semibold text-on-surface flex items-center space-x-2">
+<span class="material-symbols-outlined text-[18px] text-primary">history</span>
+<span>Recent Upload Logs</span>
+</h3>
+<button class="text-[10px] font-mono text-on-surface-variant hover:text-primary transition-colors flex items-center space-x-1 px-2 py-1 bg-surface-container-highest/40 rounded-lg">
+<span>CLEAR LOGS</span>
+</button>
+</div>
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="bg-surface-container-highest/30">
+<th class="px-6 py-2.5 text-[10px] font-mono text-on-surface-variant font-normal tracking-wider">FILENAME</th>
+<th class="px-6 py-2.5 text-[10px] font-mono text-on-surface-variant font-normal tracking-wider">TIMESTAMP</th>
+<th class="px-6 py-2.5 text-[10px] font-mono text-on-surface-variant font-normal tracking-wider">SHA-256 CHECKSUM</th>
+</tr>
+</thead>
+<tbody class="text-xs divide-y divide-outline-variant/10">
+<tr class="hover:bg-surface-container/40 transition-colors">
+<td class="px-6 py-3 font-mono text-on-surface">firmware_v2.4.1_stable.bin</td>
+<td class="px-6 py-3 text-on-surface-variant">2023-10-24 14:32:01</td>
+<td class="px-6 py-3 font-mono text-primary/80">e3b0c442...b855</td>
+</tr>
+<tr class="hover:bg-surface-container/40 transition-colors">
+<td class="px-6 py-3 font-mono text-on-surface">esp32_patch_08.bin</td>
+<td class="px-6 py-3 text-on-surface-variant">2023-10-24 12:15:44</td>
+<td class="px-6 py-3 font-mono text-primary/80">9a2f1b4c...f2d3</td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<!-- Firmware Repository List -->
+<section class="bg-surface-container-low rounded-2xl flex flex-col overflow-hidden border border-outline-variant/10">
+<div class="px-6 py-4 border-b border-outline-variant/15 flex justify-between items-center bg-surface-container/30">
+<h3 class="font-headline font-semibold text-on-surface flex items-center space-x-2">
+<span class="material-symbols-outlined text-[18px] text-tertiary-dim">folder_open</span>
+<span>Firmware Repository</span>
+</h3>
+<div class="flex space-x-2">
+<button class="text-xs font-mono text-on-surface-variant hover:text-primary transition-colors flex items-center space-x-1 px-3 py-1 bg-surface-container-highest/40 rounded-full">
+<span class="material-symbols-outlined text-[14px]">filter_list</span>
+<span>FILTER</span>
+</button>
+</div>
+</div>
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="bg-surface-container-highest/50">
+<th class="px-6 py-3 text-xs font-mono text-on-surface-variant font-normal tracking-wider">VERSION</th>
+<th class="px-6 py-3 text-xs font-mono text-on-surface-variant font-normal tracking-wider">TARGET</th>
+<th class="px-6 py-3 text-xs font-mono text-on-surface-variant font-normal tracking-wider">CHECKSUM (SHA-256)</th>
+<th class="px-6 py-3 text-xs font-mono text-on-surface-variant font-normal tracking-wider">DATE</th>
+<th class="px-6 py-3 text-xs font-mono text-on-surface-variant font-normal tracking-wider text-right">STATUS</th>
+</tr>
+</thead>
+<tbody class="text-sm divide-y divide-outline-variant/10">
+<tr class="hover:bg-surface-container/80 transition-colors group cursor-pointer">
+<td class="px-6 py-4 font-medium text-on-surface">v2.4.1-stable</td>
+<td class="px-6 py-4">
+<span class="inline-flex items-center px-2.5 py-1 rounded-lg bg-surface-container-highest text-tertiary-dim text-xs font-mono">ESP32-WROOM</span>
+</td>
+<td class="px-6 py-4 font-mono text-xs text-on-surface-variant truncate max-w-[150px]" title="e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855">
+                                            e3b0c442...b855
+                                        </td>
+<td class="px-6 py-4 text-on-surface-variant">Oct 24, 2023</td>
+<td class="px-6 py-4 text-right">
+<span class="inline-flex items-center space-x-1 text-secondary">
+<span class="material-symbols-outlined text-[14px]">verified</span>
+<span class="text-xs font-medium">VERIFIED</span>
+</span>
+</td>
+</tr>
+<tr class="hover:bg-surface-container/80 transition-colors group cursor-pointer">
+<td class="px-6 py-4 font-medium text-error">v2.5.0-beta (Untrusted)</td>
+<td class="px-6 py-4">
+<span class="inline-flex items-center px-2.5 py-1 rounded-lg bg-surface-container-highest text-tertiary-dim text-xs font-mono">ESP32-S3</span>
+</td>
+<td class="px-6 py-4 font-mono text-xs text-error-dim truncate max-w-[150px]">
+                                            Mismatch
+                                        </td>
+<td class="px-6 py-4 text-on-surface-variant">Just now</td>
+<td class="px-6 py-4 text-right">
+<span class="inline-flex items-center space-x-1 text-error">
+<span class="material-symbols-outlined text-[14px]">warning</span>
+<span class="text-xs font-medium">FAILED</span>
+</span>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+</div>
+<!-- Right Column -->
+<div class="lg:col-span-4 flex flex-col space-y-6">
+<section class="bg-surface-container-high rounded-2xl p-6 flex flex-col h-full border border-outline-variant/10 shadow-[0_4px_24px_rgba(0,0,0,0.2)]">
+<div class="flex items-center space-x-3 mb-6">
+<span class="material-symbols-outlined text-primary text-[28px] font-light">rocket_launch</span>
+<h3 class="font-headline font-semibold text-xl text-on-surface">Deployment Config</h3>
+</div>
+<form class="flex-1 flex flex-col space-y-5">
+<div class="flex flex-col space-y-2 glow-focus">
+<label class="text-xs font-mono text-on-surface-variant tracking-wide px-1">TARGET PAYLOAD</label>
+<div class="relative">
+<select class="w-full bg-surface-container-lowest border border-outline-variant/30 focus:border-primary focus:ring-0 text-on-surface text-sm py-3 px-4 rounded-xl appearance-none cursor-pointer font-medium">
+<option>v2.4.1-stable (ESP32)</option>
+<option>v1.8.5-patch (nRF52840)</option>
+</select>
+<span class="material-symbols-outlined absolute right-4 top-3 text-on-surface-variant pointer-events-none text-[20px]">expand_more</span>
+</div>
+</div>
+<div class="flex flex-col space-y-2 glow-focus">
+<label class="text-xs font-mono text-on-surface-variant tracking-wide px-1">TARGET FLEET / CHIPSET</label>
+<div class="relative">
+<select class="w-full bg-surface-container-lowest border border-outline-variant/30 focus:border-primary focus:ring-0 text-on-surface text-sm py-3 px-4 rounded-xl appearance-none cursor-pointer font-medium">
+<option>Production - ESP32-WROOM</option>
+<option>Staging - ESP32-WROOM</option>
+</select>
+<span class="material-symbols-outlined absolute right-4 top-3 text-on-surface-variant pointer-events-none text-[20px]">expand_more</span>
+</div>
+<div class="flex justify-between items-center mt-1 px-1">
+<span class="text-xs text-on-surface-variant">Estimated scope:</span>
+<span class="text-xs font-mono text-primary">12,450 devices</span>
+</div>
+</div>
+<div class="flex flex-col space-y-3 pt-2">
+<label class="text-xs font-mono text-on-surface-variant tracking-wide px-1">ROLLOUT STRATEGY</label>
+<div class="grid grid-cols-2 gap-3">
+<label class="cursor-pointer">
+<input checked="" class="peer sr-only" name="strategy" type="radio"/>
+<div class="px-3 py-3 bg-surface-container border border-outline-variant/30 rounded-xl text-center text-sm text-on-surface-variant peer-checked:bg-surface-container-lowest peer-checked:border-primary peer-checked:text-primary transition-all font-medium">
+                                            Phased (10%)
+                                        </div>
+</label>
+<label class="cursor-pointer">
+<input class="peer sr-only" name="strategy" type="radio"/>
+<div class="px-3 py-3 bg-surface-container border border-outline-variant/30 rounded-xl text-center text-sm text-on-surface-variant peer-checked:bg-surface-container-lowest peer-checked:border-error peer-checked:text-error transition-all font-medium">
+                                            Immediate (100%)
+                                        </div>
+</label>
+</div>
+</div>
+<div class="flex-1"></div>
+<div class="bg-surface-container-lowest/50 border border-outline-variant/20 p-4 rounded-xl flex space-x-3 items-start mt-4">
+<span class="material-symbols-outlined text-tertiary-dim text-[20px] mt-0.5">info</span>
+<p class="text-xs text-on-surface-variant leading-relaxed">Ensure firmware signatures match the root CA. Action will redirect to <span class="text-primary font-medium">Verification Panel</span> for final checksum audit.</p>
+</div>
+<button class="w-full mt-4 bg-gradient-to-br from-primary to-primary-dim text-on-primary-fixed font-headline font-bold text-lg py-4 rounded-xl hover:shadow-[0_0_15px_rgba(161,250,255,0.3)] transition-all active:scale-[0.98] flex flex-col items-center justify-center space-y-1" type="button">
+<div class="flex items-center space-x-2">
+<span>INITIALIZE OTA PUSH</span>
+<span class="material-symbols-outlined text-[20px]">send</span>
+</div>
+<span class="text-[9px] uppercase tracking-widest opacity-80 font-mono">Redirects to Verification</span>
+</button>
+</form>
+</section>
+</div>
+</div>
+</main>
+</div>
+</body></html>
