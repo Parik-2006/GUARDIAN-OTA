@@ -90,8 +90,8 @@ function ECUComponent({ def, isActive, variantScale }: { def: ECUDef; isActive: 
     <>
       {isActive && (
         <>
-          <pointLight position={scaledPos} intensity={2.0} color={def.color} distance={3.5} decay={2} />
-          <pointLight position={[scaledPos[0], scaledPos[1] - 0.3, scaledPos[2]]} intensity={1.5} color={def.color} distance={3.0} decay={2} />
+          <pointLight position={scaledPos} intensity={4.5} color={def.color} distance={5.0} decay={2} />
+          <pointLight position={[scaledPos[0], scaledPos[1] - 0.3, scaledPos[2]]} intensity={3.5} color={def.color} distance={4.5} decay={2} />
         </>
       )}
     </>
