@@ -10,6 +10,7 @@ import SecurityPanel from "./SecurityPanel";
 import VerificationSim from "./VerificationSim";
 import UpdatePanel from "./UpdatePanel";
 import dynamic from "next/dynamic";
+import { CarVariant } from "./CarModel3D";
 
 // Dynamically import the 3D component with SSR disabled (Three.js requires browser APIs)
 const CarModel3D = dynamic(() => import("./CarModel3D"), {
@@ -33,6 +34,7 @@ type Tab = "security" | "verification" | "updates";
 export default function VehicleInsight() {
   const { fleet, selectedVehicleId, goToDashboard } = useFleet();
   const [activeTab, setActiveTab] = useState<Tab>("security");
+  const [carVariant, setCarVariant] = useState<CarVariant>("audi-a8");
 
   const vehicle = fleet.find(v => v.deviceId === selectedVehicleId);
   if (!vehicle) return null;
@@ -143,8 +145,48 @@ export default function VehicleInsight() {
               }}>Loading 3D Model...</span>
             </div>
           }>
-            <CarModel3D />
+            <CarModel3D variant={carVariant} />
           </Suspense>
+
+          {/* Car Model Selector */}
+          <div style={{
+            position: "absolute", top: 16, right: 18, zIndex: 10,
+            display: "flex", gap: 6, flexDirection: "column",
+            fontFamily: "'JetBrains Mono',monospace", fontSize: "0.52rem",
+          }}>
+            <div style={{ color: P.whisper, marginBottom: 4 }}>VEHICLE:</div>
+            {(["audi-a8", "bmw-i7", "mercedes-s"] as const).map(variant => (
+              <button
+                key={variant}
+                onClick={() => setCarVariant(variant)}
+                style={{
+                  padding: "4px 8px", borderRadius: 2,
+                  background: carVariant === variant ? P.cognac : P.cockpit,
+                  border: `1px solid ${carVariant === variant ? P.cognac : P.bMid}`,
+                  color: carVariant === variant ? P.cockpit : P.parchment,
+                  cursor: "pointer", fontFamily: "inherit", fontSize: "inherit",
+                  textTransform: "uppercase", fontWeight: carVariant === variant ? 600 : 400,
+                  transition: "all 0.2s",
+                }}
+                onMouseEnter={e => {
+                  if (carVariant !== variant) {
+                    e.currentTarget.style.borderColor = P.cognac;
+                    e.currentTarget.style.color = P.cognac;
+                  }
+                }}
+                onMouseLeave={e => {
+                  if (carVariant !== variant) {
+                    e.currentTarget.style.borderColor = P.bMid;
+                    e.currentTarget.style.color = P.parchment;
+                  }
+                }}
+              >
+                {variant === "audi-a8" && "Audi A8"}
+                {variant === "bmw-i7" && "BMW i7"}
+                {variant === "mercedes-s" && "Merc S"}
+              </button>
+            ))}
+          </div>
 
           {/* ECU Panel overlay */}
           <ECUPanel />
