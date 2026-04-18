@@ -15,12 +15,12 @@ interface ECUDef {
 }
 
 const ECU_DEFS: ECUDef[] = [
-  { name: "Telematics",     position: [1.2, 0.1, 0.6],    geometry: "sphere",      scale: [0.22, 0.22, 0.22], color: "#6A9DB8" },
-  { name: "Brake ECU",      position: [-1.4, -0.2, 0.5],  geometry: "box",         scale: [0.28, 0.18, 0.22], color: "#C46B6B" },
-  { name: "Powertrain",     position: [0, -0.1, 0],       geometry: "cylinder",    scale: [0.25, 0.35, 0.25], color: "#D4A96A" },
-  { name: "Sensor Array",   position: [0, 0.65, 0],       geometry: "octahedron",  scale: [0.2, 0.2, 0.2],    color: "#7AB88A" },
-  { name: "Infotainment",   position: [0.6, 0.2, 0.8],    geometry: "box",         scale: [0.35, 0.15, 0.18], color: "#D4956A" },
-  { name: "ADAS",           position: [-1.6, 0.05, 0],    geometry: "sphere",      scale: [0.18, 0.18, 0.18], color: "#B87C3A" },
+  { name: "Telematics",     position: [0, 0.5, 1.2],      geometry: "sphere",      scale: [0.35, 0.35, 0.35], color: "#6A9DB8" },
+  { name: "Brake ECU",      position: [-1.8, -0.1, -0.6], geometry: "box",         scale: [0.4, 0.3, 0.3],    color: "#C46B6B" },
+  { name: "Powertrain",     position: [0, -0.4, 0.3],     geometry: "cylinder",    scale: [0.35, 0.45, 0.35], color: "#D4A96A" },
+  { name: "Sensor Array",   position: [0, 1.0, 0.2],      geometry: "octahedron",  scale: [0.35, 0.35, 0.35], color: "#7AB88A" },
+  { name: "Infotainment",   position: [0, 0.15, 0.1],     geometry: "box",         scale: [0.4, 0.25, 0.25],  color: "#D4956A" },
+  { name: "ADAS",           position: [0.1, 0.6, 1.3],    geometry: "sphere",      scale: [0.3, 0.3, 0.3],    color: "#B87C3A" },
 ];
 
 export { ECU_DEFS };
@@ -124,18 +124,18 @@ function ECUComponent({ def, isActive, variantScale }: { def: ECUDef; isActive: 
       <meshStandardMaterial
         ref={matRef}
         color={def.color}
-        emissive={isActive ? "#00FF88" : "#000000"}
-        emissiveIntensity={isActive ? 0.8 : 0}
+        emissive={isActive ? def.color : "#000000"}
+        emissiveIntensity={isActive ? 1.5 : 0.2}
         transparent
-        opacity={0.9}
-        roughness={0.3}
-        metalness={0.6}
+        opacity={isActive ? 1.0 : 0.7}
+        roughness={0.2}
+        metalness={0.8}
       />
       
       {isActive && (
-        <mesh ref={glowMeshRef} position={[0, 0, 0]} scale={[1.6, 1.6, 1.6]}>
+        <mesh ref={glowMeshRef} position={[0, 0, 0]} scale={[2.2, 2.2, 2.2]}>
           {geo}
-          <meshBasicMaterial color={def.color} transparent opacity={0.35} toneMapped={false} />
+          <meshBasicMaterial color={def.color} transparent opacity={0.5} toneMapped={false} />
         </mesh>
       )}
     </mesh>
@@ -200,6 +200,43 @@ function CarShell({ variant }: { variant: CarVariant }) {
       <mesh position={[bodyL / 3.1, -0.15, 0]}>
         <boxGeometry args={[0.35, 0.25, bodyW]} />
         <meshStandardMaterial color={model.accentColor} metalness={1} roughness={0.05} transparent opacity={0.3} />
+      </mesh>
+
+      {/* ECU Location Indicators */}
+      {/* Telematics - Front Sensor */}
+      <mesh position={[0, 0.5, 1.2]}>
+        <sphereGeometry args={[0.35, 8, 8]} />
+        <meshBasicMaterial color="#6A9DB8" wireframe transparent opacity={0.15} />
+      </mesh>
+
+      {/* Brake ECU - Rear Left */}
+      <mesh position={[-1.8, -0.1, -0.6]}>
+        <boxGeometry args={[0.4, 0.3, 0.3]} />
+        <meshBasicMaterial color="#C46B6B" wireframe transparent opacity={0.15} />
+      </mesh>
+
+      {/* Powertrain - Engine */}
+      <mesh position={[0, -0.4, 0.3]}>
+        <cylinderGeometry args={[0.35, 0.35, 0.45, 8]} />
+        <meshBasicMaterial color="#D4A96A" wireframe transparent opacity={0.15} />
+      </mesh>
+
+      {/* Sensor Array - Roof */}
+      <mesh position={[0, 1.0, 0.2]}>
+        <octahedronGeometry args={[0.35, 2]} />
+        <meshBasicMaterial color="#7AB88A" wireframe transparent opacity={0.15} />
+      </mesh>
+
+      {/* Infotainment - Dashboard */}
+      <mesh position={[0, 0.15, 0.1]}>
+        <boxGeometry args={[0.4, 0.25, 0.25]} />
+        <meshBasicMaterial color="#D4956A" wireframe transparent opacity={0.15} />
+      </mesh>
+
+      {/* ADAS - Front Windshield */}
+      <mesh position={[0.1, 0.6, 1.3]}>
+        <sphereGeometry args={[0.3, 8, 8]} />
+        <meshBasicMaterial color="#B87C3A" wireframe transparent opacity={0.15} />
       </mesh>
 
       {[[-model.wheelOffset, -0.45, bodyW / 2.2], [-model.wheelOffset, -0.45, -bodyW / 2.2], [model.wheelOffset, -0.45, bodyW / 2.2], [model.wheelOffset, -0.45, -bodyW / 2.2]].map((pos, i) => (
@@ -294,10 +331,19 @@ export default function CarModel3D({ variant = "bmw-m3" }: CarModel3DProps) {
       </div>
 
       <Canvas camera={{ position: [4.5, 2.2, 4.5], fov: 50 }} style={{ background: "transparent" }} gl={{ alpha: true, antialias: true }}>
-        <ambientLight intensity={0.5} />
-        <directionalLight position={[6, 8, 6]} intensity={1} color="#F0EBE0" />
-        <pointLight position={[-5, 3, -4]} intensity={0.6} color={CAR_MODELS[variant].accentColor} />
-        <pointLight position={[4, 1, 5]} intensity={0.5} color="#6A9DB8" />
+        <ambientLight intensity={0.6} />
+        <directionalLight position={[6, 8, 6]} intensity={1.2} color="#F0EBE0" />
+        <pointLight position={[-5, 3, -4]} intensity={0.8} color={CAR_MODELS[variant].accentColor} />
+        <pointLight position={[4, 1, 5]} intensity={0.7} color="#6A9DB8" />
+        
+        {/* Dynamic light for active ECU */}
+        {activeEcu && (() => {
+          const ecuDef = ECU_DEFS.find(d => d.name === activeEcu);
+          if (ecuDef) {
+            const [x, y, z] = ecuDef.position;
+            return <pointLight key="active-ecu-light" position={[x, y + 0.5, z]} intensity={1.5} color={ecuDef.color} distance={4} decay={2} />;
+          }
+        })()}
 
         <group ref={rotationRef}>
           <CarShell variant={variant} />
