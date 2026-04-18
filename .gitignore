@@ -8,20 +8,44 @@ firmware/*.bin
 firmware/*.elf
 firmware/*.map
 
+# --- NEW: Security & Sensitive Files ---
+*.pem
+*.key
+*.crt
+*.cert
+*.p12
+*.pfx
+.env*
+! .env.example
+
+# --- NEW: Language & Local Metadata ---
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+.venv/
+.pytest_cache/
+
+# Databases
+*.db
+*.sqlite
+*.sql.gz
+
+# IDE & OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
 # Node / Next.js
 dashboard/node_modules/
 dashboard/.next/
 dashboard/out/
+*.tsbuildinfo
 
 # Go Backend
 backend/main
+backend/backend
 backend/*.exe
-
-# General
-.env
-venv/
-.venv/
-.vscode/
-.idea/
 *.log
-.DS_Store

@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"log/slog"
-	"math/rand"
 	"net/http"
 	"os"
 	"strconv"
@@ -38,7 +37,7 @@ func main() {
 
 	// ── Domain services ───────────────────────────────────────────
 	registry := twin.NewRegistry()
-	bootstrapFleet(registry)
+	// bootstrapFleet(registry) // Disabled for Production: Hardware Only
 
 	hub := ws.NewHub()
 	mgr := campaign.NewManager(registry)
@@ -79,8 +78,8 @@ func main() {
 		slog.Warn("mqtt: consumer subscribe failed", "err", err)
 	}
 
-	// ── Fleet simulator ───────────────────────────────────────────
-	go fleetSimulator(context.Background(), registry, hub, evStore)
+	// ── Telemetry Broadcaster ───────────────────────────────────────────
+	go telemtryBroadcaster(context.Background(), registry, hub, evStore)
 
 	// ── HTTP server ───────────────────────────────────────────────
 	if getenv("GIN_MODE", "") == "release" {
@@ -163,40 +162,22 @@ func bootstrapFleet(reg *twin.Registry) {
 	slog.Info("fleet bootstrapped", "count", 20)
 }
 
-func fleetSimulator(ctx context.Context, reg *twin.Registry, hub *ws.Hub, evStore *events.Store) {
-	ticker := time.NewTicker(1200 * time.Millisecond)
+func telemtryBroadcaster(ctx context.Context, reg *twin.Registry, hub *ws.Hub, evStore *events.Store) {
+	ticker := time.NewTicker(1000 * time.Millisecond)
 	defer ticker.Stop()
 	for {
 		select {
 		case <-ctx.Done():
 			return
 		case <-ticker.C:
-			for _, id := range reg.IDs() {
-				reg.Update(id, func(d *twin.DeviceState) {
-					d.LastSeen = time.Now().UTC()
-					switch {
-					case rand.Float64() < 0.02:
-						d.ECUStates["brake"] = "failure"
-						d.SafetyState = "UNSAFE"
-						d.ThreatLevel = "HIGH"
-					case rand.Float64() < 0.05:
-						d.ECUStates["sensor"] = "warning"
-						d.ThreatLevel = "MEDIUM"
-					default:
-						d.ECUStates["brake"] = "green"
-						d.ECUStates["sensor"] = "green"
-						d.SafetyState = "SAFE"
-						d.ThreatLevel = "LOW"
-					}
+			snap := reg.Snapshot()
+			if len(snap) > 0 {
+				hub.Broadcast(ws.Event{
+					Type:      "fleet_tick",
+					Timestamp: time.Now().UTC(),
+					Payload:   snap,
 				})
 			}
-			snap := reg.Snapshot()
-			hub.Broadcast(ws.Event{
-				Type:      "fleet_tick",
-				Timestamp: time.Now().UTC(),
-				Payload:   snap,
-			})
-			evStore.Write(ctx, "fleet_tick", snap)
 		}
 	}
 }

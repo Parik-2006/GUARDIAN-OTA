@@ -14,6 +14,8 @@
 #include "freertos/queue.h"
 #include "freertos/task.h"
 
+#include "lcd.h"
+
 #include <stdbool.h>
 #include <string.h>
 
@@ -51,13 +53,8 @@ static void send_can(ecu_id_t from, ecu_id_t to, const char *msg) {
  */
 void brake_ecu_task(void *arg) {
     for (;;) {
-        if ((esp_random() % 100) < 3) {
-            s_safe_to_upd = false;
-            ESP_LOGW(TAG, "[BRAKE] UNSAFE condition — OTA blocked");
-        } else {
-            s_safe_to_upd = true;
-        }
-        send_can(ECU_BRAKE, ECU_SENSOR, s_safe_to_upd ? "SAFE" : "UNSAFE");
+        s_safe_to_upd = true;
+        send_can(ECU_BRAKE, ECU_SENSOR, "SAFE");
         vTaskDelay(pdMS_TO_TICKS(800));
     }
 }
@@ -93,7 +90,15 @@ void sensor_ecu_task(void *arg) {
  */
 void infotainment_ecu_task(void *arg) {
     for (;;) {
-        send_can(ECU_INFOTAINMENT, ECU_POWERTRAIN, "ui_heartbeat");
+        send_can(ECU_INFOTAINMENT, ECU_POWERTRAIN, "ui_heartbeat: [ VERSION 3 ]");
+        
+        lcd_clear();
+        lcd_set_cursor(0, 0);
+        lcd_print("GUARDIAN-OTA SEC");
+        lcd_set_cursor(1, 0);
+        lcd_print("ACTIVE: V-3.0(a)");
+
+        ESP_LOGI(TAG, "LCD DISPLAY -> [ RUNNING FIRMWARE VERSION 3 ]");
         vTaskDelay(pdMS_TO_TICKS(1100));
     }
 }

@@ -12,4 +12,10 @@ menu "WiFi Configuration"
         help
             WiFi password (WPA2) for the ESP32.
 
+    config ESP_MQTT_BROKER_URI
+        string "MQTT Broker URI"
+        default "mqtt://192.168.1.100:1883"
+        help
+            URI of the Mosquitto broker (e.g. mqtt://YOUR_LAPTOP_IP:1883).
+
 endmenu

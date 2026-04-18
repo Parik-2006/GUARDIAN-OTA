@@ -28,21 +28,25 @@ export interface Campaign {
   version: string;
   createdAt: string;
   updatedAt: string;
-  status: "QUEUED" | "IN_PROGRESS" | "COMPLETED" | "FAILED" | "CANCELLED";
+  status: string;
   targetCount: number;
   completedCount: number;
   failedCount: number;
   canaryPercent: number;
+  firmwareUrl?: string;
+  firmwareHash?: string;
+  signatureB64?: string;
+  targets?: string[];
+  progress?: Record<string, any>;
 }
 
 export interface OTAEvent {
-  id: string;
+  id: string | number;
   timestamp: string;
   deviceId: string;
   type: string;
-  message: string;
-  severity: "INFO" | "WARN" | "ERROR";
+  message?: string;
+  details?: string;
+  severity?: "INFO" | "WARN" | "ERROR";
   campaignId?: string;
 }
-
-

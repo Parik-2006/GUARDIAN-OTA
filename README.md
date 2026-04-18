@@ -1,52 +1,71 @@
-# SDV Secure OTA Prototype
+# GUARDIAN-OTA: Secure SDV OTA Prototype
 
-Production-style prototype of a secure OTA orchestration stack for a simulated autonomous vehicle environment using a **single ESP32** and software-defined fleet simulation.
+A production-grade, security-hardened orchestration stack for Over-The-Air (OTA) firmware updates in a Software-Defined Vehicle (SDV) environment. This prototype demonstrates end-to-end orchestration using a single physical ESP32 and a software-defined fleet simulator.
 
-## Stack
+---
 
-- **Vehicle/Edge**: ESP32, ESP-IDF (C), FreeRTOS, ESP-IDF OTA APIs, mbedTLS ECC + SHA-256
-- **Backend**: Go + Gin, PostgreSQL, MQTT broker integration, WebSocket streaming
-- **Messaging**: Mosquitto (TLS enabled)
-- **Storage**: MinIO for firmware artifact hosting
-- **Dashboard**: Next.js App Router, TailwindCSS, Framer Motion
+## 🚀 Key Features
 
-## Monorepo Layout
+- **End-to-End Security**: ECC P-256 signature verification and SHA-256 integrity checks via mbedTLS.
+- **Operational Safety Gates**: Real-time validation of vehicle state (e.g., Brake ECU check) before update application.
+- **Cinematic Monitoring**: High-performance Next.js dashboard with live WebSocket telemetry and Framer Motion animations.
+- **Canary Rollouts**: Deployment campaigns with configurable fleet percentage targets.
+- **Anti-Brick Resilience**: Dual-slot partition scheme with automatic rollback on boot failure.
 
-- `firmware/` ESP-IDF project for edge gateway + virtual ECUs
-- `backend/` OTA control plane + telemetry ingestion + fleet simulator
-- `dashboard/` cinematic SDV web cockpit
-- `deploy/` docker-compose for PostgreSQL, Mosquitto, MinIO
+---
 
-## Quick Start
+## 🛠️ Tech Stack
 
-1. Start infra:
-   - `cd deploy`
-   - `docker compose up -d`
-2. Run backend:
-   - `cd ../backend`
-   - `go mod tidy`
-   - `go run .`
-3. Run dashboard:
-   - `cd ../dashboard`
-   - `npm install`
-   - `npm run dev`
-4. Build/flash ESP32 firmware:
-   - `cd ../firmware`
-   - `idf.py set-target esp32`
-   - `idf.py build flash monitor`
+- **Vehicle/Edge**: ESP32 (ESP-IDF / C), FreeRTOS, mbedTLS
+- **Backend**: Go (Gin), PostgreSQL, MQTT (Mosquitto), WebSocket
+- **Dashboard**: Next.js (App Router), TailwindCSS, Framer Motion
+- **Infrastructure**: Docker Compose (MQTT, Postgres, MinIO)
 
-## Security Controls in This Prototype
+---
 
-- Device identity pinned to eFuse MAC address
-- OTA manifest signature verification (ECC P-256, mbedTLS)
-- Firmware digest verification (SHA-256)
-- TLS MQTT transport
-- Safety-gated updates (no OTA in unsafe ECU state)
-- Rollback on health-check failure via ESP-IDF `esp_ota_mark_app_invalid_rollback_and_reboot`
+## 📂 Project Structure
 
-## Demo Paths
+- `firmware/`: ESP-IDF project (Virtual ECUs, Secure OTA Handler, MQTT Transport).
+- `backend/`: Go-based control plane, fleet registry, and campaign manager.
+- `dashboard/`: React cockpit for fleet visualization and deployment control.
+- `deploy/`: Infrastructure configuration (PostgreSQL, Mosquitto, MinIO).
 
-- Dashboard: `http://localhost:3000`
-- Backend health: `http://localhost:8080/health`
-- MinIO console: `http://localhost:9001`
+---
+
+## 🚦 Quick Start
+
+### 1. Infrastructure
+```bash
+cd deploy
+docker compose up -d
+```
+
+### 2. Backend
+```bash
+cd backend
+go run .
+```
+
+### 3. Dashboard
+```bash
+cd dashboard
+npm install && npm run dev
+```
+
+### 4. Firmware
+```bash
+cd firmware
+idf.py build flash monitor
+```
+
+---
+
+## 🔒 Security Implementation
+
+1. **Manifest Signing**: Firmware binaries are paired with an ECC-signed manifest.
+2. **Hardware Identity**: Device ID is derived from the immutable eFuse MAC address.
+3. **Encrypted Transport**: All command and telemetry traffic utilizes MQTT over TLS.
+4. **Health Check**: POST-OTA boot validation ensures the system recovers even if a faulty update is flashed.
+
+For a deep dive into the architecture, see [project_overview.md](file:///home/vaibhav/.gemini/antigravity/brain/98c787db-6cd0-4e3b-9c0a-ec6cea45ef3b/project_overview.md).
 

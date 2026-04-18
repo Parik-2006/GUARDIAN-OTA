@@ -221,6 +221,10 @@ function Nav({ onNav }: { onNav: () => void }) {
    single quotes (') as &#x27; while the client renders them as literal quotes.
 ══════════════════════════════════════════ */
 export default function Landing({ onEnterDashboard }: { onEnterDashboard: () => void }) {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+  if (!mounted) return <div style={{ background: "#060606", height: "100vh", width: "100vw" }} />;
+  
   return (
     <div className="lp-root">
       <ParticleField />

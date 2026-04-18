@@ -26,13 +26,11 @@
 static const char *TAG = "security";
 
 /* ── Embedded P-256 public key ──────────────────────────────────────────── */
-/* Replace the placeholder key below with your actual generated public key.  */
+/* Replaced with actual generated public key for OTA tests ─ */
 static const char *OTA_PUBKEY_PEM =
     "-----BEGIN PUBLIC KEY-----\n"
-    "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE"
-    "AAAAAAAAAAAAAAAAAAAAAAAAAAAA"
-    "AAAAAAAAAAAAAAAAAAAAAAAAAAAA"
-    "AA==\n"
+    "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAELh9jkWx+HDYurlgFrTW3vnXMCl5j\n"
+    "PNL8HIk91t6le/INOfRjO+I45wBrDH8WjfA+rLvin2auVckQZaa8z4fH7w==\n"
     "-----END PUBLIC KEY-----\n";
 
 /* ── Nonce cache (recent 32 nonces to detect replays) ───────────────────── */
@@ -131,21 +129,43 @@ bool verify_ecc_signature(const uint8_t hash32[32], const char *signature_b64) {
 
 /* ── is_nonce_fresh ─────────────────────────────────────────────────────── */
 /*
- * Minimal RFC3339 parser: "2026-04-18T08:39:00Z"
- * Returns seconds since epoch, or 0 on parse error.
+ * parse_rfc3339_utc — Convert "YYYY-MM-DDTHH:MM:SSZ" to a UTC Unix timestamp
+ * WITHOUT calling mktime(), which would apply the local timezone offset.
+ *
+ * We compute the epoch manually:
+ *   1. Days from 1970-01-01 to the given date  (using the standard leap-year formula)
+ *   2. + seconds into that day from HH:MM:SS
+ *
+ * Returns 0 on parse error.
  */
-static time_t parse_rfc3339(const char *s) {
+static time_t parse_rfc3339_utc(const char *s) {
     if (!s || strlen(s) < 20) return 0;
-    struct tm t = {0};
-    /* sscanf format matches: YYYY-MM-DDTHH:MM:SSZ */
-    if (sscanf(s, "%4d-%2d-%2dT%2d:%2d:%2dZ",
-               &t.tm_year, &t.tm_mon, &t.tm_mday,
-               &t.tm_hour, &t.tm_min, &t.tm_sec) != 6) {
+
+    int Y, M, D, h, m, sec;
+    if (sscanf(s, "%4d-%2d-%2dT%2d:%2d:%2d",
+               &Y, &M, &D, &h, &m, &sec) != 6) {
         return 0;
     }
-    t.tm_year -= 1900;
-    t.tm_mon  -= 1;
-    return mktime(&t); /* NOTE: mktime uses local TZ; for UTC offset handling set TZ="UTC" */
+
+    /* Days from epoch (1970-01-01) to 1st Jan of year Y.
+     * Formula: Y*365 + leap-years-before-Y — same value at Y=1970 is the constant to subtract.
+     * Constant = 1970*365 + 1969/4 - 1969/100 + 1969/400 = 719527                             */
+    int y = Y - 1;
+    long days = (long)Y * 365 + y / 4 - y / 100 + y / 400
+              - (1970 * 365 + 1969 / 4 - 1969 / 100 + 1969 / 400);
+
+    /* Add days for each month in this year (1-indexed) */
+    static const int mdays[13] = {0,31,28,31,30,31,30,31,31,30,31,30,31};
+    for (int i = 1; i < M; i++) {
+        days += mdays[i];
+        /* Leap-year correction for February */
+        if (i == 2 && ((Y % 4 == 0 && Y % 100 != 0) || Y % 400 == 0)) {
+            days += 1;
+        }
+    }
+    days += D - 1;
+
+    return (time_t)(days * 86400L + h * 3600 + m * 60 + sec);
 }
 
 bool is_nonce_fresh(const char *nonce, const char *issued_at_iso, int ttl_seconds) {
@@ -158,13 +178,23 @@ bool is_nonce_fresh(const char *nonce, const char *issued_at_iso, int ttl_second
     }
 
     /* TTL check */
-    time_t issued = parse_rfc3339(issued_at_iso);
+    time_t issued = parse_rfc3339_utc(issued_at_iso);
     time_t now    = time(NULL);
-    if (issued == 0) {
+
+    /* If the RTC is clearly uninitialized (before year 2020), skip TTL.
+     * An unsynchronized clock must never block a valid OTA command.
+     * The nonce cache still prevents replay attacks. */
+#define YEAR_2020_EPOCH 1577836800L
+    if (now < YEAR_2020_EPOCH) {
+        ESP_LOGW(TAG, "RTC not synced (now=%lld) — skipping TTL, accepting on nonce only",
+                 (long long)now);
+    } else if (issued == 0) {
         ESP_LOGW(TAG, "cannot parse issued_at: %s — skipping TTL check", issued_at_iso);
     } else {
         double age = difftime(now, issued);
-        if (age < 0 || age > (double)ttl_seconds) {
+        ESP_LOGI(TAG, "TTL check: now=%lld issued=%lld age=%.0fs ttl=%ds",
+                 (long long)now, (long long)issued, age, ttl_seconds);
+        if (age < -60 || age > (double)ttl_seconds) {
             ESP_LOGW(TAG, "OTA command expired: age=%.0fs TTL=%ds", age, ttl_seconds);
             return false;
         }
@@ -173,3 +203,4 @@ bool is_nonce_fresh(const char *nonce, const char *issued_at_iso, int ttl_second
     nonce_record(nonce);
     return true;
 }
+

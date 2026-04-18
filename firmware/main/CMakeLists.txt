@@ -6,6 +6,7 @@ idf_component_register(
         "ota_handler.c"
         "mqtt_transport.c"
         "wifi_connect.c"
+        "lcd.c"
     INCLUDE_DIRS "."
     REQUIRES
         esp_wifi
@@ -20,4 +21,5 @@ idf_component_register(
         cjson
         app_update
         esp_partition
+        esp_driver_gpio
 )
