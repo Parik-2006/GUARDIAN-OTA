@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useRef } from "react";
 import { P } from "./theme";
 import I from "./Icon";
 import { useFleet } from "./FleetContext";
@@ -13,28 +14,93 @@ export default function ECUPanel() {
   const carVariant = selectedVehicle?.carVariant || "bmw-m5";
   const ecuDefs = getECUDefs(carVariant);
 
+  // Draggable state
+  const [position, setPosition] = useState({ x: 16, y: 16 });
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+  const panelRef = useRef<HTMLDivElement>(null);
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    if ((e.target as HTMLElement).closest("button")) return; // Don't drag if clicking button
+    setIsDragging(true);
+    setDragStart({
+      x: e.clientX - position.x,
+      y: e.clientY - position.y,
+    });
+  };
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (!isDragging) return;
+    setPosition({
+      x: e.clientX - dragStart.x,
+      y: e.clientY - dragStart.y,
+    });
+  };
+
+  const handleMouseUp = () => {
+    setIsDragging(false);
+  };
+
+  const resetPosition = () => {
+    setPosition({ x: 16, y: 16 });
+  };
+
   return (
-    <div style={{
-      position: "absolute", top: 16, left: 16, zIndex: 10,
-      width: 200,
-      background: "rgba(22,18,16,0.88)",
-      border: `1px solid ${P.bMid}`,
-      borderRadius: 6,
-      backdropFilter: "blur(16px)",
-      overflow: "hidden",
-    }}>
-      {/* Header */}
-      <div style={{
-        padding: "10px 14px",
-        borderBottom: `1px solid ${P.bDim}`,
-        display: "flex", alignItems: "center", gap: 7,
-      }}>
-        <I n="memory" f sz={14} col={P.cognac} />
-        <span style={{
-          fontFamily: "'JetBrains Mono',monospace", fontSize: "0.58rem",
-          fontWeight: 600, letterSpacing: "0.12em", color: P.ivory,
-          textTransform: "uppercase",
-        }}>ECU Components</span>
+    <div
+      ref={panelRef}
+      onMouseMove={handleMouseMove}
+      onMouseUp={handleMouseUp}
+      onMouseLeave={handleMouseUp}
+      style={{
+        position: "absolute", 
+        top: position.y, 
+        left: position.x, 
+        zIndex: 10,
+        width: 200,
+        background: "rgba(22,18,16,0.88)",
+        border: `1px solid ${P.bMid}`,
+        borderRadius: 6,
+        backdropFilter: "blur(16px)",
+        overflow: "hidden",
+        userSelect: isDragging ? "none" : "auto",
+        cursor: isDragging ? "grabbing" : "grab",
+        boxShadow: isDragging ? "0 8px 32px rgba(0,0,0,0.5)" : "none",
+      }}
+    >
+      {/* Header - Draggable */}
+      <div 
+        onMouseDown={handleMouseDown}
+        style={{
+          padding: "10px 14px",
+          borderBottom: `1px solid ${P.bDim}`,
+          display: "flex", alignItems: "center", justifyContent: "space-between",
+          cursor: "grab",
+          transition: "background 0.2s",
+        }}
+        onMouseEnter={(e) => { e.currentTarget.style.background = `${P.cockpit}50`; }}
+        onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
+      >
+        <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
+          <I n="memory" f sz={14} col={P.cognac} />
+          <span style={{
+            fontFamily: "'JetBrains Mono',monospace", fontSize: "0.58rem",
+            fontWeight: 600, letterSpacing: "0.12em", color: P.ivory,
+            textTransform: "uppercase",
+          }}>ECU Components</span>
+        </div>
+        <button
+          onClick={resetPosition}
+          style={{
+            background: "transparent", border: "none", padding: "2px 6px",
+            cursor: "pointer", borderRadius: 2, transition: "all 0.2s",
+            display: "flex", alignItems: "center", justifyContent: "center",
+          }}
+          title="Reset to original position"
+          onMouseEnter={e => { e.currentTarget.style.background = P.cgnDim; }}
+          onMouseLeave={e => { e.currentTarget.style.background = "transparent"; }}
+        >
+          <I n="restart_alt" sz={12} col={P.cognac} />
+        </button>
       </div>
 
       {/* List */}

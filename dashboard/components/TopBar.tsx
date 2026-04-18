@@ -85,16 +85,6 @@ export default function TopBar({
           fontFamily: "'JetBrains Mono',monospace", fontSize: "0.58rem", color: P.whisper,
         }}>{clock}</span>}
 
-        {["rss_feed", "settings_input_component", "notifications"].map(ic => (
-          <button key={ic} style={{
-            background: "transparent", border: "none", cursor: "pointer",
-            padding: "4px", borderRadius: 2, transition: "all 0.18s",
-          }}
-            onMouseEnter={e => { e.currentTarget.style.background = P.cockpit; }}
-            onMouseLeave={e => { e.currentTarget.style.background = "transparent"; }}
-          ><I n={ic} sz={17} /></button>
-        ))}
-
         <div style={{
           width: 26, height: 26, borderRadius: 3, background: P.cockpit,
           border: `1px solid ${P.bMid}`,

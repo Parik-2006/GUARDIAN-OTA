@@ -5,8 +5,9 @@ import I from "./Icon";
 import { useFleet } from "./FleetContext";
 
 export default function Sidebar({ onBack }: { onBack?: () => void }) {
-  const { currentView, goToDashboard } = useFleet();
+  const { currentView, goToDashboard, goToTerminal } = useFleet();
   const isDashboard = currentView === "fleet";
+  const isTerminal = currentView === "terminal";
 
   return (
     <aside style={{
@@ -67,6 +68,36 @@ export default function Sidebar({ onBack }: { onBack?: () => void }) {
         >
           <I n="dashboard" f={isDashboard} sz={18} col={isDashboard ? P.cognac : undefined} />
           <span>Dashboard</span>
+        </div>
+
+        <div
+          onClick={goToTerminal}
+          style={{
+            display: "flex", alignItems: "center", gap: 10,
+            padding: "12px 14px", borderRadius: 3, cursor: "pointer",
+            transition: "all 0.18s",
+            color: isTerminal ? P.ivory : P.cashmere,
+            background: isTerminal ? P.cockpit : "transparent",
+            borderLeft: `2px solid ${isTerminal ? P.cognac : "transparent"}`,
+            fontWeight: 600, fontSize: "0.88rem",
+          }}
+          onMouseEnter={e => {
+            if (!isTerminal) {
+              e.currentTarget.style.background = P.cockpit;
+              e.currentTarget.style.color = P.champagne;
+              e.currentTarget.style.borderLeftColor = P.bHi;
+            }
+          }}
+          onMouseLeave={e => {
+            if (!isTerminal) {
+              e.currentTarget.style.background = "transparent";
+              e.currentTarget.style.color = P.cashmere;
+              e.currentTarget.style.borderLeftColor = "transparent";
+            }
+          }}
+        >
+          <I n="terminal" f={isTerminal} sz={18} col={isTerminal ? P.cognac : undefined} />
+          <span>Terminal</span>
         </div>
       </div>
 
