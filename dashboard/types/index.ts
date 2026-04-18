@@ -23,3 +23,26 @@ export interface OTADeployPayload {
   canaryPercent: number;
 }
 
+export interface Campaign {
+  id: string;
+  version: string;
+  createdAt: string;
+  updatedAt: string;
+  status: "QUEUED" | "IN_PROGRESS" | "COMPLETED" | "FAILED" | "CANCELLED";
+  targetCount: number;
+  completedCount: number;
+  failedCount: number;
+  canaryPercent: number;
+}
+
+export interface OTAEvent {
+  id: string;
+  timestamp: string;
+  deviceId: string;
+  type: string;
+  message: string;
+  severity: "INFO" | "WARN" | "ERROR";
+  campaignId?: string;
+}
+
+
