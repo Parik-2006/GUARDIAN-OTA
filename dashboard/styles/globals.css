@@ -661,28 +661,23 @@ body::after {
 ───────────────────────────────────────────── */
 .lp-car-background {
   position: fixed;
-  bottom: 0;
-  right: -10%;
-  width: 60vw;
-  max-width: 900px;
-  height: 60vh;
-  max-height: 600px;
-  z-index: 2;
+  bottom: -5%;
+  right: -5%;
+  width: 70vw;
+  max-width: 1000px;
+  height: 70vh;
+  max-height: 700px;
+  z-index: 5;
   pointer-events: none;
   opacity: 0;
-  transition: opacity 0.08s ease-out;
+  transition: opacity 0.15s ease-out;
   will-change: opacity, transform;
 }
 
 .lp-car-svg {
   width: 100%;
   height: 100%;
-  filter: drop-shadow(0 20px 60px rgba(0,0,0,0.6)) drop-shadow(0 -10px 30px rgba(212,169,106,0.08));
-}
-
-.lp-car-body,
-.lp-wheels {
-  mix-blend-mode: screen;
+  filter: drop-shadow(0 30px 80px rgba(0,0,0,0.7)) drop-shadow(0 -15px 40px rgba(212,169,106,0.15));
 }
 
 @media (max-width: 1024px) {
