@@ -1,21 +1,27 @@
-# Node
+# ESP-IDF / Firmware
+firmware/build/
+firmware/managed_components/
+firmware/dependencies.lock
+firmware/sdkconfig
+firmware/sdkconfig.old
+firmware/*.bin
+firmware/*.elf
+firmware/*.map
+
+# Node / Next.js
 dashboard/node_modules/
 dashboard/.next/
-dashboard/.env.local
+dashboard/out/
 
-# Go build artifacts
-backend/bin/
-*.exe
+# Go Backend
+backend/main
+backend/*.exe
 
-# Environment
+# General
 .env
-.env.local
-.env.*.local
-
-# OS
-.DS_Store
-Thumbs.db
-
-# IDE
+venv/
+.venv/
 .vscode/
 .idea/
+*.log
+.DS_Store
