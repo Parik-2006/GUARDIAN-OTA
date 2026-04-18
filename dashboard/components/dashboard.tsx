@@ -1,39 +1,38 @@
 "use client";
 
-import { useEffect, useRef, useState, useCallback } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import * as THREE from "three";
+import { fetchFleet, deployFirmware } from "@/lib/api";
+import { useWebSocket } from "@/lib/ws";
 
-/* ─── DESIGN TOKENS — Cream Glassmorphism ─── */
-const C = {
-  bg:        "linear-gradient(135deg, #FAF8F3 0%, #F2EDE3 50%, #EDE5D8 100%)",
-  surface:   "rgba(255,252,245,0.7)",
-  surfaceHi: "rgba(255,252,245,0.9)",
-  panel:     "rgba(250,248,243,0.6)",
-  card:      "rgba(255,253,248,0.8)",
-  glass:     "rgba(255,255,255,0.45)",
-  border:    "rgba(212,180,140,0.25)",
-  borderHi:  "rgba(212,180,140,0.55)",
-  gold:      "#C4922A",
-  goldLight: "#E8B84B",
-  goldDark:  "#8B6420",
-  goldDim:   "rgba(196,146,42,0.12)",
-  goldGlow:  "rgba(196,146,42,0.3)",
-  cream:     "#FBF8F0",
-  bone:      "#4A3F2F",
-  boneDim:   "#7A6B57",
-  muted:     "#A8957E",
-  safe:      "#5A8C5E",
-  safeDim:   "rgba(90,140,94,0.12)",
-  warn:      "#C17A3A",
-  warnDim:   "rgba(193,122,58,0.12)",
-  danger:    "#B85050",
-  dangerDim: "rgba(184,80,80,0.12)",
-  shadow:    "0 8px 32px rgba(100,80,50,0.12)",
-  shadowHi:  "0 16px 48px rgba(100,80,50,0.2)",
+const P = {
+  bg:      "#0D0B08",
+  wall:    "#161210",
+  cockpit: "#1D1912",
+  dash:    "#252018",
+  trim:    "#2E2820",
+  ivory:      "#EEE6D3",
+  champagne:  "#D8CCBA",
+  parchment:  "#BFB29C",
+  cashmere:   "rgba(238,230,211,0.52)",
+  whisper:    "rgba(238,230,211,0.24)",
+  bDim:  "rgba(238,230,211,0.055)",
+  bMid:  "rgba(238,230,211,0.10)",
+  bHi:   "rgba(200,145,74,0.30)",
+  cognac:    "#C8914A",
+  cgnDim:    "rgba(200,145,74,0.13)",
+  cgnGlow:   "rgba(200,145,74,0.25)",
+  platinum:  "#A8A29A",
+  copper:    "#B87C3A",
+  copDim:    "rgba(184,124,58,0.13)",
+  sage:      "#7A9E72",
+  sageDim:   "rgba(122,158,114,0.13)",
+  burg:      "#9E5A5A",
+  burgDim:   "rgba(158,90,90,0.13)",
 } as const;
 
-/* ─── TYPES ─── */
+type View = "dashboard" | "terminal" | "updates" | "verification";
+
 interface DeviceState {
   deviceId: string; primary: boolean; otaVersion: string;
   safetyState: string; ecuStates: Record<string, string>;
@@ -41,959 +40,98 @@ interface DeviceState {
   otaProgress: number; signatureOk: boolean; integrityOk: boolean;
   tlsHealthy: boolean; rollbackArmed: boolean;
 }
-
-type View = "fleet" | "detail";
-
-interface CarModel {
-  id: string; name: string; subtitle: string; role: string;
-  color: string; colorDark: string; category: string;
+interface NodeVerification {
+  id: string; ip: string;
+  status: "verifying"|"complete"|"decrypting"|"error"|"downloading";
+  progress: number; label: string;
 }
 
-/* ─── CAR DATA ─── */
-const CARS: CarModel[] = [
-  { id: "interceptor", name: "Interceptor", subtitle: "Performance Series", role: "High-velocity pursuit & rapid response with real-time OTA priority routing.", color: "#C4922A", colorDark: "#8B6518", category: "Sport" },
-  { id: "sentinel", name: "Sentinel", subtitle: "Security Series", role: "Hardened perimeter protection with military-grade cryptographic stack and zero-trust update chain.", color: "#5A8C5E", colorDark: "#3D6140", category: "Armor" },
-  { id: "voyager", name: "Voyager", subtitle: "Logistics Series", role: "Long-haul autonomous freight carrier optimised for fleet-wide canary rollout and telemetry density.", color: "#7A6B8C", colorDark: "#5A4D6A", category: "Freight" },
-];
+function nowStr() { return new Date().toLocaleTimeString("en-US",{hour12:false}); }
 
-const ECU_COMPONENTS = [
-  { id: "telematics", name: "Telematics Unit", color: "#C4922A", pos: [0, 0.8, 0.6] },
-  { id: "powertrain", name: "Powertrain ECU", color: "#5A8C5E", pos: [-0.8, 0, 0] },
-  { id: "gateway", name: "Central Gateway", color: "#7A6B8C", pos: [0, 0, 0] },
-  { id: "brake", name: "Brake Control", color: "#B85050", pos: [0.8, -0.3, 0.8] },
-  { id: "sensor", name: "Sensor Fusion", color: "#4A7B9D", pos: [0, 0.4, -0.8] },
-  { id: "infotainment", name: "Infotainment", color: "#9B7A2E", pos: [0, 0.6, 0] },
-];
-
-/* ─── SHARED PRIMITIVES ─── */
-function GlassCard({ children, style, onClick, hover = true }: {
-  children: React.ReactNode; style?: React.CSSProperties;
-  onClick?: () => void; hover?: boolean;
-}) {
-  const [hov, setHov] = useState(false);
-  return (
-    <div onClick={onClick}
-      onMouseEnter={() => hover && setHov(true)}
-      onMouseLeave={() => setHov(false)}
-      style={{
-        background: C.surface,
-        border: `1px solid ${hov ? C.borderHi : C.border}`,
-        borderRadius: 16,
-        backdropFilter: "blur(20px)",
-        WebkitBackdropFilter: "blur(20px)",
-        boxShadow: hov ? C.shadowHi : C.shadow,
-        transition: "all 0.25s ease",
-        cursor: onClick ? "pointer" : "default",
-        position: "relative",
-        overflow: "hidden",
-        ...style,
-      }}
-    >
-      <div style={{
-        position: "absolute", inset: 0, borderRadius: 16,
-        background: "linear-gradient(145deg, rgba(255,255,255,0.6) 0%, rgba(255,255,255,0) 60%)",
-        pointerEvents: "none",
-      }} />
-      <div style={{ position: "relative", zIndex: 1 }}>{children}</div>
-    </div>
-  );
-}
-
-function Label({ children, color = C.muted, size = "0.6rem" }: {
-  children: React.ReactNode; color?: string; size?: string;
-}) {
+function I({ n, f=false, sz=20, col }: { n:string; f?:boolean; sz?:number; col?:string }) {
   return (
     <span style={{
-      fontFamily: "'JetBrains Mono', monospace", fontSize: size,
-      color, letterSpacing: "0.12em", textTransform: "uppercase",
-    }}>{children}</span>
+      fontFamily:"'Material Symbols Outlined'",fontWeight:400,fontStyle:"normal",
+      fontSize:sz,lineHeight:1,letterSpacing:"normal",textTransform:"none",
+      display:"inline-block",whiteSpace:"nowrap",direction:"ltr",
+      WebkitFontSmoothing:"antialiased",
+      fontVariationSettings:f?"'FILL' 1":"'FILL' 0",
+      color:col??P.parchment,verticalAlign:"middle",
+    }}>{n}</span>
   );
 }
 
-function StatusPill({ on, label }: { on: boolean; label: string }) {
+function Card({ children, style }: { children:React.ReactNode; style?:React.CSSProperties }) {
   return (
-    <div style={{
-      display: "inline-flex", alignItems: "center", gap: 6,
-      padding: "3px 10px", borderRadius: 20,
-      background: on ? C.safeDim : C.dangerDim,
-      border: `1px solid ${on ? "rgba(90,140,94,0.3)" : "rgba(184,80,80,0.3)"}`,
-    }}>
-      <div style={{ width: 6, height: 6, borderRadius: "50%", background: on ? C.safe : C.danger }} />
-      <Label color={on ? C.safe : C.danger}>{label}</Label>
-    </div>
+    <div
+      style={{ background:P.wall, borderRadius:4, border:`1px solid ${P.bDim}`, transition:"border-color 0.22s, background 0.22s", ...style }}
+      onMouseEnter={e=>{e.currentTarget.style.borderColor=P.bMid;}}
+      onMouseLeave={e=>{e.currentTarget.style.borderColor=P.bDim;}}
+    >{children}</div>
   );
 }
 
-/* ─── 3D CAR CANVAS (Three.js) ─── */
-function CarCanvas3D({ carId, activeEcu, onEcuClick }: {
-  carId: string; activeEcu: string | null; onEcuClick: (id: string) => void;
-}) {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const sceneRef = useRef<any>(null);
-  const frameRef = useRef<number>(0);
-
-  useEffect(() => {
-    if (!canvasRef.current) return;
-    const canvas = canvasRef.current;
-
-    // Load Three.js dynamically
-    const script = document.createElement("script");
-    script.src = "https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js";
-    script.onload = () => initScene();
-    document.head.appendChild(script);
-
-    function initScene() {
-      const THREE = (window as any).THREE;
-      if (!THREE) return;
-
-      const W = canvas.clientWidth;
-      const H = canvas.clientHeight;
-      const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
-      renderer.setSize(W, H);
-      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-
-      const scene = new THREE.Scene();
-      const camera = new THREE.PerspectiveCamera(45, W / H, 0.1, 100);
-      camera.position.set(0, 2, 6);
-
-      // Lighting
-      const ambient = new THREE.AmbientLight(0xFFF8E7, 0.6);
-      scene.add(ambient);
-      const sun = new THREE.DirectionalLight(0xFFE4A0, 1.2);
-      sun.position.set(4, 6, 3);
-      scene.add(sun);
-      const fill = new THREE.DirectionalLight(0xD4C4A0, 0.4);
-      fill.position.set(-4, 2, -2);
-      scene.add(fill);
-
-      // Car body group
-      const carGroup = new THREE.Group();
-      scene.add(carGroup);
-
-      // Transparent car shell
-      const bodyMat = new THREE.MeshPhongMaterial({
-        color: 0xE8D5A0,
-        transparent: true,
-        opacity: 0.18,
-        wireframe: false,
-        side: THREE.DoubleSide,
-      });
-
-      const wireMat = new THREE.MeshBasicMaterial({
-        color: 0xC4922A,
-        wireframe: true,
-        transparent: true,
-        opacity: 0.12,
-      });
-
-      // Car body - main chassis
-      const chassisGeo = new THREE.BoxGeometry(3.2, 0.5, 1.4);
-      const chassis = new THREE.Mesh(chassisGeo, bodyMat);
-      chassis.position.y = 0.1;
-      carGroup.add(chassis);
-
-      const chassisWire = new THREE.Mesh(chassisGeo, wireMat);
-      chassisWire.position.y = 0.1;
-      carGroup.add(chassisWire);
-
-      // Cabin
-      const cabinGeo = new THREE.BoxGeometry(1.6, 0.7, 1.2);
-      const cabin = new THREE.Mesh(cabinGeo, bodyMat);
-      cabin.position.set(-0.2, 0.6, 0);
-      carGroup.add(cabin);
-
-      const cabinWire = new THREE.Mesh(cabinGeo, wireMat);
-      cabinWire.position.set(-0.2, 0.6, 0);
-      carGroup.add(cabinWire);
-
-      // Hood slope
-      const hoodGeo = new THREE.CylinderGeometry(0.01, 0.7, 1.0, 4, 1);
-      const hood = new THREE.Mesh(hoodGeo, bodyMat);
-      hood.rotation.z = Math.PI / 2;
-      hood.position.set(0.9, 0.35, 0);
-      carGroup.add(hood);
-
-      // Wheels
-      const wheelGeo = new THREE.CylinderGeometry(0.38, 0.38, 0.28, 24);
-      const wheelMat = new THREE.MeshPhongMaterial({ color: 0x2A2A2A, transparent: true, opacity: 0.5 });
-      const wheelPositions = [
-        [-1.1, -0.25, 0.8], [-1.1, -0.25, -0.8],
-        [1.1, -0.25, 0.8], [1.1, -0.25, -0.8],
-      ];
-      wheelPositions.forEach(p => {
-        const w = new THREE.Mesh(wheelGeo, wheelMat);
-        w.rotation.x = Math.PI / 2;
-        w.position.set(p[0], p[1], p[2]);
-        carGroup.add(w);
-      });
-
-      // ECU component spheres
-      const ecuMeshes: Record<string, THREE.Mesh> = {};
-      ECU_COMPONENTS.forEach(ecu => {
-        const geo = new THREE.SphereGeometry(0.18, 16, 16);
-        const mat = new THREE.MeshPhongMaterial({
-          color: new THREE.Color(ecu.color),
-          transparent: true,
-          opacity: 0.5,
-          emissive: new THREE.Color(ecu.color),
-          emissiveIntensity: 0.2,
-        });
-        const mesh = new THREE.Mesh(geo, mat);
-        mesh.position.set(ecu.pos[0] * 0.9, ecu.pos[1] * 0.4, ecu.pos[2] * 0.5);
-        mesh.userData.ecuId = ecu.id;
-        carGroup.add(mesh);
-        ecuMeshes[ecu.id] = mesh;
-
-        // Glow ring
-        const ringGeo = new THREE.TorusGeometry(0.22, 0.02, 8, 32);
-        const ringMat = new THREE.MeshBasicMaterial({ color: new THREE.Color(ecu.color), transparent: true, opacity: 0.3 });
-        const ring = new THREE.Mesh(ringGeo, ringMat);
-        mesh.add(ring);
-      });
-
-      // Grid floor
-      const gridHelper = new THREE.GridHelper(8, 16, 0xC4922A, 0xE8D5B0);
-      (gridHelper.material as any).transparent = true;
-      (gridHelper.material as any).opacity = 0.15;
-      gridHelper.position.y = -0.65;
-      scene.add(gridHelper);
-
-      // Mouse rotation
-      let isDragging = false;
-      let prevX = 0, prevY = 0;
-      let rotX = 0.2, rotY = 0;
-      let targetRotX = 0.2, targetRotY = 0;
-
-      canvas.addEventListener("mousedown", e => { isDragging = true; prevX = e.clientX; prevY = e.clientY; });
-      canvas.addEventListener("mousemove", e => {
-        if (!isDragging) return;
-        targetRotY += (e.clientX - prevX) * 0.01;
-        targetRotX += (e.clientY - prevY) * 0.005;
-        targetRotX = Math.max(-0.5, Math.min(0.8, targetRotX));
-        prevX = e.clientX; prevY = e.clientY;
-      });
-      canvas.addEventListener("mouseup", () => { isDragging = false; });
-
-      // Touch support
-      canvas.addEventListener("touchstart", e => { isDragging = true; prevX = e.touches[0].clientX; prevY = e.touches[0].clientY; });
-      canvas.addEventListener("touchmove", e => {
-        if (!isDragging) return;
-        targetRotY += (e.touches[0].clientX - prevX) * 0.01;
-        prevX = e.touches[0].clientX; prevY = e.touches[0].clientY;
-        e.preventDefault();
-      }, { passive: false });
-      canvas.addEventListener("touchend", () => { isDragging = false; });
-
-      // Zoom
-      canvas.addEventListener("wheel", e => {
-        camera.position.z = Math.max(3, Math.min(9, camera.position.z + e.deltaY * 0.01));
-        e.preventDefault();
-      }, { passive: false });
-
-      // Click ECU
-      const raycaster = new THREE.Raycaster();
-      const mouse = new THREE.Vector2();
-      canvas.addEventListener("click", e => {
-        const rect = canvas.getBoundingClientRect();
-        mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
-        mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
-        raycaster.setFromCamera(mouse, camera);
-        const meshes = Object.values(ecuMeshes);
-        const hits = raycaster.intersectObjects(meshes);
-        if (hits.length > 0) {
-          const id = hits[0].object.userData.ecuId;
-          if (id) onEcuClick(id);
-        }
-      });
-
-      sceneRef.current = { ecuMeshes, THREE };
-
-      // Animation loop
-      let t = 0;
-      function animate() {
-        frameRef.current = requestAnimationFrame(animate);
-        t += 0.012;
-
-        rotY += (targetRotY - rotY) * 0.08;
-        rotX += (targetRotX - rotX) * 0.08;
-        carGroup.rotation.y = rotY + t * 0.15;
-        carGroup.rotation.x = rotX;
-
-        // Pulse ECU spheres
-        ECU_COMPONENTS.forEach(ecu => {
-          const mesh = ecuMeshes[ecu.id];
-          if (!mesh) return;
-          const mat = mesh.material as THREE.MeshPhongMaterial;
-          const isActive = (mesh.userData.ecuId === sceneRef.current?.activeEcu);
-          mat.opacity = isActive ? 0.95 : 0.45 + Math.sin(t * 2 + ecu.pos[0]) * 0.1;
-          mat.emissiveIntensity = isActive ? 0.8 : 0.15 + Math.sin(t * 3) * 0.05;
-          if (isActive) {
-            mesh.scale.setScalar(1.3 + Math.sin(t * 4) * 0.1);
-          } else {
-            mesh.scale.setScalar(1.0);
-          }
-        });
-
-        renderer.render(scene, camera);
-      }
-      animate();
-    }
-
-    return () => {
-      if (frameRef.current) cancelAnimationFrame(frameRef.current);
-    };
-  }, [carId]);
-
-  // Update active ECU
-  useEffect(() => {
-    if (sceneRef.current) {
-      sceneRef.current.activeEcu = activeEcu;
-    }
-  }, [activeEcu]);
-
-  return (
-    <canvas ref={canvasRef}
-      style={{ width: "100%", height: "100%", cursor: "grab", borderRadius: 12 }}
-    />
-  );
-}
-
-/* ─── SVG CAR ILLUSTRATIONS ─── */
-function CarSVG({ id, color }: { id: string; color: string }) {
-  if (id === "interceptor") return (
-    <svg viewBox="0 0 280 130" style={{ width: "100%", height: "100%" }}>
-      <defs>
-        <linearGradient id={`g-${id}`} x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor={color} stopOpacity="0.9" />
-          <stop offset="100%" stopColor={color} stopOpacity="0.4" />
-        </linearGradient>
-      </defs>
-      <ellipse cx="140" cy="118" rx="90" ry="6" fill="rgba(180,150,100,0.15)" />
-      <path d="M 30 88 L 42 62 L 68 50 L 105 46 L 145 44 L 180 48 L 218 60 L 245 78 L 248 88 Z" fill={`url(#g-${id})`} />
-      <path d="M 85 62 L 98 38 L 158 34 L 200 42 L 218 58 L 85 62 Z" fill={`${color}50`} stroke={color} strokeWidth="1" strokeOpacity="0.6" />
-      <path d="M 92 60 L 102 38 L 148 34 L 152 60 Z" fill="rgba(220,240,255,0.25)" stroke={color} strokeWidth="0.8" strokeOpacity="0.5" />
-      <path d="M 155 60 L 157 34 L 196 42 L 212 56 Z" fill="rgba(220,240,255,0.2)" stroke={color} strokeWidth="0.8" strokeOpacity="0.4" />
-      <circle cx="75" cy="90" r="20" fill="rgba(60,50,40,0.7)" stroke={color} strokeWidth="1.5" strokeOpacity="0.6" />
-      <circle cx="75" cy="90" r="11" fill="rgba(40,35,28,0.8)" stroke={color} strokeWidth="1" strokeOpacity="0.5" />
-      <circle cx="205" cy="90" r="20" fill="rgba(60,50,40,0.7)" stroke={color} strokeWidth="1.5" strokeOpacity="0.6" />
-      <circle cx="205" cy="90" r="11" fill="rgba(40,35,28,0.8)" stroke={color} strokeWidth="1" strokeOpacity="0.5" />
-      <line x1="240" y1="68" x2="250" y2="78" stroke={color} strokeWidth="3" strokeLinecap="round" />
-      <line x1="30" y1="68" x2="22" y2="76" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeOpacity="0.5" />
-    </svg>
-  );
-  if (id === "sentinel") return (
-    <svg viewBox="0 0 280 130" style={{ width: "100%", height: "100%" }}>
-      <defs>
-        <linearGradient id={`g-${id}`} x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor={color} stopOpacity="0.85" />
-          <stop offset="100%" stopColor={color} stopOpacity="0.35" />
-        </linearGradient>
-      </defs>
-      <ellipse cx="140" cy="118" rx="95" ry="6" fill="rgba(150,180,150,0.12)" />
-      <path d="M 22 88 L 30 56 L 55 44 L 90 40 L 190 40 L 225 44 L 252 58 L 258 88 Z" fill={`url(#g-${id})`} />
-      <path d="M 70 56 L 72 24 L 210 24 L 212 56 Z" fill={`${color}45`} stroke={color} strokeWidth="1" strokeOpacity="0.5" />
-      <path d="M 78 54 L 80 26 L 134 24 L 134 54 Z" fill="rgba(220,240,220,0.2)" stroke={color} strokeWidth="0.8" strokeOpacity="0.4" />
-      <path d="M 138 54 L 138 24 L 208 26 L 210 54 Z" fill="rgba(220,240,220,0.15)" />
-      <circle cx="70" cy="90" r="22" fill="rgba(60,50,40,0.7)" stroke={color} strokeWidth="1.5" strokeOpacity="0.6" />
-      <circle cx="70" cy="90" r="13" fill="rgba(40,35,28,0.8)" stroke={color} strokeWidth="1" strokeOpacity="0.5" />
-      <circle cx="210" cy="90" r="22" fill="rgba(60,50,40,0.7)" stroke={color} strokeWidth="1.5" strokeOpacity="0.6" />
-      <circle cx="210" cy="90" r="13" fill="rgba(40,35,28,0.8)" stroke={color} strokeWidth="1" strokeOpacity="0.5" />
-      <rect x="248" y="52" width="10" height="28" rx="2" fill={color} fillOpacity="0.3" />
-    </svg>
-  );
-  return (
-    <svg viewBox="0 0 300 130" style={{ width: "100%", height: "100%" }}>
-      <defs>
-        <linearGradient id={`g-${id}`} x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor={color} stopOpacity="0.8" />
-          <stop offset="100%" stopColor={color} stopOpacity="0.3" />
-        </linearGradient>
-      </defs>
-      <ellipse cx="150" cy="118" rx="110" ry="6" fill="rgba(150,140,180,0.12)" />
-      <path d="M 20 86 L 28 50 L 58 38 L 100 36 L 108 38 L 110 86 Z" fill={`url(#g-${id})`} />
-      <path d="M 35 82 L 40 50 L 56 40 L 98 38 L 104 82 Z" fill={`${color}15`} stroke={color} strokeWidth="0.8" strokeOpacity="0.3" />
-      <path d="M 40 78 L 44 48 L 95 40 L 96 78 Z" fill="rgba(220,215,240,0.2)" stroke={color} strokeWidth="0.8" strokeOpacity="0.4" />
-      <rect x="108" y="36" width="175" height="50" rx="3" fill={`${color}30`} stroke={color} strokeWidth="1" strokeOpacity="0.5" />
-      <line x1="150" y1="36" x2="150" y2="86" stroke={color} strokeWidth="0.5" strokeOpacity="0.3" />
-      <line x1="195" y1="36" x2="195" y2="86" stroke={color} strokeWidth="0.5" strokeOpacity="0.3" />
-      <line x1="240" y1="36" x2="240" y2="86" stroke={color} strokeWidth="0.5" strokeOpacity="0.3" />
-      <circle cx="58" cy="90" r="18" fill="rgba(60,50,40,0.7)" stroke={color} strokeWidth="1.5" strokeOpacity="0.6" />
-      <circle cx="58" cy="90" r="10" fill="rgba(40,35,28,0.8)" stroke={color} strokeWidth="1" strokeOpacity="0.5" />
-      <circle cx="165" cy="90" r="18" fill="rgba(60,50,40,0.7)" stroke={color} strokeWidth="1.5" strokeOpacity="0.6" />
-      <circle cx="215" cy="90" r="18" fill="rgba(60,50,40,0.7)" stroke={color} strokeWidth="1.5" strokeOpacity="0.6" />
-    </svg>
-  );
-}
-
-/* ─── FLEET HEADER ─── */
-function FleetHeader({ fleet, onAddDevice }: {
-  fleet: DeviceState[]; onAddDevice: () => void;
-}) {
-  const active = fleet.filter(d => d.safetyState === "SAFE").length;
-  const pending = fleet.filter(d => d.otaVersion !== "2.4.1").length;
-  const high = fleet.filter(d => d.threatLevel === "HIGH").length;
-
-  return (
-    <GlassCard style={{ padding: "24px 28px", marginBottom: 20 }} hover={false}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-        <div>
-          <Label color={C.gold}>Connected Devices</Label>
-          <div style={{ marginTop: 6, display: "flex", alignItems: "baseline", gap: 8 }}>
-            <span style={{ fontFamily: "'Playfair Display', serif", fontSize: "2.8rem", fontWeight: 700, color: C.bone, lineHeight: 1 }}>
-              {fleet.length}
-            </span>
-            <Label color={C.muted}>fleet nodes</Label>
-          </div>
-          <div style={{ display: "flex", gap: 10, marginTop: 12 }}>
-            <StatusPill on={true} label={`${active} active`} />
-            {pending > 0 && <StatusPill on={false} label={`${pending} pending`} />}
-            {high > 0 && (
-              <div style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "3px 10px", borderRadius: 20, background: C.warnDim, border: `1px solid rgba(193,122,58,0.3)` }}>
-                <div style={{ width: 6, height: 6, borderRadius: "50%", background: C.warn }} />
-                <Label color={C.warn}>{high} flagged</Label>
-              </div>
-            )}
-          </div>
-        </div>
-        <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
-          <GlassCard style={{ padding: "12px 20px", textAlign: "center", minWidth: 90 }}>
-            <div style={{ fontFamily: "'Playfair Display', serif", fontSize: "1.8rem", fontWeight: 700, color: C.safe, lineHeight: 1 }}>{active}</div>
-            <Label color={C.safe} size="0.55rem">Online</Label>
-          </GlassCard>
-          <GlassCard style={{ padding: "12px 20px", textAlign: "center", minWidth: 90 }}>
-            <div style={{ fontFamily: "'Playfair Display', serif", fontSize: "1.8rem", fontWeight: 700, color: C.warn, lineHeight: 1 }}>{pending}</div>
-            <Label color={C.warn} size="0.55rem">Pending</Label>
-          </GlassCard>
-          <button onClick={onAddDevice}
-            style={{
-              padding: "11px 22px", background: C.goldDim,
-              border: `1px solid ${C.borderHi}`, borderRadius: 12,
-              cursor: "pointer", fontFamily: "'JetBrains Mono', monospace",
-              fontSize: "0.68rem", letterSpacing: "0.1em", textTransform: "uppercase",
-              color: C.gold, fontWeight: 600, transition: "all 0.2s",
-            }}
-            onMouseEnter={e => { e.currentTarget.style.background = C.goldGlow; e.currentTarget.style.color = C.goldDark || C.bone; }}
-            onMouseLeave={e => { e.currentTarget.style.background = C.goldDim; e.currentTarget.style.color = C.gold; }}
-          >
-            + Add Device
-          </button>
-        </div>
-      </div>
-
-      {/* Device mini-list */}
-      <div style={{ marginTop: 16, display: "flex", gap: 6, flexWrap: "wrap" }}>
-        {fleet.slice(0, 12).map((d, i) => (
-          <motion.div key={d.deviceId} initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: i * 0.04 }}>
-            <div style={{
-              padding: "4px 10px", borderRadius: 8,
-              background: d.threatLevel === "HIGH" ? C.dangerDim : d.threatLevel === "MEDIUM" ? C.warnDim : C.safeDim,
-              border: `1px solid ${d.threatLevel === "HIGH" ? "rgba(184,80,80,0.25)" : d.threatLevel === "MEDIUM" ? "rgba(193,122,58,0.25)" : "rgba(90,140,94,0.25)"}`,
-              display: "flex", alignItems: "center", gap: 5,
-            }}>
-              <div style={{ width: 5, height: 5, borderRadius: "50%", background: d.threatLevel === "HIGH" ? C.danger : d.threatLevel === "MEDIUM" ? C.warn : C.safe }} />
-              <Label size="0.52rem" color={d.threatLevel === "HIGH" ? C.danger : d.threatLevel === "MEDIUM" ? C.warn : C.muted}>
-                {d.deviceId.replace("sim-", "N-")}
-              </Label>
-            </div>
-          </motion.div>
-        ))}
-        {fleet.length > 12 && (
-          <div style={{ padding: "4px 10px", borderRadius: 8, background: C.goldDim, border: `1px solid ${C.border}` }}>
-            <Label color={C.gold} size="0.52rem">+{fleet.length - 12} more</Label>
-          </div>
-        )}
-      </div>
-    </GlassCard>
-  );
-}
-
-/* ─── CAR SELECTION GRID ─── */
-function CarSelectionGrid({ onSelect }: { onSelect: (car: CarModel) => void }) {
-  return (
-    <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 18 }}>
-      {CARS.map((car, i) => (
-        <motion.div key={car.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.1 }}>
-          <GlassCard style={{ overflow: "hidden" }} onClick={() => onSelect(car)}>
-            {/* Gold accent top */}
-            <div style={{ height: 3, background: `linear-gradient(90deg, ${car.color}, transparent)` }} />
-
-            {/* Status bar */}
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 14px", borderBottom: `1px solid ${C.border}` }}>
-              <Label color={car.color} size="0.55rem">SER-{car.id.toUpperCase().slice(0, 3)}-001</Label>
-              <div style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "2px 8px", background: `${car.color}15`, borderRadius: 8, border: `1px solid ${car.color}30` }}>
-                <div style={{ width: 5, height: 5, borderRadius: "50%", background: car.color }} />
-                <Label color={car.color} size="0.5rem">ONLINE</Label>
-              </div>
-            </div>
-
-            {/* Car SVG */}
-            <div style={{ padding: "20px 16px 8px", background: `linear-gradient(180deg, ${car.color}08 0%, transparent 100%)`, height: 140 }}>
-              <CarSVG id={car.id} color={car.color} />
-            </div>
-
-            {/* Info */}
-            <div style={{ padding: "14px 18px" }}>
-              <div style={{ marginBottom: 8 }}>
-                <h3 style={{ fontFamily: "'Playfair Display', serif", fontSize: "1.15rem", fontWeight: 700, color: C.bone, margin: "0 0 3px" }}>
-                  {car.name}
-                </h3>
-                <Label color={car.colorDark} size="0.58rem">{car.subtitle}</Label>
-              </div>
-              <p style={{ fontSize: "0.78rem", color: C.muted, lineHeight: 1.6, margin: "0 0 14px" }}>{car.role}</p>
-              <div style={{ display: "flex", gap: 6, marginBottom: 14 }}>
-                <span style={{ padding: "3px 8px", background: C.goldDim, borderRadius: 6, border: `1px solid ${C.border}` }}>
-                  <Label color={C.gold} size="0.5rem">{car.category}</Label>
-                </span>
-                <span style={{ padding: "3px 8px", background: C.safeDim, borderRadius: 6, border: "1px solid rgba(90,140,94,0.2)" }}>
-                  <Label color={C.safe} size="0.5rem">OTA Ready</Label>
-                </span>
-              </div>
-              <button
-                onClick={e => { e.stopPropagation(); onSelect(car); }}
-                style={{
-                  width: "100%", padding: "10px 0",
-                  background: `${car.color}18`,
-                  color: car.colorDark,
-                  border: `1px solid ${car.color}45`,
-                  borderRadius: 10, cursor: "pointer",
-                  fontFamily: "'Playfair Display', serif",
-                  fontSize: "0.85rem", fontWeight: 700,
-                  letterSpacing: "0.04em", transition: "all 0.2s",
-                }}
-                onMouseEnter={e => { e.currentTarget.style.background = `${car.color}32`; e.currentTarget.style.borderColor = car.color; }}
-                onMouseLeave={e => { e.currentTarget.style.background = `${car.color}18`; e.currentTarget.style.borderColor = `${car.color}45`; }}
-              >
-                {car.name} — Enter Cockpit →
-              </button>
-            </div>
-          </GlassCard>
-        </motion.div>
-      ))}
-    </div>
-  );
-}
-
-/* ─── VERIFICATION OVERLAY ─── */
-function VerificationOverlay({ onClose, car }: { onClose: () => void; car: CarModel }) {
-  const [phase, setPhase] = useState(0);
-  const [progress, setProgress] = useState(0);
-  const phases = [
-    { label: "INITIALIZING CRYPTO ENGINE", detail: "Loading ECC P-256 keypair from secure enclave..." },
-    { label: "VERIFYING SIGNATURE CHAIN", detail: "Validating ECDSA signature against embedded public key..." },
-    { label: "SHA-256 HASH CHECK", detail: "Computing firmware digest and comparing against manifest..." },
-    { label: "TLS HANDSHAKE VALIDATION", detail: "Verifying mutual TLS certificate chain to MQTTS broker..." },
-    { label: "SAFETY GATE QUERY", detail: "Polling brake ECU for SAFE/UNSAFE state — result: SAFE." },
-    { label: "UPDATE CHAIN VERIFIED", detail: "All cryptographic gates passed. Deployment approved." },
-  ];
-  useEffect(() => {
-    let p = 0;
-    const tick = setInterval(() => {
-      p += 2;
-      setProgress(Math.min(p, 100));
-      setPhase(Math.min(Math.floor((p / 100) * phases.length), phases.length - 1));
-      if (p >= 100) clearInterval(tick);
-    }, 80);
-    return () => clearInterval(tick);
-  }, []);
-  const done = progress >= 100;
-  return (
-    <div style={{ position: "fixed", inset: 0, background: "rgba(240,230,210,0.7)", backdropFilter: "blur(8px)", zIndex: 200, display: "flex", alignItems: "center", justifyContent: "center" }}>
-      <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}>
-        <GlassCard style={{ width: 520, overflow: "hidden" }} hover={false}>
-          <div style={{ padding: "16px 22px", borderBottom: `1px solid ${C.border}`, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <Label color={done ? C.safe : C.gold}>VERIFICATION · {car.name.toUpperCase()}</Label>
-            {done && (
-              <button onClick={onClose} style={{ padding: "5px 14px", background: C.safeDim, color: C.safe, border: `1px solid rgba(90,140,94,0.3)`, borderRadius: 8, cursor: "pointer", fontFamily: "'JetBrains Mono', monospace", fontSize: "0.6rem" }}>
-                DONE ✓
-              </button>
-            )}
-          </div>
-          <div style={{ padding: "20px 22px" }}>
-            <div style={{ height: 6, background: C.border, borderRadius: 3, overflow: "hidden", marginBottom: 16 }}>
-              <motion.div animate={{ width: `${progress}%` }} style={{ height: "100%", background: done ? C.safe : C.gold, borderRadius: 3 }} />
-            </div>
-            <div style={{ padding: "12px 16px", background: done ? C.safeDim : C.goldDim, borderRadius: 10, border: `1px solid ${done ? "rgba(90,140,94,0.25)" : "rgba(196,146,42,0.25)"}`, marginBottom: 14 }}>
-              <Label color={done ? C.safe : C.gold} size="0.62rem">{phases[phase].label}</Label>
-              <p style={{ fontSize: "0.74rem", color: C.muted, margin: "4px 0 0", lineHeight: 1.5 }}>{phases[phase].detail}</p>
-            </div>
-            <AnimatePresence>
-              {phases.slice(0, phase + 1).map((p, i) => (
-                <motion.div key={i} initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }}
-                  style={{ display: "flex", gap: 10, marginBottom: 6, alignItems: "center" }}
-                >
-                  <span style={{ fontFamily: "monospace", fontSize: 11, color: C.safe }}>✓</span>
-                  <span style={{ fontFamily: "monospace", fontSize: 11, color: C.boneDim }}>{p.detail}</span>
-                </motion.div>
-              ))}
-            </AnimatePresence>
-          </div>
-        </GlassCard>
-      </motion.div>
-    </div>
-  );
-}
-
-/* ─── CAR DETAIL VIEW ─── */
-function CarDetailView({ car, fleet, onBack }: { car: CarModel; fleet: DeviceState[]; onBack: () => void }) {
-  const [activeEcu, setActiveEcu] = useState<string | null>(null);
-  const [showVerify, setShowVerify] = useState(false);
-  const [encEnabled, setEncEnabled] = useState(true);
-  const [showEncMenu, setShowEncMenu] = useState(false);
-  const [canary, setCanary] = useState(20);
-  const [version, setVersion] = useState("v2.5.0-beta");
-  const [firmwareUrl, setFirmwareUrl] = useState("https://firmware.example/esp32.bin");
-  const [pickedFile, setPickedFile] = useState<string | null>(null);
-  const [deployStatus, setDeployStatus] = useState<"idle"|"pushing"|"success"|"error">("idle");
-  const fileRef = useRef<HTMLInputElement>(null);
-
-  function handleFilePick(e: React.ChangeEvent<HTMLInputElement>) {
-    if (e.target.files?.[0]) {
-      setPickedFile(e.target.files[0].name);
-      setVersion("v2.5.0-local");
-    }
-  }
-
-  async function handleDeploy() {
-    setDeployStatus("pushing");
-    try {
-      const res = await fetch("/api/deploy", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ version, firmwareUrl, firmwareHash: "placeholder", signatureB64: "SIM_SIG", canaryPercent: canary }),
-      });
-      setDeployStatus(res.ok ? "success" : "error");
-    } catch { setDeployStatus("success"); }
-    setTimeout(() => setDeployStatus("idle"), 3500);
-  }
-
-  const deployColors: Record<typeof deployStatus, string> = {
-    idle: C.gold, pushing: C.warn, success: C.safe, error: C.danger,
-  };
-
-  return (
-    <div style={{ flex: 1, overflowY: "auto", padding: "20px 24px" }}>
-      {showVerify && <VerificationOverlay car={car} onClose={() => setShowVerify(false)} />}
-
-      {/* Back + title */}
-      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 20 }}>
-        <button onClick={onBack}
-          style={{ padding: "7px 14px", background: C.surface, border: `1px solid ${C.border}`, borderRadius: 10, cursor: "pointer", fontFamily: "'JetBrains Mono', monospace", fontSize: "0.6rem", color: C.boneDim, transition: "all 0.15s" }}
-          onMouseEnter={e => { e.currentTarget.style.background = C.goldDim; e.currentTarget.style.color = C.bone; }}
-          onMouseLeave={e => { e.currentTarget.style.background = C.surface; e.currentTarget.style.color = C.boneDim; }}
-        >← BACK</button>
-        <div style={{ height: 1, width: 16, background: C.border }} />
-        <div>
-          <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: "1.3rem", fontWeight: 700, color: car.color, margin: 0 }}>
-            {car.name} <span style={{ color: C.boneDim, fontWeight: 400, fontSize: "0.9rem" }}>System Cockpit</span>
-          </h2>
-          <Label color={C.muted} size="0.55rem">{car.subtitle} · Interactive ECU Model</Label>
-        </div>
-      </motion.div>
-
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 320px", gap: 16 }}>
-        {/* CENTER — 3D Canvas + ECU list */}
-        <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-          {/* 3D Viewer */}
-          <GlassCard style={{ height: 380, overflow: "hidden" }} hover={false}>
-            <div style={{ padding: "10px 16px", borderBottom: `1px solid ${C.border}`, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <Label color={car.color}>Interactive 3D Model — Drag to rotate · Scroll to zoom · Click ECU</Label>
-              <Label color={C.muted} size="0.5rem">X-Ray Mode Active</Label>
-            </div>
-            <div style={{ height: "calc(100% - 40px)" }}>
-              <CarCanvas3D carId={car.id} activeEcu={activeEcu} onEcuClick={setActiveEcu} />
-            </div>
-          </GlassCard>
-
-          {/* ECU Grid */}
-          <GlassCard style={{ padding: 0, overflow: "hidden" }} hover={false}>
-            <div style={{ padding: "10px 16px", borderBottom: `1px solid ${C.border}` }}>
-              <Label color={car.color}>ECU Components — Click to Highlight in 3D</Label>
-            </div>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 0 }}>
-              {ECU_COMPONENTS.map((ecu, i) => {
-                const isActive = activeEcu === ecu.id;
-                return (
-                  <motion.div key={ecu.id}
-                    onClick={() => setActiveEcu(isActive ? null : ecu.id)}
-                    whileTap={{ scale: 0.97 }}
-                    style={{
-                      padding: "12px 14px",
-                      borderRight: i % 3 !== 2 ? `1px solid ${C.border}` : "none",
-                      borderBottom: i < 3 ? `1px solid ${C.border}` : "none",
-                      background: isActive ? `${ecu.color}15` : "transparent",
-                      cursor: "pointer", transition: "background 0.2s",
-                    }}
-                  >
-                    <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
-                      <div style={{
-                        width: 10, height: 10, borderRadius: "50%",
-                        background: isActive ? ecu.color : `${ecu.color}60`,
-                        boxShadow: isActive ? `0 0 8px ${ecu.color}` : "none",
-                        transition: "all 0.3s",
-                      }} />
-                      <span style={{ fontSize: "0.75rem", fontWeight: 600, color: isActive ? ecu.color : C.bone }}>
-                        {ecu.name}
-                      </span>
-                    </div>
-                    <Label color={isActive ? ecu.color : C.muted} size="0.5rem">
-                      {isActive ? "● ACTIVE" : "○ STANDBY"}
-                    </Label>
-                  </motion.div>
-                );
-              })}
-            </div>
-          </GlassCard>
-        </div>
-
-        {/* RIGHT COLUMN */}
-        <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-          {/* Security Panel */}
-          <GlassCard style={{ overflow: "hidden" }} hover={false}>
-            <div style={{ height: 3, background: `linear-gradient(90deg, ${C.safe}, transparent)` }} />
-            <div style={{ padding: "12px 16px", borderBottom: `1px solid ${C.border}`, display: "flex", justifyContent: "space-between" }}>
-              <Label color={C.safe} size="0.62rem">Security Settings</Label>
-              <StatusPill on={true} label="Armed" />
-            </div>
-            <div style={{ padding: "14px 16px", display: "flex", flexDirection: "column", gap: 10 }}>
-              {/* Encryption toggle */}
-              <div>
-                <button onClick={() => setShowEncMenu(v => !v)}
-                  style={{
-                    width: "100%", padding: "9px 12px",
-                    background: showEncMenu ? C.goldDim : "transparent",
-                    border: `1px solid ${showEncMenu ? C.borderHi : C.border}`,
-                    borderRadius: 10, cursor: "pointer",
-                    fontFamily: "'JetBrains Mono', monospace", fontSize: "0.62rem",
-                    color: C.boneDim, transition: "all 0.2s",
-                    display: "flex", justifyContent: "space-between", alignItems: "center",
-                  }}
-                >
-                  <span>⬡ Encryption Gate</span>
-                  <span style={{ color: C.gold }}>{showEncMenu ? "▲" : "▼"}</span>
-                </button>
-                <AnimatePresence>
-                  {showEncMenu && (
-                    <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.2 }}
-                      style={{ overflow: "hidden" }}
-                    >
-                      <div style={{ padding: "10px 12px", background: C.goldDim, borderRadius: "0 0 10px 10px", border: `1px solid ${C.border}`, borderTop: "none" }}>
-                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-                          <div>
-                            <div style={{ fontSize: "0.78rem", color: C.bone, fontWeight: 600, marginBottom: 2 }}>Payload Encryption</div>
-                            <Label color={C.muted} size="0.54rem">ECC P-256 + AES-256-GCM</Label>
-                          </div>
-                          <div onClick={() => setEncEnabled(v => !v)}
-                            style={{ width: 38, height: 20, borderRadius: 10, background: encEnabled ? C.safeDim : C.border, border: `1px solid ${encEnabled ? C.safe : C.border}`, position: "relative", cursor: "pointer", transition: "all 0.25s", padding: "2px" }}
-                          >
-                            <div style={{ width: 14, height: 14, borderRadius: "50%", background: encEnabled ? C.safe : C.muted, transform: encEnabled ? "translateX(18px)" : "translateX(0)", transition: "all 0.25s" }} />
-                          </div>
-                        </div>
-                        {[["Algorithm", "ECC P-256"], ["Cipher", "AES-256-GCM"], ["MAC", "HMAC-SHA256"]].map(([k, v]) => (
-                          <div key={k} style={{ display: "flex", justifyContent: "space-between", padding: "3px 0", borderBottom: `1px solid ${C.border}` }}>
-                            <Label color={C.muted} size="0.54rem">{k}</Label>
-                            <Label color={encEnabled ? C.boneDim : C.muted} size="0.54rem">{v}</Label>
-                          </div>
-                        ))}
-                        <div style={{ marginTop: 6, padding: "4px 8px", background: encEnabled ? C.safeDim : C.dangerDim, borderRadius: 6, border: `1px solid ${encEnabled ? "rgba(90,140,94,0.2)" : "rgba(184,80,80,0.2)"}` }}>
-                          <Label color={encEnabled ? C.safe : C.danger} size="0.54rem">
-                            {encEnabled ? "✓ ENABLED — OTA payloads encrypted" : "⚠ DISABLED — dev mode only"}
-                          </Label>
-                        </div>
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
-
-              {/* Verify button */}
-              <button onClick={() => setShowVerify(true)}
-                style={{
-                  width: "100%", padding: "9px 12px", background: "transparent",
-                  border: `1px solid ${C.border}`, borderRadius: 10, cursor: "pointer",
-                  fontFamily: "'JetBrains Mono', monospace", fontSize: "0.62rem",
-                  color: C.boneDim, transition: "all 0.2s",
-                  display: "flex", justifyContent: "space-between", alignItems: "center",
-                }}
-                onMouseEnter={e => { e.currentTarget.style.background = C.goldDim; e.currentTarget.style.borderColor = C.borderHi; }}
-                onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.borderColor = C.border; }}
-              >
-                <span>◎ Run Verification Simulation</span>
-                <span style={{ color: C.gold, fontSize: "0.56rem" }}>▶ SIM</span>
-              </button>
-
-              {/* Security indicators */}
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6 }}>
-                {[
-                  { label: "Signature", on: true },
-                  { label: "Integrity", on: true },
-                  { label: "TLS", on: true },
-                  { label: "Rollback", on: true },
-                ].map(ind => (
-                  <div key={ind.label} style={{ padding: "6px 8px", background: ind.on ? C.safeDim : C.dangerDim, borderRadius: 8, border: `1px solid ${ind.on ? "rgba(90,140,94,0.2)" : "rgba(184,80,80,0.2)"}`, display: "flex", alignItems: "center", gap: 5 }}>
-                    <div style={{ width: 5, height: 5, borderRadius: "50%", background: ind.on ? C.safe : C.danger }} />
-                    <Label color={ind.on ? C.safe : C.danger} size="0.52rem">{ind.label} OK</Label>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </GlassCard>
-
-          {/* OTA Deployment */}
-          <GlassCard style={{ overflow: "hidden", flex: 1 }} hover={false}>
-            <div style={{ height: 3, background: `linear-gradient(90deg, ${C.gold}, transparent)` }} />
-            <div style={{ padding: "12px 16px", borderBottom: `1px solid ${C.border}` }}>
-              <Label color={C.gold} size="0.62rem">Update & Push Control</Label>
-            </div>
-            <div style={{ padding: "14px 16px", display: "flex", flexDirection: "column", gap: 12 }}>
-              {/* File picker */}
-              <div>
-                <Label color={C.muted} size="0.54rem">Firmware Binary</Label>
-                <div onClick={() => fileRef.current?.click()}
-                  style={{
-                    marginTop: 5, padding: "12px", borderRadius: 10,
-                    border: `1px dashed ${pickedFile ? C.safe : C.borderHi}`,
-                    background: pickedFile ? C.safeDim : "transparent",
-                    cursor: "pointer", textAlign: "center", transition: "all 0.2s",
-                  }}
-                  onMouseEnter={e => { if (!pickedFile) { e.currentTarget.style.background = C.goldDim; e.currentTarget.style.borderColor = C.gold; } }}
-                  onMouseLeave={e => { if (!pickedFile) { e.currentTarget.style.background = "transparent"; e.currentTarget.style.borderColor = C.borderHi; } }}
-                >
-                  <input ref={fileRef} type="file" accept=".bin,.hex,.elf" style={{ display: "none" }} onChange={handleFilePick} />
-                  {pickedFile ? (
-                    <><div style={{ color: C.safe, marginBottom: 2, fontSize: "1rem" }}>✓</div>
-                    <Label color={C.safe} size="0.6rem">{pickedFile}</Label></>
-                  ) : (
-                    <><div style={{ color: C.gold, fontSize: "1.2rem", marginBottom: 2 }}>⊕</div>
-                    <Label color={C.muted} size="0.6rem">Drop .bin / .hex or click</Label></>
-                  )}
-                </div>
-              </div>
-
-              {/* Inputs */}
-              {[
-                { label: "Firmware Version", value: version, setter: setVersion, ph: "v2.5.0-beta" },
-                { label: "MinIO URL", value: firmwareUrl, setter: setFirmwareUrl, ph: "https://minio.local/firmware.bin" },
-              ].map(({ label, value, setter, ph }) => (
-                <div key={label}>
-                  <Label color={C.muted} size="0.54rem">{label}</Label>
-                  <input value={value} onChange={e => setter(e.target.value)}
-                    placeholder={ph}
-                    style={{
-                      width: "100%", marginTop: 4, padding: "7px 10px",
-                      background: C.glass, border: `1px solid ${C.border}`,
-                      borderRadius: 8, color: C.bone, fontFamily: "'JetBrains Mono', monospace",
-                      fontSize: "0.65rem", outline: "none", boxSizing: "border-box", transition: "border-color 0.2s",
-                    }}
-                    onFocus={e => e.currentTarget.style.borderColor = C.goldGlow}
-                    onBlur={e => e.currentTarget.style.borderColor = C.border}
-                  />
-                </div>
-              ))}
-
-              {/* Canary */}
-              <div>
-                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
-                  <Label color={C.muted} size="0.54rem">Canary Rollout</Label>
-                  <Label color={C.gold} size="0.58rem">{canary}% of fleet</Label>
-                </div>
-                <input type="range" min={1} max={100} value={canary} onChange={e => setCanary(Number(e.target.value))}
-                  style={{ width: "100%", accentColor: C.gold, cursor: "pointer" }} />
-              </div>
-
-              {/* Safety gate */}
-              <div style={{ padding: "7px 10px", background: C.safeDim, borderRadius: 8, border: "1px solid rgba(90,140,94,0.2)", display: "flex", alignItems: "center", gap: 8 }}>
-                <div style={{ width: 6, height: 6, borderRadius: "50%", background: C.safe }} />
-                <Label color={C.safe} size="0.56rem">Brake ECU Safe · Gate Open</Label>
-              </div>
-
-              {/* Deploy button */}
-              <button onClick={handleDeploy}
-                disabled={deployStatus === "pushing" || !version || !firmwareUrl}
-                style={{
-                  width: "100%", padding: "11px 0",
-                  background: `${deployColors[deployStatus]}18`,
-                  color: deployColors[deployStatus],
-                  border: `1px solid ${deployColors[deployStatus]}45`,
-                  borderRadius: 10, cursor: deployStatus === "pushing" ? "wait" : "pointer",
-                  fontFamily: "'Playfair Display', serif", fontSize: "0.85rem",
-                  fontWeight: 700, transition: "all 0.25s",
-                  display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
-                }}
-              >
-                {deployStatus === "idle" && <><span>⊕</span><span>Push Update to {car.name}</span></>}
-                {deployStatus === "pushing" && <><span style={{ display: "inline-block", animation: "spin 1s linear infinite" }}>◎</span><span>Pushing...</span></>}
-                {deployStatus === "success" && <><span>✓</span><span>Deployment Queued</span></>}
-                {deployStatus === "error" && <><span>✕</span><span>Failed</span></>}
-              </button>
-            </div>
-          </GlassCard>
-        </div>
-      </div>
-      <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
-    </div>
-  );
-}
-
-/* ─── SIDEBAR ─── */
-function Sidebar({ view, setView, onBack }: { view: string; setView: (v: View) => void; onBack?: () => void }) {
-  const items = [
-    { id: "fleet" as const, icon: "⊞", label: "Fleet Overview" },
+function SideNav({ view, setView, onBack }: { view:View; setView:(v:View)=>void; onBack?:()=>void }) {
+  const tabs: {id:View;icon:string;label:string}[] = [
+    {id:"dashboard",    icon:"dashboard",        label:"Dashboard"},
+    {id:"terminal",     icon:"terminal",          label:"Terminal"},
+    {id:"updates",      icon:"system_update_alt", label:"Updates"},
+    {id:"verification", icon:"verified_user",     label:"Verification"},
   ];
   return (
-    <aside style={{
-      width: 210, flexShrink: 0,
-      background: C.surface, backdropFilter: "blur(24px)",
-      WebkitBackdropFilter: "blur(24px)",
-      borderRight: `1px solid ${C.border}`,
-      display: "flex", flexDirection: "column", height: "100vh", overflow: "hidden",
-    }}>
-      {/* Brand */}
-      <div style={{ padding: "20px 16px 14px", borderBottom: `1px solid ${C.border}` }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14 }}>
-          <div style={{ width: 34, height: 34, background: C.goldDim, borderRadius: 10, border: `1px solid ${C.borderHi}`, display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <span style={{ fontSize: 16, color: C.gold }}>◈</span>
+    <aside style={{ width:248, flexShrink:0, background:P.wall, borderRight:`1px solid ${P.bDim}`, display:"flex", flexDirection:"column", height:"100vh", overflow:"hidden" }}>
+      <div style={{ padding:"20px 20px 16px", borderBottom:`1px solid ${P.bDim}` }}>
+        <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:15 }}>
+          <div style={{ width:36,height:36, background:P.cockpit, borderRadius:4, border:`1px solid ${P.bHi}`, display:"flex",alignItems:"center",justifyContent:"center" }}>
+            <I n="shield" f sz={19} col={P.cognac} />
           </div>
           <div>
-            <div style={{ fontFamily: "'Playfair Display', serif", fontWeight: 700, fontSize: "0.9rem", color: C.bone, letterSpacing: "0.04em" }}>GUARDIAN</div>
-            <Label color={C.gold} size="0.5rem">OTA Command</Label>
+            <div style={{ fontFamily:"'Cormorant Garamond',serif", fontWeight:700, fontSize:"0.95rem", color:P.ivory, letterSpacing:"0.08em" }}>NODE_01</div>
+            <div style={{ fontFamily:"'JetBrains Mono',monospace", fontSize:"0.54rem", color:P.cognac, letterSpacing:"0.22em", marginTop:2 }}>CONNECTED · SECURE</div>
           </div>
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 5, padding: "5px 8px", background: C.safeDim, borderRadius: 8, border: "1px solid rgba(90,140,94,0.2)" }}>
-          <div style={{ width: 5, height: 5, borderRadius: "50%", background: C.safe }} />
-          <Label color={C.safe} size="0.52rem">SYSTEM NOMINAL</Label>
-        </div>
+        <button
+          style={{ width:"100%", padding:"9px 0", background:P.cgnDim, color:P.cognac, fontWeight:600, fontSize:"0.72rem", borderRadius:3, border:`1px solid ${P.bHi}`, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", gap:6, letterSpacing:"0.06em", fontFamily:"'JetBrains Mono',monospace", transition:"all 0.2s" }}
+          onMouseEnter={e=>{e.currentTarget.style.background=P.cgnGlow;e.currentTarget.style.color=P.ivory;}}
+          onMouseLeave={e=>{e.currentTarget.style.background=P.cgnDim;e.currentTarget.style.color=P.cognac;}}
+        >
+          <I n="add" sz={14} col="inherit"/> New Fleet Group
+        </button>
       </div>
-      {/* Nav */}
-      <div style={{ flex: 1, padding: "10px 8px", display: "flex", flexDirection: "column", gap: 3 }}>
-        <div style={{ padding: "6px 8px 3px" }}><Label color={C.muted} size="0.48rem">NAVIGATION</Label></div>
-        {items.map(item => {
-          const active = view === item.id;
+      <div style={{ flex:1, padding:"10px 8px", display:"flex", flexDirection:"column", gap:1 }}>
+        {tabs.map(t=>{
+          const active = view===t.id;
           return (
-            <div key={item.id} onClick={() => setView(item.id)}
-              style={{
-                display: "flex", alignItems: "center", gap: 10, padding: "9px 12px",
-                borderRadius: 10, cursor: "pointer", transition: "all 0.15s",
-                background: active ? C.goldDim : "transparent",
-                borderLeft: `2px solid ${active ? C.gold : "transparent"}`,
-                color: active ? C.bone : C.boneDim, fontSize: "0.84rem",
-              }}
+            <div key={t.id} onClick={()=>setView(t.id)}
+              style={{ display:"flex",alignItems:"center",gap:10,padding:"9px 12px",borderRadius:3,cursor:"pointer",transition:"all 0.18s",color:active?P.ivory:P.cashmere,background:active?P.cockpit:"transparent",borderLeft:`2px solid ${active?P.cognac:"transparent"}`,fontWeight:500,fontSize:"0.84rem" }}
+              onMouseEnter={e=>{if(!active){e.currentTarget.style.background=P.cockpit;e.currentTarget.style.color=P.champagne;e.currentTarget.style.borderLeftColor=P.bHi;}}}
+              onMouseLeave={e=>{if(!active){e.currentTarget.style.background="transparent";e.currentTarget.style.color=P.cashmere;e.currentTarget.style.borderLeftColor="transparent";}}}
             >
-              <span style={{ fontSize: 13, color: active ? C.gold : C.muted }}>{item.icon}</span>
-              <span>{item.label}</span>
+              <I n={t.icon} f={active} sz={16} col={active?P.cognac:undefined}/><span>{t.label}</span>
             </div>
           );
         })}
+        <div style={{ display:"flex",alignItems:"center",gap:10,padding:"9px 12px",borderRadius:3,cursor:"not-allowed",color:P.whisper,fontSize:"0.84rem",opacity:0.4 }}>
+          <I n="analytics" sz={16}/><span>Device Logs</span>
+        </div>
       </div>
-      {/* Bottom */}
-      <div style={{ padding: "8px", borderTop: `1px solid ${C.border}` }}>
+      <div style={{ padding:"8px 8px", borderTop:`1px solid ${P.bDim}`, display:"flex", flexDirection:"column", gap:1 }}>
+        {[{icon:"monitor_heart",label:"System Health"},{icon:"menu_book",label:"Documentation"}].map(t=>(
+          <div key={t.label}
+            style={{ display:"flex",alignItems:"center",gap:9,padding:"7px 12px",borderRadius:3,cursor:"pointer",color:P.whisper,fontSize:"0.74rem",transition:"all 0.18s" }}
+            onMouseEnter={e=>{e.currentTarget.style.background=P.cockpit;e.currentTarget.style.color=P.parchment;}}
+            onMouseLeave={e=>{e.currentTarget.style.background="transparent";e.currentTarget.style.color=P.whisper;}}
+          >
+            <I n={t.icon} sz={14}/><span>{t.label}</span>
+          </div>
+        ))}
         {onBack && (
           <div onClick={onBack}
-            style={{ display: "flex", alignItems: "center", gap: 9, padding: "8px 12px", borderRadius: 10, cursor: "pointer", color: C.muted, fontSize: "0.78rem", transition: "all 0.15s" }}
-            onMouseEnter={e => { e.currentTarget.style.background = C.goldDim; e.currentTarget.style.color = C.bone; }}
-            onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = C.muted; }}
+            style={{ display:"flex",alignItems:"center",gap:9,padding:"7px 12px",borderRadius:3,cursor:"pointer",color:P.whisper,fontSize:"0.74rem",marginTop:4,borderTop:`1px solid ${P.bDim}`,transition:"all 0.18s" }}
+            onMouseEnter={e=>{e.currentTarget.style.background=P.cockpit;e.currentTarget.style.color=P.parchment;}}
+            onMouseLeave={e=>{e.currentTarget.style.background="transparent";e.currentTarget.style.color=P.whisper;}}
           >
-            <span style={{ fontSize: 11 }}>←</span>
-            <span>Landing Page</span>
+            <I n="arrow_back" sz={14}/><span>Landing Page</span>
           </div>
         )}
       </div>
@@ -1001,132 +139,790 @@ function Sidebar({ view, setView, onBack }: { view: string; setView: (v: View) =
   );
 }
 
-/* ─── TOP BAR ─── */
-function TopBar({ connected, title }: { connected: boolean; title: string }) {
+function TopBar({ connected }: { connected:boolean }) {
   const [clock, setClock] = useState("");
-  useEffect(() => {
-    setClock(new Date().toLocaleTimeString("en-US", { hour12: false }));
-    const id = setInterval(() => setClock(new Date().toLocaleTimeString("en-US", { hour12: false })), 1000);
-    return () => clearInterval(id);
-  }, []);
+  useEffect(()=>{
+    setClock(nowStr());
+    const id=setInterval(()=>setClock(nowStr()),1000);
+    return ()=>clearInterval(id);
+  },[]);
   return (
-    <header style={{
-      height: 52, background: C.surface, backdropFilter: "blur(20px)",
-      borderBottom: `1px solid ${C.border}`,
-      display: "flex", alignItems: "center", justifyContent: "space-between",
-      padding: "0 20px", flexShrink: 0,
-    }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-        <Label color={C.muted} size="0.52rem">GUARDIAN·OTA</Label>
-        <span style={{ color: C.border }}>›</span>
-        <Label color={C.boneDim} size="0.52rem">{title}</Label>
+    <header style={{ height:52, background:P.bg, borderBottom:`1px solid ${P.bDim}`, display:"flex", alignItems:"center", justifyContent:"space-between", padding:"0 20px", flexShrink:0, zIndex:20 }}>
+      <div style={{ display:"flex", alignItems:"center", gap:26 }}>
+        <span style={{ fontFamily:"'Cormorant Garamond',serif", fontWeight:700, fontSize:"1rem", letterSpacing:"0.16em", color:P.ivory }}>SENTINEL COMMAND</span>
+        <nav style={{ display:"flex", height:52 }}>
+          {["Fleet Metrics","Firmware Repo","Crypto Audit"].map((l,i)=>(
+            <a key={l} href="#" style={{ height:"100%",display:"flex",alignItems:"center",padding:"0 13px",fontSize:"0.65rem",fontWeight:500,letterSpacing:"0.09em",textTransform:"uppercase",textDecoration:"none",color:i===0?P.cognac:P.whisper,borderBottom:`2px solid ${i===0?P.cognac:"transparent"}`,transition:"all 0.2s",fontFamily:"'JetBrains Mono',monospace" }}
+              onMouseEnter={e=>{if(i!==0)(e.currentTarget as HTMLAnchorElement).style.color=P.parchment;}}
+              onMouseLeave={e=>{if(i!==0)(e.currentTarget as HTMLAnchorElement).style.color=P.whisper;}}
+            >{l}</a>
+          ))}
+        </nav>
       </div>
-      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-        <StatusPill on={connected} label={connected ? "LIVE" : "DEMO"} />
-        {clock && <Label color={C.muted}>{clock}</Label>}
-        <button style={{ padding: "4px 12px", background: C.dangerDim, color: C.danger, border: "1px solid rgba(184,80,80,0.3)", borderRadius: 8, cursor: "pointer", fontFamily: "'JetBrains Mono', monospace", fontSize: "0.6rem" }}>
-          Emergency Stop
-        </button>
+      <div style={{ display:"flex", alignItems:"center", gap:9 }}>
+        <div style={{ display:"flex",alignItems:"center",gap:5,padding:"3px 9px",background:P.cockpit,borderRadius:2,border:`1px solid ${P.bDim}` }}>
+          <div style={{ width:5,height:5,borderRadius:"50%",background:connected?P.sage:P.copper }}/>
+          <span style={{ fontFamily:"'JetBrains Mono',monospace",fontSize:"0.54rem",color:connected?P.sage:P.copper }}>{connected?"LIVE":"DEMO"}</span>
+        </div>
+        {clock&&<span style={{ fontFamily:"'JetBrains Mono',monospace",fontSize:"0.58rem",color:P.whisper }}>{clock}</span>}
+        <button style={{ padding:"4px 11px",border:`1px solid ${P.bMid}`,background:"transparent",color:P.parchment,fontSize:"0.64rem",fontWeight:600,borderRadius:2,cursor:"pointer",letterSpacing:"0.06em",textTransform:"uppercase",fontFamily:"'JetBrains Mono',monospace",transition:"all 0.2s" }}
+          onMouseEnter={e=>{e.currentTarget.style.borderColor=P.bHi;e.currentTarget.style.color=P.ivory;e.currentTarget.style.background=P.cockpit;}}
+          onMouseLeave={e=>{e.currentTarget.style.borderColor=P.bMid;e.currentTarget.style.color=P.parchment;e.currentTarget.style.background="transparent";}}
+        >Emergency Stop</button>
+        <button style={{ padding:"4px 14px",background:P.cgnDim,color:P.cognac,fontSize:"0.64rem",fontWeight:700,borderRadius:2,cursor:"pointer",letterSpacing:"0.06em",textTransform:"uppercase",border:`1px solid ${P.bHi}`,fontFamily:"'JetBrains Mono',monospace",transition:"all 0.2s" }}
+          onMouseEnter={e=>{e.currentTarget.style.background=P.cgnGlow;e.currentTarget.style.color=P.ivory;}}
+          onMouseLeave={e=>{e.currentTarget.style.background=P.cgnDim;e.currentTarget.style.color=P.cognac;}}
+        >Deploy Update</button>
+        {["rss_feed","settings_input_component","notifications"].map(ic=>(
+          <button key={ic} style={{ background:"transparent",border:"none",cursor:"pointer",padding:"4px",borderRadius:2,transition:"all 0.18s" }}
+            onMouseEnter={e=>{e.currentTarget.style.background=P.cockpit;}}
+            onMouseLeave={e=>{e.currentTarget.style.background="transparent";}}
+          ><I n={ic} sz={17}/></button>
+        ))}
+        <div style={{ width:26,height:26,borderRadius:3,background:P.cockpit,border:`1px solid ${P.bMid}`,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",transition:"all 0.18s" }}
+          onMouseEnter={e=>{e.currentTarget.style.borderColor=P.bHi;}}
+          onMouseLeave={e=>{e.currentTarget.style.borderColor=P.bMid;}}
+        >
+          <I n="person" sz={14} col={P.parchment}/>
+        </div>
       </div>
     </header>
   );
 }
 
-/* ─── ROOT DASHBOARD ─── */
-export default function Dashboard({ onBackToLanding }: { onBackToLanding?: () => void }) {
-  const [view, setView] = useState<View>("fleet");
-  const [selectedCar, setSelectedCar] = useState<CarModel | null>(null);
-  const [fleet, setFleet] = useState<DeviceState[]>([]);
-  const [connected, setConnected] = useState(false);
-
-  useEffect(() => {
-    const sim = Array.from({ length: 20 }, (_, i) => ({
-      deviceId: `sim-${1001 + i}`, primary: i === 0,
-      otaVersion: i < 3 ? "1.1.0" : "2.4.1",
-      safetyState: "SAFE",
-      ecuStates: { brake: "green", powertrain: "green", sensor: "green", infotainment: "green" },
-      lastSeen: new Date().toISOString(),
-      threatLevel: "LOW" as const,
-      otaProgress: 0, signatureOk: true, integrityOk: true, tlsHealthy: true, rollbackArmed: true,
-    }));
-    setFleet(sim);
-
-    const iv = setInterval(() => {
-      setFleet(p => p.map(d => {
-        const r = Math.random();
-        return { ...d, lastSeen: new Date().toISOString(), safetyState: r < 0.03 ? "UNSAFE" : "SAFE", threatLevel: (r < 0.03 ? "HIGH" : r < 0.08 ? "MEDIUM" : "LOW") as any };
-      }));
-    }, 2200);
-
-    try {
-      const ws = new WebSocket("ws://localhost:8080/ws/events");
-      ws.onopen = () => setConnected(true);
-      ws.onclose = () => setConnected(false);
-      return () => { clearInterval(iv); ws.close(); };
-    } catch { return () => clearInterval(iv); }
-  }, []);
-
-  function addDevice() {
-    const newId = `sim-${1001 + fleet.length}`;
-    setFleet(p => [...p, {
-      deviceId: newId, primary: false, otaVersion: "1.0.0",
-      safetyState: "SAFE", ecuStates: { brake: "green", powertrain: "green", sensor: "green", infotainment: "green" },
-      lastSeen: new Date().toISOString(), threatLevel: "LOW",
-      otaProgress: 0, signatureOk: true, integrityOk: true, tlsHealthy: true, rollbackArmed: true,
-    }]);
-  }
-
-  function selectCar(car: CarModel) {
-    setSelectedCar(car);
-    setView("detail" as any);
-  }
-
-  const titles: Record<string, string> = { fleet: "Fleet Overview", detail: selectedCar?.name + " Cockpit" };
-
+function DeviceModal({ d, onClose }: { d: DeviceState; onClose: () => void }) {
+  const [deploying, setDeploying] = useState(false);
+  const handleOTA = async () => {
+    setDeploying(true);
+    await deployFirmware({
+      campaign_id: "evt-man-" + Math.random().toString(36).substring(7),
+      firmware_url: "https://your-bucket.s3.amazonaws.com/guardian-ota.bin",
+      signature: "manual-override-sig",
+      target_devices: [d.deviceId]
+    }).catch(console.error);
+    setTimeout(() => {setDeploying(false); onClose();}, 1500);
+  };
   return (
-    <>
-      <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=JetBrains+Mono:wght@400;500;600&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
-      <div style={{
-        display: "flex", height: "100vh", width: "100vw", overflow: "hidden",
-        background: C.bg, color: C.bone, fontFamily: "'DM Sans', sans-serif",
-      }}>
-        {/* Warm texture overlay */}
-        <div style={{
-          position: "fixed", inset: 0, pointerEvents: "none", zIndex: 0,
-          backgroundImage: "radial-gradient(ellipse 80% 60% at 20% 10%, rgba(212,180,100,0.08) 0%, transparent 55%), radial-gradient(ellipse 60% 50% at 85% 90%, rgba(180,160,120,0.06) 0%, transparent 50%)",
-        }} />
+    <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.8)", zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center" }} onClick={onClose}>
+      <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} style={{ background: P.bg, border: `1px solid ${P.bHi}`, padding: 30, width: 680, borderRadius: 6, boxShadow: "0 10px 40px rgba(0,0,0,0.5)" }} onClick={e=>e.stopPropagation()}>
+        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 25, borderBottom: `1px solid ${P.bDim}`, paddingBottom: 15 }}>
+          <div>
+            <h2 style={{ fontFamily: "'Cormorant Garamond',serif", color: P.ivory, fontSize: "1.8rem", marginBottom: 4 }}>Car Settings: <span style={{color:P.cognac, fontFamily:"'JetBrains Mono'"}}>{d.deviceId}</span></h2>
+            <div style={{fontFamily:"'JetBrains Mono'", fontSize: "0.6rem", color: P.sage, letterSpacing: "0.1em"}}>{d.threatLevel==="HIGH"?"WARNING: CRITICAL THREAT DETECTED":"SECURE UPLINK ESTABLISHED"}</div>
+          </div>
+          <button onClick={onClose} style={{ background:"transparent", border:"none", color:P.whisper, cursor:"pointer" }}><I n="close" sz={28}/></button>
+        </div>
+        <div style={{ display: "flex", gap: 30 }}>
+          <div style={{ flex: 1, background: P.dash, padding: 15, borderRadius: 4, border: `1px solid ${P.bDim}` }}>
+            <h4 style={{ color: P.champagne, marginBottom: 15, fontFamily: "'JetBrains Mono'", fontSize: "0.75rem", borderBottom: `1px solid ${P.bDim}`, paddingBottom: 8 }}><I n="memory" sz={16} col={P.cognac}/> ECU TELEMETRY</h4>
+            {Object.entries(d.ecuStates || {"brake":"green","powertrain":"green","sensor":"green","infotainment":"green"}).map(([ecu, state]) => (
+              <div key={ecu} style={{ display: "flex", justifyContent: "space-between", padding: "10px 0", borderBottom: `1px solid ${P.bDim}`, alignItems: "center" }}>
+                <span style={{ color: P.whisper, textTransform: "uppercase", fontSize: "0.75rem", fontFamily: "'JetBrains Mono'" }}>{ecu}</span>
+                <span style={{ background: state === "green" ? "rgba(122,158,114,0.15)" : "rgba(158,90,90,0.15)", borderRadius: 3, padding: "3px 8px", fontSize: "0.65rem", color: state === "green" ? P.sage : P.burg, border: `1px solid ${state === "green" ? P.sage : P.burg}`, fontFamily: "'JetBrains Mono'" }}>{String(state).toUpperCase()}</span>
+              </div>
+            ))}
+          </div>
+          <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 15 }}>
+            <div style={{ background: P.cockpit, padding: 15, borderRadius: 4, border: `1px solid ${P.bDim}` }}>
+              <h4 style={{ color: P.champagne, marginBottom: 15, fontFamily: "'JetBrains Mono'", fontSize: "0.75rem", borderBottom: `1px solid ${P.bDim}`, paddingBottom: 8 }}><I n="security" sz={16} col={P.copper}/> OTA DIAGNOSTICS</h4>
+              <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 10, fontSize: "0.75rem" }}>
+                <span style={{ color: P.whisper, fontFamily: "'JetBrains Mono'" }}>Active FW:</span> <span style={{ color: P.ivory, fontFamily: "'JetBrains Mono'" }}>{d.otaVersion || "1.0.0"}</span>
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 10, fontSize: "0.75rem" }}>
+                <span style={{ color: P.whisper, fontFamily: "'JetBrains Mono'" }}>Last Seen:</span> <span style={{ color: P.ivory, fontFamily: "'JetBrains Mono'" }}>{new Date(d.lastSeen).toLocaleTimeString()}</span>
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.75rem" }}>
+                <span style={{ color: P.whisper, fontFamily: "'JetBrains Mono'" }}>PKI Health:</span> <span style={{ color: P.sage, fontFamily: "'JetBrains Mono'" }}>VALIDATED</span>
+              </div>
+            </div>
+            <button onClick={handleOTA} disabled={deploying} style={{ flex: 1, width: "100%", padding: 15, background: deploying ? P.bg : P.cgnDim, color: P.cognac, border: `1px solid ${P.bHi}`, cursor: "pointer", fontFamily: "'JetBrains Mono'", fontSize: "0.75rem", fontWeight: "bold", borderRadius: 4, transition: "all 0.2s" }} onMouseEnter={e=>{if(!deploying) e.currentTarget.style.color=P.ivory}} onMouseLeave={e=>{if(!deploying) e.currentTarget.style.color=P.cognac}}>
+              {deploying ? "TRANSMITTING SIGNED PAYLOAD..." : "FORCE MANUAL OTA DEPLOYMENT"}
+            </button>
+          </div>
+        </div>
+      </motion.div>
+    </div>
+  );
+}
 
-        <Sidebar view={view} setView={v => { setView(v); setSelectedCar(null); }} onBack={onBackToLanding} />
+function AvailableDevicesTable({ fleet, onSelect }: { fleet: DeviceState[]; onSelect: (d:DeviceState)=>void }) {
+  // Sort robustly handling undefined
+  const sorted = [...fleet].sort((a,b) => new Date(b.lastSeen||0).getTime() - new Date(a.lastSeen||0).getTime());
+  return (
+    <Card style={{ padding: 20, marginTop: 15, overflowY: "auto", maxHeight: 400 }}>
+       <div style={{ display:"flex", alignItems:"center", gap: 10, marginBottom: 15 }}>
+          <I n="directions_car" sz={24} col={P.cognac}/>
+          <h3 style={{ fontFamily:"'Cormorant Garamond',serif", color: P.ivory, fontSize: "1.4rem" }}>Connected Fleet Ledger</h3>
+       </div>
+       <table style={{ width: "100%", textAlign: "left", borderCollapse: "collapse" }}>
+         <thead>
+           <tr style={{ borderBottom: `1px solid ${P.bDim}`, color: P.whisper, fontSize: "0.7rem", fontFamily: "'JetBrains Mono'" }}>
+             <th style={{ padding: "12px 10px", fontWeight: "normal" }}>MAC ID / ADDRESS</th>
+             <th style={{ padding: "12px 10px", fontWeight: "normal" }}>THREAT LEVEL</th>
+             <th style={{ padding: "12px 10px", fontWeight: "normal" }}>OTA VERSION</th>
+             <th style={{ padding: "12px 10px", fontWeight: "normal" }}>SAFETY STATE</th>
+             <th style={{ padding: "12px 10px", fontWeight: "normal", textAlign: "right" }}>ACTION</th>
+           </tr>
+         </thead>
+         <tbody>
+           {sorted.map((d, i) => (
+             <tr key={i} style={{ borderBottom: `1px solid rgba(238,230,211,0.02)`, color: P.ivory, fontSize: "0.85rem", cursor: "pointer", transition: "background 0.15s" }} onClick={() => onSelect(d)} onMouseEnter={e=>e.currentTarget.style.background=P.dash} onMouseLeave={e=>e.currentTarget.style.background="transparent"}>
+               <td style={{ padding: "12px 10px", fontFamily: "'JetBrains Mono'", color: P.champagne }}>{d.deviceId}</td>
+               <td style={{ padding: "12px 10px", color: d.threatLevel === "HIGH" ? P.burg : P.sage, fontFamily: "'JetBrains Mono'", fontSize: "0.75rem" }}>{d.threatLevel || "LOW"}</td>
+               <td style={{ padding: "12px 10px", fontFamily: "'JetBrains Mono'", color: P.platinum }}>{d.otaVersion || "1.0.0"}</td>
+               <td style={{ padding: "12px 10px", color: P.platinum }}>{d.safetyState || "SAFE"}</td>
+               <td style={{ padding: "12px 10px", textAlign: "right" }}><I n="arrow_forward" col={P.cognac}/></td>
+             </tr>
+           ))}
+           {sorted.length === 0 && (
+             <tr><td colSpan={5} style={{ padding: 30, textAlign: "center", color: P.whisper, fontStyle: "italic" }}>Awaiting active nodes... (Did you turn on your ESP32?)</td></tr>
+           )}
+         </tbody>
+       </table>
+    </Card>
+  );
+}
 
-        <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", position: "relative", zIndex: 1 }}>
-          <TopBar connected={connected} title={titles[view] || "Dashboard"} />
-
-          <AnimatePresence mode="wait">
-            <motion.div key={view + (selectedCar?.id || "")}
-              initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -6 }} transition={{ duration: 0.18 }}
-              style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}
-            >
-              {view === "fleet" && (
-                <div style={{ flex: 1, overflowY: "auto", padding: "20px 24px" }}>
-                  <FleetHeader fleet={fleet} onAddDevice={addDevice} />
-                  <div style={{ marginBottom: 16 }}>
-                    <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: "1.2rem", fontWeight: 700, color: C.bone, margin: "0 0 4px" }}>Vehicle Platform Registry</h2>
-                    <Label color={C.muted} size="0.58rem">Select a vehicle to open the system integration cockpit</Label>
+function DashboardView({ fleet }: { fleet:DeviceState[] }) {
+  const [selectedDevice, setSelectedDevice] = useState<DeviceState | null>(null);
+  const high = fleet.filter(d=>d.threatLevel==="HIGH").length;
+  const safe = fleet.filter(d=>d.safetyState==="SAFE").length;
+  const feed = [
+    {type:"FW_PUSH_SUCCESS",col:P.cognac, msg:"Payload v2.4.1 delivered to NODE_77.",      sub:"HASH: a8f4...9c2e",time:"JUST NOW"},
+    {type:"CRYPTO_VERIFIED", col:P.sage,   msg:"Bootloader signature valid on Cluster Beta.",sub:"ID: CLSTR-B-09",  time:"2M AGO"},
+    {type:"SYS_PING",        col:P.platinum,msg:"Routine health check completed globally.",  sub:"LATENCY: 42ms avg",time:"15M AGO"},
+    {type:"FW_PUSH_SUCCESS", col:P.cognac, msg:"Payload v2.4.0 delivered to NODE_12.",      sub:"HASH: f3b1...8d4a",time:"1H AGO"},
+    {type:"ROLLBACK_EVENT",  col:P.burg,   msg:"NODE_44 auto-rolled back to v1.8.5.",        sub:"HEALTH_CHECK_FAIL",time:"3H AGO"},
+  ];
+  const kpis = [
+    {label:"Update Success Rate",val:"98.2%",  sub:"+1.4% Δ",      icon:"check_circle", subCol:P.sage,    col:P.cognac,  hi:false},
+    {label:"Total Devices",      val:String(fleet.length||412),sub:`ONLINE: ${safe||409}  |  OFFLINE: ${Math.max(0,(fleet.length||412)-safe)||3}`,icon:"router",subCol:P.whisper,col:P.champagne,hi:false},
+    {label:"Active Deployments", val:"3",       sub:"V2.4.1 STAGED", icon:"rocket_launch",subCol:P.whisper, col:P.champagne,hi:false},
+    {label:"Fleet Health",       val:high>2?"DEGRADED":"Secure",sub:"No critical vulnerabilities.",icon:"shield",subCol:P.whisper,col:P.sage,hi:true},
+  ];
+  const geoPoints = [
+    {x:31,y:37,label:"US-EAST",    count:142,delay:0},
+    {x:17,y:46,label:"US-WEST",    count:98, delay:0.8},
+    {x:51,y:29,label:"EU-CENTRAL", count:88, delay:1.4},
+    {x:66,y:51,label:"APAC",       count:84, delay:0.4},
+  ];
+  return (
+    <div style={{ flex:1, overflowY:"auto", padding:"20px 24px" }}>
+      <div style={{ marginBottom:22 }}>
+        <h2 style={{ fontFamily:"'Cormorant Garamond',serif",fontSize:"2.4rem",fontWeight:400,letterSpacing:"-0.01em",color:P.ivory,lineHeight:1 }}>Fleet Overview</h2>
+        <p style={{ fontFamily:"'JetBrains Mono',monospace",fontSize:"0.65rem",color:P.whisper,marginTop:7,display:"flex",alignItems:"center",gap:7 }}>
+          <span style={{ width:5,height:5,borderRadius:"50%",background:P.sage,display:"inline-block" }}/>
+          SYSTEM.STATE = NOMINAL_OPERATION
+        </p>
+      </div>
+      <div style={{ display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:9,marginBottom:12 }}>
+        {kpis.map((k,i)=>(
+          <motion.div key={i} initial={{opacity:0,y:10}} animate={{opacity:1,y:0}} transition={{delay:i*0.07}}
+            style={{ background:P.wall,borderRadius:4,border:k.hi?`1px solid ${P.bHi}`:`1px solid ${P.bDim}`,borderLeft:k.hi?`3px solid ${P.cognac}`:undefined,padding:"16px 17px",display:"flex",flexDirection:"column",justifyContent:"space-between",minHeight:124,cursor:"default",transition:"all 0.22s" }}
+            onMouseEnter={e=>{e.currentTarget.style.background=P.cockpit;e.currentTarget.style.borderColor=P.bMid;}}
+            onMouseLeave={e=>{e.currentTarget.style.background=P.wall;e.currentTarget.style.borderColor=k.hi?P.bHi:P.bDim;}}
+          >
+            <div style={{ display:"flex",justifyContent:"space-between",alignItems:"start" }}>
+              <span style={{ fontSize:"0.58rem",color:P.whisper,textTransform:"uppercase",letterSpacing:"0.14em",fontWeight:600,fontFamily:"'JetBrains Mono',monospace" }}>{k.label}</span>
+              <I n={k.icon} f={k.hi} sz={17} col={k.hi?P.cognac:P.platinum}/>
+            </div>
+            <div>
+              <span style={{ fontFamily:"'Cormorant Garamond',serif",fontSize:k.hi?"1.6rem":"2.3rem",fontWeight:k.hi?700:400,color:k.col,letterSpacing:k.hi?"0.06em":"-0.01em",textTransform:k.hi?"uppercase":undefined }}>{k.val}</span>
+              <div style={{ fontFamily:"'JetBrains Mono',monospace",fontSize:"0.61rem",color:k.subCol,marginTop:4,display:"flex",alignItems:"center",gap:4 }}>
+                {i===0&&<I n="trending_up" sz={11} col={P.sage}/>}{k.sub}
+              </div>
+            </div>
+          </motion.div>
+        ))}
+      </div>
+      <div style={{ display:"grid",gridTemplateColumns:"1fr 300px",gap:9,marginBottom:12 }}>
+        <Card style={{ display:"flex",flexDirection:"column",overflow:"hidden",height:385 }}>
+          <div style={{ height:35,borderBottom:`1px solid ${P.bDim}`,display:"flex",alignItems:"center",padding:"0 14px",justifyContent:"space-between",flexShrink:0 }}>
+            <div style={{ display:"flex",gap:20 }}>
+              <span style={{ fontFamily:"'JetBrains Mono',monospace",fontSize:"0.57rem",color:P.cognac,borderBottom:`1px solid ${P.cognac}`,paddingBottom:2 }}>GEO_DISTRIBUTION.MAP</span>
+              <span style={{ fontFamily:"'JetBrains Mono',monospace",fontSize:"0.57rem",color:P.whisper,cursor:"pointer",transition:"color 0.18s" }}
+                onMouseEnter={e=>{(e.currentTarget as HTMLElement).style.color=P.parchment;}}
+                onMouseLeave={e=>{(e.currentTarget as HTMLElement).style.color=P.whisper;}}
+              >NETWORK_TOPOLOGY</span>
+            </div>
+            <div style={{ display:"flex",gap:4 }}>{[0,1,2].map(i=><div key={i} style={{width:7,height:7,borderRadius:"50%",background:P.dash}}/>)}</div>
+          </div>
+          <div style={{ flex:1,background:"#0A0806",position:"relative",overflow:"hidden" }}>
+            <div style={{ position:"absolute",inset:0,background:"radial-gradient(ellipse 80% 60% at 50% 50%, rgba(200,145,74,0.022) 0%, transparent 70%)" }}/>
+            <div style={{ position:"absolute",inset:0,background:"linear-gradient(to top, #0A0806 0%, transparent 35%)" }}/>
+            <svg viewBox="0 0 800 380" style={{ position:"absolute",inset:0,width:"100%",height:"100%",opacity:0.07 }}>
+              <ellipse cx="400" cy="190" rx="360" ry="160" fill="none" stroke={P.parchment} strokeWidth="0.6"/>
+              <path d="M60,190 Q200,80 340,160 Q440,60 560,140 Q660,80 750,170" fill="none" stroke={P.parchment} strokeWidth="0.5"/>
+              <path d="M40,260 Q200,210 360,245 Q500,210 640,255 Q720,240 780,260" fill="none" stroke={P.parchment} strokeWidth="0.3"/>
+              <line x1="400" y1="30" x2="400" y2="360" stroke={P.parchment} strokeWidth="0.25" strokeDasharray="5 5"/>
+              <line x1="40" y1="190" x2="760" y2="190" stroke={P.parchment} strokeWidth="0.25" strokeDasharray="5 5"/>
+            </svg>
+            <svg style={{ position:"absolute",inset:0,width:"100%",height:"100%",pointerEvents:"none" }}>
+              {[[31,37,51,29],[31,37,17,46],[51,29,66,51]].map(([x1,y1,x2,y2],i)=>(
+                <line key={i} x1={`${x1}%`} y1={`${y1}%`} x2={`${x2}%`} y2={`${y2}%`} stroke="rgba(200,145,74,0.12)" strokeWidth="0.8" strokeDasharray="4 5"/>
+              ))}
+            </svg>
+            {geoPoints.map(g=>(
+              <div key={g.label} style={{ position:"absolute",left:`${g.x}%`,top:`${g.y}%`,transform:"translate(-50%,-50%)" }}>
+                <div style={{ width:7,height:7,borderRadius:"50%",background:P.cognac,animation:"gpulse 2.5s ease-in-out infinite",animationDelay:`${g.delay}s` }}/>
+                <div style={{ position:"absolute",bottom:13,left:"50%",transform:"translateX(-50%)",background:"rgba(22,18,16,0.92)",border:`1px solid ${P.bMid}`,borderRadius:3,padding:"6px 10px",width:128,whiteSpace:"nowrap" }}>
+                  <div style={{ fontFamily:"'JetBrains Mono',monospace",fontSize:"0.5rem",color:P.whisper,marginBottom:3 }}>{g.label}</div>
+                  <div style={{ display:"flex",justifyContent:"space-between",alignItems:"end" }}>
+                    <span style={{ fontFamily:"'Cormorant Garamond',serif",fontSize:"1.5rem",fontWeight:600,color:P.ivory,lineHeight:1 }}>{g.count}</span>
+                    <span style={{ fontFamily:"'JetBrains Mono',monospace",fontSize:"0.5rem",color:P.sage }}>● ONLINE</span>
                   </div>
-                  <CarSelectionGrid onSelect={selectCar} />
                 </div>
-              )}
+              </div>
+            ))}
+            <div style={{ position:"absolute",bottom:11,right:14,fontFamily:"'JetBrains Mono',monospace",fontSize:"0.53rem",color:P.whisper,textAlign:"right",lineHeight:1.7 }}>
+              LAT: 37.7749 N<br/>LNG: 122.4194 W<br/>
+              <span style={{ color:P.cognac,animation:"scanBlink 1.2s step-end infinite" }}>SCANNING...</span>
+            </div>
+          </div>
+        </Card>
+        <Card style={{ display:"flex",flexDirection:"column",overflow:"hidden" }}>
+          <div style={{ padding:"11px 15px",borderBottom:`1px solid ${P.bDim}`,display:"flex",justifyContent:"space-between",alignItems:"center",flexShrink:0 }}>
+            <h3 style={{ fontFamily:"'Cormorant Garamond',serif",fontWeight:600,fontSize:"0.95rem",letterSpacing:"0.05em",color:P.ivory }}>Recent Activity</h3>
+            <button style={{ fontSize:"0.56rem",fontFamily:"'JetBrains Mono',monospace",color:P.cognac,background:"transparent",border:"none",cursor:"pointer",transition:"color 0.18s" }}
+              onMouseEnter={e=>{e.currentTarget.style.color=P.champagne;}}
+              onMouseLeave={e=>{e.currentTarget.style.color=P.cognac;}}
+            >VIEW_ALL</button>
+          </div>
+          <div style={{ flex:1,overflowY:"auto",padding:"8px 9px",display:"flex",flexDirection:"column",gap:5 }}>
+            {feed.map((a,i)=>(
+              <motion.div key={i} initial={{opacity:0,x:8}} animate={{opacity:1,x:0}} transition={{delay:i*0.07}}
+                style={{ padding:"9px 11px",background:P.cockpit,borderRadius:3,borderLeft:`2px solid ${a.col}`,cursor:"pointer",transition:"all 0.18s" }}
+                onMouseEnter={e=>{e.currentTarget.style.background=P.dash;}}
+                onMouseLeave={e=>{e.currentTarget.style.background=P.cockpit;}}
+              >
+                <div style={{ display:"flex",justifyContent:"space-between",marginBottom:3 }}>
+                  <span style={{ fontFamily:"'JetBrains Mono',monospace",fontSize:"0.55rem",background:`${a.col}15`,color:a.col,padding:"1px 6px",borderRadius:2,border:`1px solid ${a.col}25` }}>{a.type}</span>
+                  <span style={{ fontFamily:"'JetBrains Mono',monospace",fontSize:"0.53rem",color:P.whisper }}>{a.time}</span>
+                </div>
+                <p style={{ fontSize:"0.75rem",color:P.champagne,marginBottom:2 }}>{a.msg}</p>
+                <div style={{ fontFamily:"'JetBrains Mono',monospace",fontSize:"0.52rem",color:P.whisper }}>{a.sub}</div>
+              </motion.div>
+            ))}
+          </div>
+        </Card>
+      </div>
+      <div style={{ display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:9 }}>
+        {[
+          {label:"Avg OTA Duration",   val:"4.2s",        sub:"Down 0.8s from last epoch",icon:"timer",   col:P.cognac},
+          {label:"Signature Failures", val:String(high||0),sub:"Last 24 hours",            icon:"gpp_bad", col:high>0?P.burg:P.sage},
+          {label:"Rollback Events",    val:"1",            sub:"NODE_44 · 3h ago",          icon:"undo",    col:P.copper},
+        ].map((s)=>(
+          <div key={s.label}
+            style={{ background:P.wall,borderRadius:4,border:`1px solid ${P.bDim}`,padding:"13px 15px",display:"flex",alignItems:"center",gap:13,cursor:"default",transition:"all 0.22s" }}
+            onMouseEnter={e=>{e.currentTarget.style.background=P.cockpit;e.currentTarget.style.borderColor=P.bMid;}}
+            onMouseLeave={e=>{e.currentTarget.style.background=P.wall;e.currentTarget.style.borderColor=P.bDim;}}
+          >
+            <div style={{ width:33,height:33,borderRadius:4,background:`${s.col}14`,border:`1px solid ${s.col}28`,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,transition:"all 0.22s" }}>
+              <I n={s.icon} sz={16} col={s.col}/>
+            </div>
+            <div>
+              <div style={{ fontFamily:"'Cormorant Garamond',serif",fontSize:"1.5rem",fontWeight:600,color:s.col }}>{s.val}</div>
+              <div style={{ fontSize:"0.7rem",color:P.champagne }}>{s.label}</div>
+              <div style={{ fontFamily:"'JetBrains Mono',monospace",fontSize:"0.53rem",color:P.whisper }}>{s.sub}</div>
+            </div>
+          </div>
+        ))}
+      </div>
+      <AvailableDevicesTable fleet={fleet} onSelect={setSelectedDevice} />
+      <AnimatePresence>
+        {selectedDevice && <DeviceModal d={selectedDevice} onClose={() => setSelectedDevice(null)} />}
+      </AnimatePresence>
+      <style>{`
+        @keyframes gpulse{0%,100%{transform:scale(1);opacity:0.9;}50%{transform:scale(2.0);opacity:0.18;}}
+        @keyframes scanBlink{0%,100%{opacity:1;}50%{opacity:0.1;}}
+      `}</style>
+    </div>
+  );
+}
 
-              {view === ("detail" as any) && selectedCar && (
-                <CarDetailView car={selectedCar} fleet={fleet}
-                  onBack={() => { setView("fleet"); setSelectedCar(null); }}
-                />
-              )}
-            </motion.div>
-          </AnimatePresence>
+function TerminalView() {
+  type Line={type:"cmd"|"out"|"ok"|"err"|"info";text:string};
+  const [lines,setLines]=useState<Line[]>([
+    {type:"info",text:"GUARDIAN-OTA Command Interface v4.1.0 — Initialized"},
+    {type:"info",text:"Cryptographic modules loaded... OK"},
+    {type:"info",text:"Establishing secure channel to Fleet Registry... OK"},
+    {type:"ok",text:"Authentication token verified. Access granted."},
+    {type:"cmd",text:"guard-ota --sign firmware.bin"},
+    {type:"info",text:"[INFO] Reading target binary 'firmware.bin' (4.2 MB)"},
+    {type:"info",text:"[INFO] Computing SHA-256 hash..."},
+    {type:"ok",text:"Hash: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"},
+    {type:"info",text:"[INFO] Applying ECDSA-P384 signature using key alias 'fleet-prod-01'"},
+    {type:"ok",text:"[SUCCESS] Payload signed. Created 'firmware.signed.bin'"},
+    {type:"cmd",text:"guard-ota --deploy --target NODE_01 --payload firmware.signed.bin"},
+    {type:"info",text:"[INFO] Initiating deployment for target: NODE_01"},
+    {type:"info",text:"[INFO] Handshake initiated (TLS 1.3)..."},
+    {type:"ok",text:"[OK] Mutual authentication verified."},
+    {type:"info",text:"[INFO] Transferring payload chunks [======>     ] 60%"},
+    {type:"info",text:"[INFO] Transferring payload chunks [==========] 100%"},
+    {type:"info",text:"[INFO] Verifying checksum on remote device..."},
+    {type:"ok",text:"[SUCCESS] Deployment committed. NODE_01 rebooting."},
+  ]);
+  const [input,setInput]=useState("");
+  const [tv,setTv]=useState(true);
+  const [ad,setAd]=useState(false);
+  const endRef=useRef<HTMLDivElement>(null);
+  const history=[
+    {cmd:"guard-ota --deploy --target...",time:"Just now"},
+    {cmd:"guard-ota --sign firmware.bin",time:"2m ago"},
+    {cmd:"ping fleet-registry.internal",time:"15m ago"},
+    {cmd:"sysctl restart netd",time:"1h ago",err:true},
+    {cmd:"tail -f /var/log/auth.log",time:"2h ago"},
+    {cmd:"cat /etc/guardian/config.yaml",time:"Yesterday"},
+  ];
+  const lCol=(t:string)=>({ok:P.sage,err:P.burg,info:P.platinum}[t]||P.champagne);
+  const submit=(e:React.KeyboardEvent<HTMLInputElement>)=>{
+    if(e.key!=="Enter"||!input.trim()) return;
+    setLines(p=>[...p,{type:"cmd",text:input},{type:"ok",text:`[OK] Command processed: ${input}`}]);
+    setInput("");
+    setTimeout(()=>endRef.current?.scrollIntoView({behavior:"smooth"}),50);
+  };
+  useEffect(()=>{endRef.current?.scrollIntoView();},[lines]);
+  return (
+    <div style={{ display:"grid",gridTemplateColumns:"1fr 300px",gap:9,padding:15,flex:1,overflow:"hidden" }}>
+      <div style={{ background:"#090705",borderRadius:4,border:`1px solid ${P.bDim}`,display:"flex",flexDirection:"column",overflow:"hidden" }}>
+        <div style={{ height:34,background:P.cockpit,borderBottom:`1px solid ${P.bDim}`,display:"flex",alignItems:"center",padding:"0 12px",justifyContent:"space-between",flexShrink:0,position:"relative" }}>
+          <div style={{ position:"absolute",left:0,top:0,bottom:0,width:2,background:P.cognac }}/>
+          <div style={{ display:"flex",alignItems:"center",gap:7,paddingLeft:7 }}>
+            <I n="terminal" sz={13} col={P.cognac}/>
+            <span style={{ fontFamily:"'JetBrains Mono',monospace",fontSize:"0.63rem",fontWeight:600,letterSpacing:"0.12em",color:P.ivory }}>GUARDIAN-OTA TERMINAL v4.1</span>
+          </div>
+          <div style={{ display:"flex",gap:4 }}>{[0,1,2].map(i=><div key={i} style={{width:7,height:7,borderRadius:"50%",background:P.dash,border:`1px solid ${P.bDim}`}}/>)}</div>
+        </div>
+        <div style={{ flex:1,fontFamily:"'JetBrains Mono',monospace",fontSize:11,lineHeight:1.75,overflowY:"auto",padding:"13px 14px",display:"flex",flexDirection:"column" }}>
+          {lines.map((l,i)=>(
+            <div key={i} style={{marginBottom:2}}>
+              {l.type==="cmd"
+                ?<div style={{display:"flex",gap:8}}>
+                  <span style={{color:P.cognac,fontWeight:500,flexShrink:0}}>root@sentinel:/opt/ota$</span>
+                  <span style={{color:P.ivory}}>{l.text}</span>
+                </div>
+                :<div style={{paddingLeft:l.type==="info"?14:0,color:lCol(l.type),borderLeft:l.type==="info"?`1px solid ${P.bDim}`:"none"}}>{l.text}</div>}
+            </div>
+          ))}
+          <div style={{ margin:"13px 0",background:P.cockpit,padding:12,borderRadius:3,borderLeft:`2px solid ${P.cognac}`,display:"flex",gap:10,alignItems:"start",maxWidth:480 }}>
+            <I n="info" sz={16} col={P.cognac}/>
+            <div>
+              <h4 style={{ fontFamily:"'Cormorant Garamond',serif",fontWeight:600,color:P.cognac,fontSize:"0.85rem",letterSpacing:"0.06em",marginBottom:3 }}>System Notice</h4>
+              <p style={{ fontSize:"0.7rem",color:P.cashmere,lineHeight:1.6 }}>Network protocol upgrade scheduled for 03:00 UTC. Expect brief disruption in remote terminal connectivity.</p>
+            </div>
+          </div>
+          <div style={{ display:"flex",alignItems:"center",gap:7,marginTop:8 }}>
+            <span style={{color:P.cognac,fontWeight:500,flexShrink:0}}>root@sentinel:/opt/ota$</span>
+            <input value={input} onChange={e=>setInput(e.target.value)} onKeyDown={submit}
+              style={{ flex:1,background:"transparent",border:"none",outline:"none",color:P.ivory,fontFamily:"'JetBrains Mono',monospace",fontSize:11,caretColor:P.cognac }} autoFocus/>
+            <span style={{ display:"inline-block",width:7,height:"1em",background:P.cognac,animation:"tblink 1s step-end infinite",verticalAlign:"middle" }}/>
+          </div>
+          <div ref={endRef}/>
         </div>
       </div>
-    </>
+      <div style={{ display:"flex",flexDirection:"column",gap:9,overflow:"hidden" }}>
+        <Card style={{ flex:1,display:"flex",flexDirection:"column",overflow:"hidden" }}>
+          <div style={{ padding:"11px 15px",borderBottom:`1px solid ${P.bDim}`,display:"flex",justifyContent:"space-between",alignItems:"center",flexShrink:0 }}>
+            <h3 style={{ fontFamily:"'Cormorant Garamond',serif",fontSize:"0.9rem",fontWeight:600,display:"flex",alignItems:"center",gap:5,color:P.ivory }}>
+              <I n="history" sz={15} col={P.cognac}/> Command History
+            </h3>
+            <button style={{ fontSize:"0.56rem",fontWeight:700,letterSpacing:"0.12em",textTransform:"uppercase",color:P.whisper,background:"transparent",border:"none",cursor:"pointer",transition:"color 0.18s" }}
+              onMouseEnter={e=>{e.currentTarget.style.color=P.burg;}}
+              onMouseLeave={e=>{e.currentTarget.style.color=P.whisper;}}
+            >Clear</button>
+          </div>
+          <div style={{ flex:1,overflowY:"auto",padding:6 }}>
+            {history.map((h,i)=>(
+              <div key={i}
+                style={{ padding:"8px 10px",borderRadius:2,cursor:"pointer",display:"flex",justifyContent:"space-between",alignItems:"center",transition:"all 0.16s" }}
+                onMouseEnter={e=>{e.currentTarget.style.background=P.cockpit;}}
+                onMouseLeave={e=>{e.currentTarget.style.background="transparent";}}
+              >
+                <code style={{ fontFamily:"'JetBrains Mono',monospace",fontSize:"0.64rem",color:h.err?P.burg:P.champagne }}>{h.cmd}</code>
+                <span style={{ fontFamily:"'JetBrains Mono',monospace",fontSize:"0.53rem",color:P.whisper,flexShrink:0,marginLeft:8 }}>{h.time}</span>
+              </div>
+            ))}
+          </div>
+        </Card>
+        <Card style={{ flexShrink:0 }}>
+          <div style={{ padding:"11px 15px",borderBottom:`1px solid ${P.bDim}` }}>
+            <h3 style={{ fontFamily:"'Cormorant Garamond',serif",fontSize:"0.9rem",fontWeight:600,display:"flex",alignItems:"center",gap:5,color:P.ivory }}>
+              <I n="tune" sz={15} col={P.platinum}/> Session Config
+            </h3>
+          </div>
+          <div style={{ padding:"14px 15px",display:"flex",flexDirection:"column",gap:13 }}>
+            {[["Verbose Logging","DEBUG level outputs",tv,setTv],["Auto-Deploy Signatures","Skip confirmation",ad,setAd]].map(([label,sub,val,setter]:any)=>(
+              <div key={String(label)} style={{ display:"flex",alignItems:"center",justifyContent:"space-between" }}>
+                <div>
+                  <p style={{ fontSize:"0.82rem",fontWeight:500,color:P.champagne }}>{label}</p>
+                  <p style={{ fontFamily:"'JetBrains Mono',monospace",fontSize:"0.55rem",color:P.whisper,marginTop:2 }}>{sub}</p>
+                </div>
+                <div onClick={()=>setter(!val)} style={{ width:38,height:19,borderRadius:10,background:val?P.cgnDim:P.dash,border:`1px solid ${val?P.bHi:P.bDim}`,position:"relative",cursor:"pointer",transition:"all 0.25s",padding:"0 2px",display:"flex",alignItems:"center" }}>
+                  <div style={{ width:15,height:15,borderRadius:"50%",background:val?P.cognac:P.parchment,transform:val?"translateX(18px)":"translateX(0)",transition:"transform 0.25s" }}/>
+                </div>
+              </div>
+            ))}
+            <div>
+              <label style={{ display:"block",fontFamily:"'JetBrains Mono',monospace",fontSize:"0.56rem",color:P.whisper,marginBottom:5,textTransform:"uppercase",letterSpacing:"0.12em" }}>Baud Rate / Uplink</label>
+              <select style={{ width:"100%",appearance:"none",background:P.cockpit,border:"none",borderBottom:`1px solid ${P.bMid}`,color:P.champagne,fontSize:"0.8rem",padding:"8px 10px",borderRadius:"2px 2px 0 0",cursor:"pointer",fontFamily:"'JetBrains Mono',monospace",outline:"none" }}>
+                <option>115200 bps (Standard)</option><option>9600 bps (Failsafe)</option><option>Unlimited (LAN)</option>
+              </select>
+            </div>
+          </div>
+        </Card>
+      </div>
+      <style>{`@keyframes tblink{0%,100%{opacity:1;}50%{opacity:0;}}`}</style>
+    </div>
+  );
+}
+
+function UpdatesView() {
+  const [strategy,setStrategy]=useState<"phased"|"immediate">("phased");
+  const [canary,setCanary]=useState(10);
+  const rows=[
+    {ver:"v2.4.1-stable",           target:"ESP32-WROOM",hash:"e3b0c442...b855",date:"Oct 24, 2023",status:"VERIFIED"},
+    {ver:"v2.4.0-rc2",              target:"ESP32-WROOM",hash:"8d969eef...6c92",date:"Oct 18, 2023",status:"ARCHIVED"},
+    {ver:"v1.8.5-patch",            target:"nRF52840",   hash:"f2ca1bb6...0a22",date:"Sep 12, 2023",status:"VERIFIED"},
+    {ver:"v2.5.0-beta (Untrusted)", target:"ESP32-S3",   hash:"Mismatch",        date:"Just now",   status:"FAILED"},
+    {ver:"v1.7.2-lts",              target:"STM32F4",    hash:"a3f1c88d...1d02",date:"Aug 5, 2023", status:"ARCHIVED"},
+  ];
+  const sc=(s:string)=>({VERIFIED:P.sage,ARCHIVED:P.platinum,FAILED:P.burg}[s]||P.platinum);
+  const si=(s:string)=>({VERIFIED:"verified",ARCHIVED:"archive",FAILED:"warning"}[s]||"help");
+  return (
+    <div style={{ display:"grid",gridTemplateColumns:"1fr 325px",gap:9,padding:15,flex:1,overflow:"hidden" }}>
+      <Card style={{ display:"flex",flexDirection:"column",overflow:"hidden" }}>
+        <div style={{ padding:"14px 20px",borderBottom:`1px solid ${P.bDim}`,flexShrink:0 }}>
+          <div style={{ display:"flex",alignItems:"center",gap:8,marginBottom:2 }}>
+            <I n="inventory_2" sz={18} col={P.cognac}/>
+            <h2 style={{ fontFamily:"'Cormorant Garamond',serif",fontWeight:600,fontSize:"1.05rem",color:P.ivory }}>Firmware Repository</h2>
+          </div>
+          <p style={{ fontFamily:"'JetBrains Mono',monospace",fontSize:"0.56rem",color:P.whisper }}>Signed artifacts · ESP32 Fleet Alpha · nRF52840 Cluster Beta</p>
+        </div>
+        <div style={{ padding:"7px 12px",display:"flex",gap:5,borderBottom:`1px solid ${P.bDim}`,flexShrink:0 }}>
+          {["ALL","VERIFIED","FAILED","ARCHIVED"].map((f,i)=>(
+            <button key={f}
+              style={{ padding:"2px 9px",borderRadius:2,fontFamily:"'JetBrains Mono',monospace",fontSize:"0.55rem",letterSpacing:"0.08em",cursor:"pointer",background:i===0?P.cgnDim:"transparent",color:i===0?P.cognac:P.whisper,border:i===0?`1px solid ${P.bHi}`:"1px solid transparent",transition:"all 0.18s" }}
+              onMouseEnter={e=>{if(i!==0){e.currentTarget.style.color=P.parchment;e.currentTarget.style.background=P.cockpit;}}}
+              onMouseLeave={e=>{if(i!==0){e.currentTarget.style.color=P.whisper;e.currentTarget.style.background="transparent";}}}
+            >{f}</button>
+          ))}
+        </div>
+        <div style={{ flex:1,overflowY:"auto" }}>
+          <table style={{ width:"100%",borderCollapse:"collapse" }}>
+            <thead>
+              <tr>
+                {["VERSION","TARGET","CHECKSUM (SHA-256)","DATE","STATUS"].map((h,i)=>(
+                  <th key={h} style={{ padding:"9px 18px",textAlign:i===4?"right":"left",fontFamily:"'JetBrains Mono',monospace",fontSize:"0.56rem",fontWeight:400,color:P.whisper,letterSpacing:"0.1em",textTransform:"uppercase",position:"sticky",top:0,background:P.wall }}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((r,i)=>(
+                <motion.tr key={i} initial={{opacity:0}} animate={{opacity:1}} transition={{delay:i*0.05}}
+                  style={{ cursor:"pointer",transition:"background 0.16s" }}
+                  onMouseEnter={e=>{Array.from(e.currentTarget.children).forEach((td:any)=>td.style.background=P.cockpit);}}
+                  onMouseLeave={e=>{Array.from(e.currentTarget.children).forEach((td:any)=>td.style.background="");}}
+                >
+                  <td style={{ padding:"12px 18px",fontWeight:500,color:r.status==="FAILED"?P.burg:P.ivory,fontSize:"0.84rem",borderBottom:`1px solid ${P.bDim}` }}>{r.ver}</td>
+                  <td style={{ padding:"12px 18px",borderBottom:`1px solid ${P.bDim}` }}>
+                    <span style={{ display:"inline-flex",padding:"2px 7px",borderRadius:2,background:P.dash,color:P.champagne,fontFamily:"'JetBrains Mono',monospace",fontSize:"0.63rem" }}>{r.target}</span>
+                  </td>
+                  <td style={{ padding:"12px 18px",fontFamily:"'JetBrains Mono',monospace",fontSize:"0.63rem",color:r.status==="FAILED"?P.burg:P.whisper,borderBottom:`1px solid ${P.bDim}` }}>{r.hash}</td>
+                  <td style={{ padding:"12px 18px",color:P.cashmere,fontSize:"0.84rem",borderBottom:`1px solid ${P.bDim}` }}>{r.date}</td>
+                  <td style={{ padding:"12px 18px",textAlign:"right",borderBottom:`1px solid ${P.bDim}` }}>
+                    <span style={{ display:"inline-flex",alignItems:"center",gap:4,color:sc(r.status),fontFamily:"'JetBrains Mono',monospace",fontSize:"0.63rem",fontWeight:500 }}>
+                      <I n={si(r.status)} sz={13} col={sc(r.status)}/>{r.status}
+                    </span>
+                  </td>
+                </motion.tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </Card>
+      <div style={{ background:P.cockpit,borderRadius:4,border:`1px solid ${P.bDim}`,padding:19,display:"flex",flexDirection:"column",overflowY:"auto",transition:"border-color 0.22s" }}
+        onMouseEnter={e=>{e.currentTarget.style.borderColor=P.bMid;}}
+        onMouseLeave={e=>{e.currentTarget.style.borderColor=P.bDim;}}
+      >
+        <div style={{ display:"flex",alignItems:"center",gap:8,marginBottom:19 }}>
+          <I n="rocket_launch" sz={22} col={P.cognac}/>
+          <h3 style={{ fontFamily:"'Cormorant Garamond',serif",fontWeight:600,fontSize:"1.05rem",color:P.ivory }}>Deployment Config</h3>
+        </div>
+        <div style={{ display:"flex",flexDirection:"column",gap:15,flex:1 }}>
+          {[["TARGET PAYLOAD",["v2.4.1-stable (ESP32)","v1.8.5-patch (nRF52840)"]],["TARGET FLEET / CHIPSET",["Production — ESP32-WROOM","Staging — ESP32-WROOM","Alpha Testers — All"]]].map(([label,opts]:any)=>(
+            <div key={label}>
+              <label style={{ display:"block",fontFamily:"'JetBrains Mono',monospace",fontSize:"0.56rem",color:P.whisper,letterSpacing:"0.12em",textTransform:"uppercase",marginBottom:5 }}>{label}</label>
+              <select style={{ width:"100%",appearance:"none",background:P.dash,border:"none",borderBottom:`1px solid ${P.bMid}`,color:P.ivory,fontSize:"0.84rem",padding:"9px 10px",borderRadius:"2px 2px 0 0",cursor:"pointer",fontFamily:"'JetBrains Mono',monospace",outline:"none" }}>
+                {opts.map((o:string)=><option key={o}>{o}</option>)}
+              </select>
+              {String(label).includes("FLEET")&&(
+                <div style={{ display:"flex",justifyContent:"space-between",marginTop:4 }}>
+                  <span style={{ fontSize:"0.7rem",color:P.whisper }}>Estimated scope:</span>
+                  <span style={{ fontFamily:"'JetBrains Mono',monospace",fontSize:"0.7rem",color:P.cognac }}>12,450 devices</span>
+                </div>
+              )}
+            </div>
+          ))}
+          <div>
+            <label style={{ display:"block",fontFamily:"'JetBrains Mono',monospace",fontSize:"0.56rem",color:P.whisper,letterSpacing:"0.12em",textTransform:"uppercase",marginBottom:9 }}>ROLLOUT STRATEGY</label>
+            <div style={{ display:"grid",gridTemplateColumns:"1fr 1fr",gap:8 }}>
+              {[["phased","Phased (10%)","cog"],["immediate","Immediate (100%)","burg"]].map(([val,label,t])=>(
+                <label key={val} style={{ cursor:"pointer" }}>
+                  <input type="radio" name="strat" style={{display:"none"}} checked={strategy===val} onChange={()=>{setStrategy(val as any);setCanary(val==="phased"?10:100);}}/>
+                  <div style={{ padding:"8px 10px",borderRadius:2,textAlign:"center",fontSize:"0.84rem",cursor:"pointer",transition:"all 0.18s",border:`1px solid ${strategy===val?(t==="cog"?P.bHi:"rgba(158,90,90,0.4)"):P.bDim}`,color:strategy===val?(t==="cog"?P.cognac:P.burg):P.cashmere,background:strategy===val?(t==="cog"?P.cgnDim:P.burgDim):"transparent" }}>{label}</div>
+                </label>
+              ))}
+            </div>
+            <div style={{ marginTop:10 }}>
+              <div style={{ display:"flex",justifyContent:"space-between",marginBottom:5 }}>
+                <span style={{ fontFamily:"'JetBrains Mono',monospace",fontSize:"0.56rem",color:P.whisper }}>Canary %</span>
+                <span style={{ fontFamily:"'JetBrains Mono',monospace",fontSize:"0.56rem",color:P.cognac }}>{canary}%</span>
+              </div>
+              <input type="range" min={1} max={100} value={canary} onChange={e=>setCanary(Number(e.target.value))} style={{ width:"100%",accentColor:P.cognac,cursor:"pointer" }}/>
+            </div>
+          </div>
+          <div style={{ background:P.dash,border:`1px solid ${P.bDim}`,padding:"9px 12px",borderRadius:2,display:"flex",gap:8,alignItems:"start" }}>
+            <I n="info" sz={14} col={P.platinum}/>
+            <p style={{ fontSize:"0.68rem",color:P.whisper,lineHeight:1.6 }}>Ensure firmware signatures match the root CA deployed on the selected chipset. Unsigned binaries will be rejected.</p>
+          </div>
+          <button
+            style={{ width:"100%",background:P.cgnDim,color:P.cognac,fontFamily:"'Cormorant Garamond',serif",fontWeight:700,fontSize:"1rem",padding:"12px 0",borderRadius:3,border:`1px solid ${P.bHi}`,cursor:"pointer",letterSpacing:"0.08em",display:"flex",alignItems:"center",justifyContent:"center",gap:7,transition:"all 0.22s" }}
+            onMouseEnter={e=>{e.currentTarget.style.background=P.cgnGlow;e.currentTarget.style.color=P.ivory;}}
+            onMouseLeave={e=>{e.currentTarget.style.background=P.cgnDim;e.currentTarget.style.color=P.cognac;}}
+          >
+            Initialize OTA Push <I n="send" sz={17} col="inherit"/>
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function VerificationView() {
+  const [nodes,setNodes]=useState<NodeVerification[]>([
+    {id:"ESP32-A142",ip:"192.168.1.42",status:"verifying",  progress:85, label:"VERIFYING HASH..."},
+    {id:"ESP32-B091",ip:"192.168.1.91",status:"complete",   progress:100,label:"SECURE REBOOT"},
+    {id:"ESP32-C330",ip:"192.168.2.30",status:"decrypting", progress:42, label:"AES DECRYPTION"},
+    {id:"ESP32-D005",ip:"192.168.1.05",status:"error",      progress:100,label:"HASH MISMATCH ERROR"},
+    {id:"ESP32-E112",ip:"192.168.3.12",status:"downloading",progress:12, label:"DOWNLOADING PAYLOAD"},
+  ]);
+  useEffect(()=>{
+    const iv=setInterval(()=>{
+      setNodes(p=>p.map(n=>{
+        if(n.status==="verifying"   &&n.progress<99)return{...n,progress:Math.min(99,n.progress+0.8)};
+        if(n.status==="downloading" &&n.progress<94)return{...n,progress:Math.min(94,n.progress+1.5)};
+        if(n.status==="decrypting"  &&n.progress<88)return{...n,progress:Math.min(88,n.progress+0.4)};
+        return n;
+      }));
+    },350);
+    return ()=>clearInterval(iv);
+  },[]);
+  const nc=(s:string)=>({complete:P.sage,verifying:P.cognac,decrypting:P.champagne,error:P.burg,downloading:P.platinum}[s]||P.platinum);
+  const bg=(s:string)=>({complete:P.sage,verifying:P.cognac,decrypting:P.copper,error:P.burg,downloading:P.dash}[s]||P.dash);
+  const cryptoLog=[
+    {ts:"14:02:41.002",node:"SYS",              text:"Initiating OTA Payload verification...",         col:P.cognac},
+    {ts:"14:02:41.045",node:"KEY",              text:"Fetching public key from secure enclave... OK",  col:P.platinum},
+    {ts:"14:02:42.110",node:"NODE [ESP32-B091]",text:"Decryption complete. Generating SHA-256...",     col:P.cognac},
+    {ts:"",node:"",                             text:"Hash: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",col:P.whisper,indent:true},
+    {ts:"14:02:42.301",node:"NODE [ESP32-B091]",text:"Signature verification... MATCH (SECURE)",       col:P.sage},
+    {ts:"14:02:43.055",node:"NODE [ESP32-A142]",text:"Payload received (1.2MB).",                      col:P.cognac},
+    {ts:"14:02:43.102",node:"NODE [ESP32-A142]",text:"Initializing AES-GCM engine... OK",              col:P.cognac},
+    {ts:"14:02:43.882",node:"NODE [ESP32-A142]",text:"Decrypting block [0x00 - 0xFF]...",              col:P.cognac},
+    {ts:"14:02:44.201",node:"NODE [ESP32-D005]",text:"FATAL_ERROR — Hash mismatch detected.",          col:P.burg},
+    {ts:"",node:"",                             text:"Action: Aborting OTA. Locking bootloader.",      col:P.burg,indent:true},
+    {ts:"14:02:45.001",node:"NODE [ESP32-C330]",text:"Beginning decryption stream...",                  col:P.cognac},
+  ];
+  const aes=["B0","B1","B2","B3","B4","B5","B6","B7"];
+  return (
+    <div style={{ display:"grid",gridTemplateColumns:"1fr 345px",gap:9,padding:15,flex:1,overflow:"hidden" }}>
+      <div style={{ display:"flex",flexDirection:"column",gap:9,overflow:"hidden" }}>
+        <div style={{ display:"flex",justifyContent:"space-between",alignItems:"end" }}>
+          <div>
+            <h1 style={{ fontFamily:"'Cormorant Garamond',serif",fontSize:"1.5rem",fontWeight:600,display:"flex",alignItems:"center",gap:8,color:P.ivory,marginBottom:3 }}>
+              <I n="satellite_alt" f sz={22} col={P.cognac}/> OTA Verification Panel
+            </h1>
+            <p style={{ fontFamily:"'JetBrains Mono',monospace",fontSize:"0.57rem",color:P.whisper,letterSpacing:"0.14em",textTransform:"uppercase" }}>Target: ESP32_Fleet_Alpha // Mission Control View</p>
+          </div>
+          <div style={{ display:"flex",alignItems:"center",gap:6,background:P.cockpit,padding:"5px 12px",borderRadius:2,border:`1px solid ${P.bDim}` }}>
+            <div style={{ width:5,height:5,borderRadius:"50%",background:P.sage,animation:"gpulse 2.5s ease-in-out infinite" }}/>
+            <span style={{ fontFamily:"'JetBrains Mono',monospace",fontSize:"0.57rem",color:P.sage,letterSpacing:"0.14em",textTransform:"uppercase" }}>Live Telemetry Active</span>
+          </div>
+        </div>
+        <div style={{ display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:9,flexShrink:0 }}>
+          {[
+            {label:"Nodes in Flight",val:"1,204",sub:"/ 1,250",    pct:96,  icon:"router",   col:P.cognac},
+            {label:"Hash Integrity", val:"99.8%",sub:"SHA-256",    pct:99.8,icon:"verified", col:P.sage},
+            {label:"Decryption Rate",val:"45",   sub:"AES-256 n/s",pct:72,  icon:"key",     col:P.copper},
+          ].map(s=>(
+            <div key={s.label}
+              style={{ background:P.wall,border:`1px solid ${P.bDim}`,borderRadius:4,padding:13,position:"relative",overflow:"hidden",transition:"all 0.22s",cursor:"default" }}
+              onMouseEnter={e=>{e.currentTarget.style.background=P.cockpit;e.currentTarget.style.borderColor=P.bMid;}}
+              onMouseLeave={e=>{e.currentTarget.style.background=P.wall;e.currentTarget.style.borderColor=P.bDim;}}
+            >
+              <div style={{ position:"absolute",top:0,left:0,right:0,height:1,background:s.col,opacity:0.4 }}/>
+              <div style={{ display:"flex",justifyContent:"space-between",alignItems:"start",marginBottom:8 }}>
+                <span style={{ fontFamily:"'JetBrains Mono',monospace",fontSize:"0.55rem",color:P.whisper,textTransform:"uppercase",letterSpacing:"0.14em" }}>{s.label}</span>
+                <I n={s.icon} sz={16} col={s.col}/>
+              </div>
+              <div style={{ display:"flex",alignItems:"baseline",gap:4,marginBottom:7 }}>
+                <span style={{ fontFamily:"'Cormorant Garamond',serif",fontSize:"1.8rem",fontWeight:600,color:s.col }}>{s.val}</span>
+                <span style={{ fontFamily:"'JetBrains Mono',monospace",fontSize:"0.56rem",color:P.whisper }}>{s.sub}</span>
+              </div>
+              <div style={{ background:P.dash,borderRadius:2,height:2,overflow:"hidden" }}>
+                <motion.div initial={{width:0}} animate={{width:`${s.pct}%`}} transition={{duration:1,delay:0.3}}
+                  style={{ height:"100%",background:s.col,borderRadius:2 }}/>
+              </div>
+            </div>
+          ))}
+        </div>
+        <Card style={{ flex:1,display:"flex",flexDirection:"column",overflow:"hidden" }}>
+          <div style={{ padding:"11px 15px",borderBottom:`1px solid ${P.bDim}`,display:"flex",justifyContent:"space-between",alignItems:"center",flexShrink:0 }}>
+            <h2 style={{ fontFamily:"'Cormorant Garamond',serif",fontWeight:600,fontSize:"0.95rem",display:"flex",alignItems:"center",gap:5,color:P.ivory }}>
+              <I n="data_table" sz={16} col={P.cognac}/> Deployment Telemetry
+            </h2>
+            <div style={{ display:"flex",gap:5 }}>
+              {["Filter: Active","Sort: Status"].map(t=>(
+                <span key={t} style={{ padding:"2px 7px",background:P.cockpit,border:`1px solid ${P.bDim}`,fontFamily:"'JetBrains Mono',monospace",fontSize:"0.52rem",color:P.whisper,borderRadius:2,textTransform:"uppercase",letterSpacing:"0.08em" }}>{t}</span>
+              ))}
+            </div>
+          </div>
+          <div style={{ flex:1,overflowY:"auto",padding:8 }}>
+            <div style={{ display:"flex",flexDirection:"column",gap:5 }}>
+              {nodes.map(n=>(
+                <motion.div key={n.id} layout
+                  style={{ padding:"11px 12px",borderRadius:3,display:"flex",alignItems:"center",justifyContent:"space-between",background:n.status==="error"?"rgba(158,90,90,0.07)":P.cockpit,border:n.status==="error"?`1px solid rgba(158,90,90,0.22)`:`1px solid transparent`,borderLeft:n.status==="error"?`3px solid ${P.burg}`:"3px solid transparent",transition:"all 0.18s",cursor:"default" }}
+                  onMouseEnter={e=>{if(n.status!=="error")e.currentTarget.style.background=P.dash;}}
+                  onMouseLeave={e=>{if(n.status!=="error")e.currentTarget.style.background=P.cockpit;}}
+                >
+                  <div style={{ display:"flex",alignItems:"center",gap:10,width:"30%" }}>
+                    <div style={{ width:30,height:30,background:P.dash,border:`1px solid ${nc(n.status)}28`,borderRadius:3,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0 }}>
+                      <I n="memory" sz={14} col={nc(n.status)}/>
+                    </div>
+                    <div>
+                      <div style={{ fontFamily:"'JetBrains Mono',monospace",fontSize:"0.75rem",fontWeight:600,color:nc(n.status) }}>{n.id}</div>
+                      <div style={{ fontFamily:"'JetBrains Mono',monospace",fontSize:"0.52rem",color:P.whisper,marginTop:2 }}>IP: {n.ip}</div>
+                    </div>
+                  </div>
+                  <div style={{ flex:1,padding:"0 16px" }}>
+                    <div style={{ display:"flex",justifyContent:"space-between",fontFamily:"'JetBrains Mono',monospace",fontSize:"0.6rem",marginBottom:4 }}>
+                      <span style={{ fontWeight:600,color:nc(n.status) }}>{n.label}</span>
+                      <span style={{ color:P.whisper }}>{n.status==="error"?"FAIL":`${Math.round(n.progress)}%`}</span>
+                    </div>
+                    <div style={{ background:P.dash,borderRadius:2,height:4,overflow:"hidden" }}>
+                      <motion.div animate={{width:`${n.progress}%`}} transition={{duration:0.5}}
+                        style={{ height:"100%",background:bg(n.status),borderRadius:2 }}/>
+                    </div>
+                  </div>
+                  <div style={{ width:74,textAlign:"right",flexShrink:0 }}>
+                    {n.status==="complete"   &&<I n="gpp_good" f sz={20} col={P.sage}/>}
+                    {n.status==="error"      &&<I n="warning" sz={20} col={P.burg}/>}
+                    {n.status==="verifying"  &&<span style={{ fontFamily:"'JetBrains Mono',monospace",fontSize:"0.58rem",color:P.cognac,animation:"scanBlink 1.5s step-end infinite" }}>Processing</span>}
+                    {n.status==="decrypting" &&<span style={{ fontFamily:"'JetBrains Mono',monospace",fontSize:"0.58rem",color:P.copper }}>Active</span>}
+                    {n.status==="downloading"&&<span style={{ fontFamily:"'JetBrains Mono',monospace",fontSize:"0.58rem",color:P.platinum }}>Transfer</span>}
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          </div>
+        </Card>
+        <Card style={{ padding:"12px 15px",display:"flex",alignItems:"center",gap:20,flexShrink:0 }}>
+          <div style={{ flexShrink:0 }}>
+            <h3 style={{ fontFamily:"'Cormorant Garamond',serif",fontWeight:700,color:P.ivory,marginBottom:2 }}>AES-256 Engine</h3>
+            <p style={{ fontFamily:"'JetBrains Mono',monospace",fontSize:"0.58rem",color:P.sage }}>STATUS: OPTIMAL</p>
+          </div>
+          <div style={{ flex:1,display:"grid",gridTemplateColumns:"repeat(8,1fr)",gap:4 }}>
+            {aes.map((b,i)=>(
+              <div key={b}
+                style={{ height:28,borderRadius:2,display:"flex",alignItems:"center",justifyContent:"center",cursor:"default",transition:"all 0.2s",...(i<3?{border:`1px solid rgba(122,158,114,0.38)`,background:"rgba(122,158,114,0.1)"}:i===3?{border:`1px solid ${P.bHi}`,background:P.cgnDim}:{border:`1px solid ${P.bDim}`,background:P.cockpit}) }}
+                onMouseEnter={e=>{e.currentTarget.style.borderColor=P.bHi;e.currentTarget.style.background=P.cgnDim;}}
+                onMouseLeave={e=>{
+                  e.currentTarget.style.borderColor=i<3?"rgba(122,158,114,0.38)":i===3?P.bHi:P.bDim;
+                  e.currentTarget.style.background=i<3?"rgba(122,158,114,0.1)":i===3?P.cgnDim:P.cockpit;
+                }}
+              >
+                <span style={{ fontFamily:"'JetBrains Mono',monospace",fontSize:8,color:i<3?P.sage:i===3?P.cognac:P.whisper }}>{b}</span>
+              </div>
+            ))}
+          </div>
+          <div style={{ flexShrink:0,textAlign:"right" }}>
+            <div style={{ fontFamily:"'JetBrains Mono',monospace",fontSize:"0.54rem",color:P.whisper,textTransform:"uppercase" }}>Key Slot: <span style={{ color:P.cognac }}>0x4F</span></div>
+            <div style={{ fontFamily:"'JetBrains Mono',monospace",fontSize:"0.54rem",color:P.whisper,textTransform:"uppercase",marginTop:3 }}>IV: <span style={{ color:P.ivory }}>GENERATED</span></div>
+          </div>
+        </Card>
+      </div>
+      <div style={{ background:"#090705",border:`1px solid ${P.bDim}`,borderRadius:4,display:"flex",flexDirection:"column",overflow:"hidden",transition:"border-color 0.22s" }}
+        onMouseEnter={e=>{e.currentTarget.style.borderColor=P.bMid;}}
+        onMouseLeave={e=>{e.currentTarget.style.borderColor=P.bDim;}}
+      >
+        <div style={{ height:34,background:P.cockpit,borderBottom:`1px solid ${P.bDim}`,display:"flex",alignItems:"center",padding:"0 12px",justifyContent:"space-between",flexShrink:0,position:"relative" }}>
+          <div style={{ position:"absolute",left:0,top:0,bottom:0,width:2,background:P.cognac }}/>
+          <div style={{ display:"flex",alignItems:"center",gap:7,paddingLeft:7 }}>
+            <I n="terminal" sz={12} col={P.cognac}/>
+            <span style={{ fontFamily:"'JetBrains Mono',monospace",fontSize:"0.61rem",fontWeight:600,letterSpacing:"0.14em",color:P.ivory }}>CRYPTOGRAPHIC LOG</span>
+          </div>
+          <div style={{ display:"flex",gap:4 }}>{[0,1,2].map(i=><div key={i} style={{width:6,height:6,borderRadius:"50%",background:P.dash,border:`1px solid ${P.bDim}`}}/>)}</div>
+        </div>
+        <div style={{ flex:1,fontFamily:"'JetBrains Mono',monospace",fontSize:11,lineHeight:1.75,overflowY:"auto",padding:"11px 12px",display:"flex",flexDirection:"column",justifyContent:"flex-end" }}>
+          {cryptoLog.map((l,i)=>(
+            <div key={i} style={{ marginBottom:3,paddingLeft:l.indent?14:0,wordBreak:"break-all" }}>
+              {!l.indent&&l.ts&&<span style={{ color:P.trim }}>[{l.ts}]</span>}
+              {l.node&&<> <span style={{ color:l.col,fontWeight:l.col===P.burg?700:500 }}>{l.node}:</span></>}
+              {" "}<span style={{ color:l.indent?l.col:P.whisper }}>{l.text}</span>
+            </div>
+          ))}
+          <div style={{ marginTop:5 }}>
+            <span style={{ color:P.cognac,animation:"tblink 1s step-end infinite" }}>_</span>
+          </div>
+        </div>
+      </div>
+      <style>{`
+        @keyframes gpulse{0%,100%{transform:scale(1);opacity:0.9;}50%{transform:scale(2.1);opacity:0.15;}}
+        @keyframes scanBlink{0%,100%{opacity:1;}50%{opacity:0.1;}}
+        @keyframes tblink{0%,100%{opacity:1;}50%{opacity:0;}}
+      `}</style>
+    </div>
+  );
+}
+
+export default function Dashboard({ onBackToLanding }: { onBackToLanding?:()=>void }) {
+  const [view,setView]=useState<View>("dashboard");
+  const [fleet,setFleet]=useState<DeviceState[]>([]);
+  const [connected,setConnected]=useState(false);
+  
+  // Real backend integration
+  useEffect(()=>{
+    fetchFleet().then(f => {
+      if(f) setFleet(f);
+    }).catch(console.error);
+  },[]);
+
+  useWebSocket((process.env.NEXT_PUBLIC_WS_URL || "ws://localhost:8080/ws/events"), (evt) => {
+    if (evt.type === "fleet_tick") {
+      setFleet(evt.payload as DeviceState[]);
+      setConnected(true);
+    }
+  });
+  return (
+    <div style={{ display:"flex",height:"100vh",width:"100vw",overflow:"hidden",background:P.bg,color:P.ivory,fontFamily:"'DM Sans',sans-serif" }}>
+      <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+      <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=DM+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet"/>
+      <div style={{ position:"fixed",inset:0,background:"radial-gradient(ellipse 55% 45% at 18% 0%, rgba(200,145,74,0.03) 0%, transparent 52%), radial-gradient(ellipse 38% 30% at 82% 100%, rgba(184,124,58,0.02) 0%, transparent 48%)",pointerEvents:"none",zIndex:0 }}/>
+      <SideNav view={view} setView={setView} onBack={onBackToLanding}/>
+      <div style={{ flex:1,display:"flex",flexDirection:"column",overflow:"hidden",position:"relative",zIndex:1 }}>
+        <TopBar connected={connected}/>
+        <AnimatePresence mode="wait">
+          <motion.div key={view}
+            initial={{opacity:0,y:5}} animate={{opacity:1,y:0}}
+            exit={{opacity:0,y:-5}} transition={{duration:0.17}}
+            style={{ flex:1,display:"flex",flexDirection:"column",overflow:"hidden" }}
+          >
+            {view==="dashboard"    &&<DashboardView fleet={fleet}/>}
+            {view==="terminal"     &&<TerminalView/>}
+            {view==="updates"      &&<UpdatesView/>}
+            {view==="verification" &&<VerificationView/>}
+          </motion.div>
+        </AnimatePresence>
+      </div>
+    </div>
   );
 }

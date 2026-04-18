@@ -2,99 +2,92 @@ package main
 
 import (
 	"context"
-	"encoding/json"
-	"log"
+	"log/slog"
 	"math/rand"
 	"net/http"
 	"os"
 	"strconv"
-	"sync"
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/gorilla/websocket"
 	"github.com/jackc/pgx/v5/pgxpool"
-	mqtt "github.com/eclipse/paho.mqtt.golang"
-)
 
-type OTARequest struct {
-	Version       string `json:"version"`
-	FirmwareURL   string `json:"firmwareUrl"`
-	FirmwareHash  string `json:"firmwareHash"`
-	SignatureB64  string `json:"signatureB64"`
-	CanaryPercent int    `json:"canaryPercent"`
-}
-
-type DeviceState struct {
-	DeviceID      string            `json:"deviceId"`
-	Primary       bool              `json:"primary"`
-	OTAVersion    string            `json:"otaVersion"`
-	SafetyState   string            `json:"safetyState"`
-	ECUStates     map[string]string `json:"ecuStates"`
-	LastSeen      time.Time         `json:"lastSeen"`
-	ThreatLevel   string            `json:"threatLevel"`
-	OTAProgress   int               `json:"otaProgress"`
-	SignatureOK   bool              `json:"signatureOk"`
-	IntegrityOK   bool              `json:"integrityOk"`
-	TLSHealthy    bool              `json:"tlsHealthy"`
-	RollbackArmed bool              `json:"rollbackArmed"`
-}
-
-type Event struct {
-	Type      string      `json:"type"`
-	Timestamp time.Time   `json:"timestamp"`
-	Payload   interface{} `json:"payload"`
-}
-
-type Hub struct {
-	mu      sync.RWMutex
-	clients map[*websocket.Conn]bool
-}
-
-func (h *Hub) Broadcast(evt Event) {
-	h.mu.RLock()
-	defer h.mu.RUnlock()
-	for c := range h.clients {
-		_ = c.WriteJSON(evt)
-	}
-}
-
-func (h *Hub) Add(c *websocket.Conn) {
-	h.mu.Lock()
-	defer h.mu.Unlock()
-	h.clients[c] = true
-}
-
-func (h *Hub) Remove(c *websocket.Conn) {
-	h.mu.Lock()
-	defer h.mu.Unlock()
-	delete(h.clients, c)
-	_ = c.Close()
-}
-
-var (
-	upgrader = websocket.Upgrader{
-		CheckOrigin: func(r *http.Request) bool { return true },
-	}
-	states = map[string]*DeviceState{}
-	smu    sync.RWMutex
-	hub    = &Hub{clients: map[*websocket.Conn]bool{}}
-	dbpool *pgxpool.Pool
+	"sdv-ota/backend/api"
+	"sdv-ota/backend/campaign"
+	"sdv-ota/backend/events"
+	mqttclient "sdv-ota/backend/mqtt"
+	"sdv-ota/backend/twin"
+	"sdv-ota/backend/ws"
 )
 
 func main() {
-	// FIX: rand.Seed is deprecated since Go 1.20 — global rand is automatically seeded.
-	// Removed: rand.Seed(time.Now().UnixNano())
+	slog.SetDefault(slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
+		Level: slog.LevelInfo,
+	})))
 
+	// ── Infrastructure ────────────────────────────────────────────
 	broker := getenv("MQTT_BROKER", "tcp://localhost:1883")
-	client := connectMQTT(broker)
-	defer client.Disconnect(500)
+	mqttClient := mqttclient.Connect(broker)
+	defer mqttClient.Disconnect(500)
 
-	bootstrapFleet()
-	initDB()
-	go fleetSimulator(context.Background())
+	pool := initDB()
+	evStore := events.NewStore(pool)
+	if err := evStore.InitSchema(context.Background()); err != nil {
+		slog.Warn("events: schema init failed", "err", err)
+	}
 
-	r := gin.Default()
+	// ── Domain services ───────────────────────────────────────────
+	registry := twin.NewRegistry()
+	bootstrapFleet(registry)
+
+	hub := ws.NewHub()
+	mgr := campaign.NewManager(registry)
+	pub := mqttclient.NewPublisher(mqttClient)
+
+	// MQTT consumer — handle device status acks
+	consumer := mqttclient.NewConsumer(mqttClient, func(update mqttclient.StatusUpdate) {
+		if _, ok := registry.Get(update.DeviceID); !ok {
+			registry.Set(&twin.DeviceState{
+				DeviceID:      update.DeviceID,
+				Primary:       false,
+				OTAVersion:    "1.0.0",
+				SafetyState:   "SAFE",
+				ECUStates:     map[string]string{"brake": "green", "powertrain": "green", "sensor": "green", "infotainment": "green"},
+				LastSeen:      time.Now().UTC(),
+				ThreatLevel:   "LOW",
+				SignatureOK:   true,
+				IntegrityOK:   true,
+				TLSHealthy:    true,
+				RollbackArmed: true,
+			})
+			slog.Info("auto-registered new device via MQTT", "device_id", update.DeviceID)
+		} else {
+			registry.Update(update.DeviceID, func(d *twin.DeviceState) {
+				d.LastSeen = time.Now().UTC()
+			})
+		}
+
+		mgr.UpdateDeviceStatus(update.CampaignID, update.DeviceID, update.Status, update.ErrorMsg)
+		hub.Broadcast(ws.Event{
+			Type:      "device_status",
+			Timestamp: time.Now().UTC(),
+			Payload:   update,
+		})
+		evStore.Write(context.Background(), "device_status", update)
+	})
+	if err := consumer.Subscribe(); err != nil {
+		slog.Warn("mqtt: consumer subscribe failed", "err", err)
+	}
+
+	// ── Fleet simulator ───────────────────────────────────────────
+	go fleetSimulator(context.Background(), registry, hub, evStore)
+
+	// ── HTTP server ───────────────────────────────────────────────
+	if getenv("GIN_MODE", "") == "release" {
+		gin.SetMode(gin.ReleaseMode)
+	}
+	r := gin.New()
+	r.Use(gin.Recovery())
 	r.Use(func(c *gin.Context) {
 		c.Header("Access-Control-Allow-Origin", "*")
 		c.Header("Access-Control-Allow-Methods", "GET,POST,OPTIONS")
@@ -105,107 +98,59 @@ func main() {
 		}
 		c.Next()
 	})
-	r.GET("/health", func(c *gin.Context) { c.JSON(http.StatusOK, gin.H{"ok": true}) })
-	r.GET("/api/fleet", handleFleet)
-	r.POST("/api/ota/deploy", func(c *gin.Context) { handleDeploy(c, client) })
-	r.GET("/ws/events", handleWS)
+	r.Use(requestLogger())
+
+	api.RegisterRoutes(r, &api.Deps{
+		Registry:  registry,
+		Campaigns: mgr,
+		Events:    evStore,
+		Hub:       hub,
+		Publisher: pub,
+	})
 
 	addr := ":" + getenv("PORT", "8080")
-	log.Printf("backend listening at %s", addr)
+	slog.Info("backend starting", "addr", addr)
 	if err := r.Run(addr); err != nil {
-		log.Fatal(err)
+		slog.Error("server failed", "err", err)
+		os.Exit(1)
 	}
 }
 
-func handleFleet(c *gin.Context) {
-	smu.RLock()
-	defer smu.RUnlock()
-	out := make([]*DeviceState, 0, len(states))
-	for _, s := range states {
-		copy := *s
-		out = append(out, &copy)
+// ── Helpers ───────────────────────────────────────────────────────
+
+func getenv(k, d string) string {
+	if v := os.Getenv(k); v != "" {
+		return v
 	}
-	c.JSON(http.StatusOK, gin.H{"devices": out})
+	return d
 }
 
-func handleDeploy(c *gin.Context, client mqtt.Client) {
-	var req OTARequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-	if req.CanaryPercent < 1 || req.CanaryPercent > 100 {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "canaryPercent must be 1-100"})
-		return
-	}
-
-	targets := canaryTargets(req.CanaryPercent)
-	cmd := gin.H{
-		"version":      req.Version,
-		"firmwareUrl":  req.FirmwareURL,
-		"firmwareHash": req.FirmwareHash,
-		"signatureB64": req.SignatureB64,
-		"targets":      targets,
-	}
-	body, _ := json.Marshal(cmd)
-	token := client.Publish("sdv/ota/command", 1, false, body)
-	token.Wait()
-
-	hub.Broadcast(Event{
-		Type:      "ota_deploy_requested",
-		Timestamp: time.Now().UTC(),
-		Payload: gin.H{
-			"request": req,
-			"targets": targets,
-		},
-	})
-	writeEvent("ota_deploy_requested", gin.H{"request": req, "targets": targets})
-	c.JSON(http.StatusOK, gin.H{"queued": true, "targets": targets})
-}
-
-func handleWS(c *gin.Context) {
-	conn, err := upgrader.Upgrade(c.Writer, c.Request, nil)
+func initDB() *pgxpool.Pool {
+	dsn := getenv("DATABASE_URL", "postgres://ota:ota@localhost:5432/ota_control?sslmode=disable")
+	pool, err := pgxpool.New(context.Background(), dsn)
 	if err != nil {
-		return
+		slog.Warn("database unavailable, running in-memory", "err", err)
+		return nil
 	}
-	hub.Add(conn)
-	defer hub.Remove(conn)
-	for {
-		if _, _, err := conn.NextReader(); err != nil {
-			return
-		}
+	if err := pool.Ping(context.Background()); err != nil {
+		slog.Warn("database ping failed, running in-memory", "err", err)
+		return nil
 	}
+	slog.Info("database connected")
+	return pool
 }
 
-func connectMQTT(broker string) mqtt.Client {
-	opts := mqtt.NewClientOptions().AddBroker(broker)
-	opts.SetClientID("sdv-backend-" + strconv.Itoa(rand.Intn(10000)))
-	opts.SetAutoReconnect(true)
-	opts.SetCleanSession(true)
-	client := mqtt.NewClient(opts)
-	token := client.Connect()
-	token.Wait()
-	if err := token.Error(); err != nil {
-		log.Printf("mqtt connection failed (continuing with simulator only): %v", err)
-	}
-	return client
-}
-
-func bootstrapFleet() {
-	smu.Lock()
-	defer smu.Unlock()
+func bootstrapFleet(reg *twin.Registry) {
 	for i := 1; i <= 20; i++ {
 		id := "sim-" + strconv.Itoa(1000+i)
-		states[id] = &DeviceState{
+		reg.Set(&twin.DeviceState{
 			DeviceID:    id,
 			Primary:     i == 1,
 			OTAVersion:  "1.0.0",
 			SafetyState: "SAFE",
 			ECUStates: map[string]string{
-				"brake":        "green",
-				"powertrain":   "green",
-				"sensor":       "green",
-				"infotainment": "green",
+				"brake": "green", "powertrain": "green",
+				"sensor": "green", "infotainment": "green",
 			},
 			LastSeen:      time.Now().UTC(),
 			ThreatLevel:   "LOW",
@@ -213,112 +158,58 @@ func bootstrapFleet() {
 			SignatureOK:   true,
 			IntegrityOK:   true,
 			RollbackArmed: true,
-		}
+		})
 	}
+	slog.Info("fleet bootstrapped", "count", 20)
 }
 
-func initDB() {
-	dsn := getenv("DATABASE_URL", "postgres://ota:ota@localhost:5432/ota_control?sslmode=disable")
-	var err error
-	dbpool, err = pgxpool.New(context.Background(), dsn)
-	if err != nil {
-		log.Printf("database unavailable, running in memory mode: %v", err)
-		return
-	}
-	_, err = dbpool.Exec(context.Background(), `
-		CREATE TABLE IF NOT EXISTS ota_events (
-			id BIGSERIAL PRIMARY KEY,
-			event_type TEXT NOT NULL,
-			payload JSONB NOT NULL,
-			created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-		)
-	`)
-	if err != nil {
-		log.Printf("failed creating ota_events table: %v", err)
-	}
-}
-
-func fleetSimulator(ctx context.Context) {
-	t := time.NewTicker(1200 * time.Millisecond)
-	defer t.Stop()
+func fleetSimulator(ctx context.Context, reg *twin.Registry, hub *ws.Hub, evStore *events.Store) {
+	ticker := time.NewTicker(1200 * time.Millisecond)
+	defer ticker.Stop()
 	for {
 		select {
 		case <-ctx.Done():
 			return
-		case <-t.C:
-			smu.Lock()
-			for _, s := range states {
-				s.LastSeen = time.Now().UTC()
-				if rand.Float64() < 0.05 {
-					s.ECUStates["sensor"] = "warning"
-					s.ThreatLevel = "MEDIUM"
-				} else if rand.Float64() < 0.02 {
-					s.ECUStates["brake"] = "failure"
-					s.SafetyState = "UNSAFE"
-					s.ThreatLevel = "HIGH"
-				} else {
-					s.ECUStates["sensor"] = "green"
-					s.ECUStates["brake"] = "green"
-					s.SafetyState = "SAFE"
-					s.ThreatLevel = "LOW"
-				}
+		case <-ticker.C:
+			for _, id := range reg.IDs() {
+				reg.Update(id, func(d *twin.DeviceState) {
+					d.LastSeen = time.Now().UTC()
+					switch {
+					case rand.Float64() < 0.02:
+						d.ECUStates["brake"] = "failure"
+						d.SafetyState = "UNSAFE"
+						d.ThreatLevel = "HIGH"
+					case rand.Float64() < 0.05:
+						d.ECUStates["sensor"] = "warning"
+						d.ThreatLevel = "MEDIUM"
+					default:
+						d.ECUStates["brake"] = "green"
+						d.ECUStates["sensor"] = "green"
+						d.SafetyState = "SAFE"
+						d.ThreatLevel = "LOW"
+					}
+				})
 			}
-			// FIX: snapshot() reads states — call it while lock is still held
-			payload := snapshot()
-			smu.Unlock()
-			hub.Broadcast(Event{
+			snap := reg.Snapshot()
+			hub.Broadcast(ws.Event{
 				Type:      "fleet_tick",
 				Timestamp: time.Now().UTC(),
-				Payload:   payload,
+				Payload:   snap,
 			})
-			writeEvent("fleet_tick", payload)
+			evStore.Write(ctx, "fleet_tick", snap)
 		}
 	}
 }
 
-// snapshot must be called with smu held (at least RLock)
-func snapshot() []DeviceState {
-	out := make([]DeviceState, 0, len(states))
-	for _, s := range states {
-		out = append(out, *s)
+func requestLogger() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		start := time.Now()
+		c.Next()
+		slog.Info("http",
+			"method", c.Request.Method,
+			"path", c.Request.URL.Path,
+			"status", c.Writer.Status(),
+			"latency_ms", time.Since(start).Milliseconds(),
+		)
 	}
-	return out
-}
-
-func canaryTargets(percent int) []string {
-	smu.RLock()
-	defer smu.RUnlock()
-	targets := []string{}
-	for id := range states {
-		if rand.Intn(100) < percent {
-			targets = append(targets, id)
-		}
-	}
-	if len(targets) == 0 {
-		for id := range states {
-			targets = append(targets, id)
-			break
-		}
-	}
-	return targets
-}
-
-func getenv(k, d string) string {
-	v := os.Getenv(k)
-	if v == "" {
-		return d
-	}
-	return v
-}
-
-func writeEvent(eventType string, payload interface{}) {
-	if dbpool == nil {
-		return
-	}
-	b, err := json.Marshal(payload)
-	if err != nil {
-		return
-	}
-	_, _ = dbpool.Exec(context.Background(),
-		"INSERT INTO ota_events(event_type, payload) VALUES ($1, $2)", eventType, b)
 }
