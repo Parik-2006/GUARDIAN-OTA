@@ -20,6 +20,28 @@ export default function Terminal() {
   const [isRunning, setIsRunning] = useState(false);
   const outputRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  
+  // Initialize terminal with welcome message on mount
+  useEffect(() => {
+    setResults([
+      {
+        command: "",
+        timestamp: new Date().toLocaleTimeString("en-US", { hour12: false }),
+        output: [
+          "╔═══════════════════════════════════════════════════════╗",
+          "║        GUARDIAN OTA TERMINAL OVERRIDE v2.0           ║",
+          "║     Secure Firmware Update & Fleet Management CLI     ║",
+          "╚═══════════════════════════════════════════════════════╝",
+          "",
+          "Welcome to the Guardian OTA Command Center.",
+          "Type 'help' for available commands or use quick buttons.",
+          "Use ↑/↓ arrow keys to navigate history.",
+          "",
+        ],
+        status: "success",
+      }
+    ]);
+  }, []);
 
   // Auto-scroll to bottom of terminal
   useEffect(() => {
@@ -32,6 +54,49 @@ export default function Terminal() {
     if (!cmd.trim()) return;
 
     setIsRunning(true);
+    
+    // Handle built-in commands
+    if (cmd.trim() === "help" || cmd.trim() === "help --all") {
+      const helpResult: CommandResult = {
+        command: cmd,
+        timestamp: new Date().toLocaleTimeString("en-US", { hour12: false }),
+        output: [
+          "╔═══════════════════════════════════════════════════════╗",
+          "║           AVAILABLE COMMANDS & OPTIONS                ║",
+          "╚═══════════════════════════════════════════════════════╝",
+          "",
+          "GIT OPERATIONS:",
+          "  git status          - Show repository status",
+          "  git add .           - Stage all changes",
+          "  git commit -m ''    - Commit with message",
+          "  git push            - Push to remote repository",
+          "  git pull            - Pull from remote",
+          "  git log             - View commit history",
+          "",
+          "NPM COMMANDS:",
+          "  npm run build       - Build the project",
+          "  npm start           - Start development server",
+          "  npm run dev         - Run in development mode",
+          "",
+          "SYSTEM COMMANDS:",
+          "  ls                  - List directory contents",
+          "  pwd                 - Print working directory",
+          "  whoami              - Show current user",
+          "  date                - Show current date/time",
+          "",
+          "[INFO] Use ↑/↓ arrow keys to navigate command history",
+          "[INFO] Click quick command buttons or type manually",
+        ],
+        status: "success",
+      };
+      setResults(prev => [...prev, helpResult]);
+      setHistory(prev => [cmd, ...prev]);
+      setHistoryIndex(-1);
+      setCommand("");
+      setIsRunning(false);
+      return;
+    }
+
     const newResult: CommandResult = {
       command: cmd,
       timestamp: new Date().toLocaleTimeString("en-US", { hour12: false }),
@@ -68,7 +133,7 @@ export default function Terminal() {
         const updated = [...prev];
         updated[updated.length - 1] = {
           ...updated[updated.length - 1],
-          output: [`Error: ${error instanceof Error ? error.message : "Unknown error"}`],
+          output: [`[ERROR] ${error instanceof Error ? error.message : "Unknown error"}`],
           status: "error",
         };
         return updated;
@@ -145,30 +210,42 @@ export default function Terminal() {
         display: "grid", gridTemplateColumns: "1fr 300px", gap: 16,
         flex: 1, minHeight: 0,
       }}>
-        {/* Terminal Window */}
+        {/* Terminal Window - Linux-style */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
           style={{
-            background: "rgba(20,20,30,0.95)", border: `1px solid rgba(109,117,140,0.15)`,
+            background: "rgba(10,15,20,0.95)", border: `1px solid rgba(0,255,0,0.15)`,
             borderRadius: 8, display: "flex", flexDirection: "column",
             overflow: "hidden", backdropFilter: "blur(16px)",
-            boxShadow: "0 0 28px rgba(0,0,0,0.4)",
+            boxShadow: "0 0 28px rgba(0,255,0,0.1), inset 0 0 20px rgba(0,255,0,0.01)",
           }}
         >
-          {/* Terminal Header */}
+          {/* Terminal Header - Linux-style */}
           <div style={{
-            height: 44, background: P.cockpit, borderBottom: `1px solid ${P.bDim}`,
+            height: 44, background: "rgba(15,20,25,0.95)", borderBottom: `1px solid rgba(0,255,0,0.15)`,
             display: "flex", alignItems: "center", justifyContent: "space-between",
             padding: "0 16px", flexShrink: 0,
+            backgroundImage: "repeating-linear-gradient(90deg, rgba(0,255,0,0.01) 0px, transparent 1px)",
           }}>
             <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-              <I n="terminal" sz={16} col={P.cognac} />
+              <div style={{
+                width: 8, height: 8, borderRadius: "50%",
+                background: "#00FF00", boxShadow: "0 0 4px rgba(0,255,0,0.5)",
+              }} />
               <span style={{
-                fontFamily: "'JetBrains Mono',monospace", fontSize: "0.62rem",
-                color: P.whisper, letterSpacing: "0.06em",
-              }}>root@guardian-ota:~#</span>
+                fontFamily: "'JetBrains Mono',monospace", fontSize: "0.75rem",
+                color: "#00FF00", letterSpacing: "0.08em",
+                textShadow: "0 0 3px rgba(0,255,0,0.2)",
+              }}>guardian-ota@localhost</span>
+              <span style={{
+                color: "#666", margin: "0 6px",
+              }}>—</span>
+              <span style={{
+                fontFamily: "'JetBrains Mono',monospace", fontSize: "0.65rem",
+                color: "#888",
+              }}>Terminal • Press 'help' for commands</span>
             </div>
             <button
               onClick={clearTerminal}
@@ -177,11 +254,11 @@ export default function Terminal() {
                 padding: "4px 8px", borderRadius: 3, transition: "all 0.2s",
                 display: "flex", alignItems: "center", gap: 5,
               }}
-              onMouseEnter={e => { e.currentTarget.style.background = P.dash; }}
+              onMouseEnter={e => { e.currentTarget.style.background = "rgba(0,255,0,0.1)"; }}
               onMouseLeave={e => { e.currentTarget.style.background = "transparent"; }}
               title="Clear terminal"
             >
-              <I n="delete_sweep" sz={14} col={P.parchment} />
+              <I n="delete_sweep" sz={14} col="#00FF00" />
             </button>
           </div>
 
@@ -189,77 +266,125 @@ export default function Terminal() {
           <div
             ref={outputRef}
             style={{
-              flex: 1, overflowY: "auto", padding: "16px",
-              fontFamily: "'JetBrains Mono',monospace", fontSize: "0.8rem",
-              lineHeight: 1.6, display: "flex", flexDirection: "column", gap: 8,
+              flex: 1, overflowY: "auto", padding: "16px 20px",
+              fontFamily: "'JetBrains Mono',monospace", fontSize: "0.85rem",
+              lineHeight: 1.8, display: "flex", flexDirection: "column", gap: 0,
+              background: "rgba(10,15,20,0.8)",
+              backgroundImage: "repeating-linear-gradient(0deg, rgba(0,255,0,0.02) 0px, transparent 1px)",
             }}
           >
-            {results.length === 0 ? (
-              <div style={{
-                color: P.whisper, opacity: 0.5,
-                display: "flex", alignItems: "center", justifyContent: "center",
-                height: "100%",
-              }}>
-                <span>Guardian OTA Terminal • Type commands below</span>
-              </div>
-            ) : (
-              results.map((result, i) => (
-                <div key={i} style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-                  {/* Command prompt */}
-                  <div style={{ display: "flex", gap: 8 }}>
-                    <span style={{ color: P.cognac, fontWeight: 600 }}>❯</span>
-                    <span style={{ color: P.ivory, flex: 1, wordBreak: "break-all" }}>{result.command}</span>
-                  </div>
-                  {/* Output */}
+            {results.map((result, i) => (
+              <div key={i} style={{ display: "flex", flexDirection: "column", gap: 0 }}>
+                {/* Command prompt - only show if command exists */}
+                {result.command && (
                   <div style={{
-                    display: "flex", flexDirection: "column", gap: 2,
-                    paddingLeft: 16, borderLeft: `1px solid ${P.bMid}`,
+                    display: "flex", gap: 8, alignItems: "flex-start",
+                    marginBottom: 4,
                   }}>
-                    {result.output.map((line, j) => (
-                      <div
-                        key={j}
-                        style={{
-                          color: result.status === "error" ? P.burg : result.status === "success" ? P.sage : P.whisper,
-                          opacity: 0.8,
-                          wordBreak: "break-word",
-                        }}
-                      >
-                        {line}
-                      </div>
-                    ))}
+                    <span style={{
+                      color: "#00FF00", fontWeight: 700, fontSize: "0.9rem",
+                      textShadow: "0 0 4px rgba(0,255,0,0.3)",
+                    }}>root@guardian:~$</span>
+                    <span style={{
+                      color: "#E0E0E0", flex: 1, wordBreak: "break-all",
+                      fontWeight: 500,
+                    }}>{result.command}</span>
                   </div>
-                </div>
-              ))
-            )}
+                )}
+                
+                {/* Output lines */}
+                {result.output.map((line, j) => {
+                  let textColor = "#E0E0E0";
+                  let textGlow = "none";
+                  
+                  if (result.status === "error" && line.toLowerCase().includes("error")) {
+                    textColor = "#FF6B6B";
+                    textGlow = "0 0 6px rgba(255,107,107,0.3)";
+                  } else if (result.status === "success" && line.toLowerCase().includes("✓")) {
+                    textColor = "#51CF66";
+                    textGlow = "0 0 6px rgba(81,207,102,0.3)";
+                  } else if (line.includes("[INFO]")) {
+                    textColor = "#4DAEFF";
+                    textGlow = "0 0 6px rgba(77,174,255,0.2)";
+                  } else if (line.includes("[WARNING]") || line.includes("⚠")) {
+                    textColor = "#FFD700";
+                    textGlow = "0 0 6px rgba(255,215,0,0.2)";
+                  } else if (line.startsWith("╔") || line.startsWith("║") || line.startsWith("╚")) {
+                    textColor = "#00FF00";
+                    textGlow = "0 0 4px rgba(0,255,0,0.2)";
+                  } else if (line.trim() === "") {
+                    return <div key={j} style={{ height: "0.5rem" }} />;
+                  }
+                  
+                  return (
+                    <div
+                      key={j}
+                      style={{
+                        color: textColor,
+                        textShadow: textGlow,
+                        wordBreak: "break-word",
+                        whiteSpace: "pre-wrap",
+                        marginBottom: "0.2rem",
+                      }}
+                    >
+                      {line}
+                    </div>
+                  );
+                })}
+              </div>
+            ))}
           </div>
 
-          {/* Input Area */}
+          {/* Input Area - Linux-like terminal prompt */}
           <div style={{
-            background: P.cockpit, borderTop: `1px solid ${P.bDim}`,
-            padding: "12px 16px", flexShrink: 0,
+            background: "rgba(10,15,20,0.9)", borderTop: `1px solid rgba(0,255,0,0.1)`,
+            padding: "12px 20px", flexShrink: 0,
             display: "flex", alignItems: "center", gap: 8,
+            backgroundImage: "repeating-linear-gradient(0deg, rgba(0,255,0,0.01) 0px, transparent 1px)",
           }}>
-            <span style={{ color: P.cognac, fontWeight: 600 }}>❯</span>
+            <span style={{
+              color: "#00FF00", fontWeight: 700, fontSize: "0.9rem",
+              textShadow: "0 0 4px rgba(0,255,0,0.3)",
+              minWidth: "fit-content",
+            }}>root@guardian:~$</span>
+            
             <input
               ref={inputRef}
               value={command}
               onChange={e => setCommand(e.target.value)}
               onKeyDown={handleKeyDown}
               disabled={isRunning}
-              placeholder="Type command (git add, git commit, git push, npm run, etc.)"
+              placeholder="Enter command..."
+              autoFocus
               style={{
                 flex: 1, background: "transparent", border: "none",
-                color: P.ivory, fontFamily: "'JetBrains Mono',monospace", fontSize: "0.8rem",
-                outline: "none", opacity: isRunning ? 0.5 : 1,
+                color: "#E0E0E0", fontFamily: "'JetBrains Mono',monospace",
+                fontSize: "0.85rem", outline: "none",
+                opacity: isRunning ? 0.5 : 1,
+                caretColor: "#00FF00",
+                textShadow: isRunning ? "none" : "0 0 2px rgba(0,255,0,0.2)",
               }}
             />
+            
             {isRunning && (
               <span style={{
-                width: 8, height: 8, borderRadius: "50%",
-                background: P.cognac, animation: "pulse 1s infinite",
+                width: 10, height: 10, borderRadius: "50%",
+                background: "#FF6B6B", animation: "pulse 1s infinite",
+                boxShadow: "0 0 6px rgba(255,107,107,0.5)",
               }} />
             )}
           </div>
+          
+          <style>{`
+            @keyframes pulse {
+              0%, 100% { opacity: 1; }
+              50% { opacity: 0.5; }
+            }
+            @keyframes blink {
+              0%, 49% { opacity: 1; }
+              50%, 100% { opacity: 0; }
+            }
+          `}</style>
         </motion.div>
 
         {/* Right Sidebar: Command History + Config */}
