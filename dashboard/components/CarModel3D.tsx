@@ -17,9 +17,9 @@ interface ECUDef {
 const ECU_DEFS: ECUDef[] = [
   { name: "Telematics",     position: [0, 0.5, 1.2],      geometry: "sphere",      scale: [0.35, 0.35, 0.35], color: "#6A9DB8" },
   { name: "Brake ECU",      position: [-1.8, -0.1, -0.6], geometry: "box",         scale: [0.4, 0.3, 0.3],    color: "#C46B6B" },
-  { name: "Powertrain",     position: [0, -0.4, 0.3],     geometry: "cylinder",    scale: [0.35, 0.45, 0.35], color: "#D4A96A" },
+  { name: "Powertrain",     position: [-0.8, -0.5, 0.4],  geometry: "cylinder",    scale: [0.35, 0.45, 0.35], color: "#D4A96A" },
   { name: "Sensor Array",   position: [0, 1.0, 0.2],      geometry: "octahedron",  scale: [0.35, 0.35, 0.35], color: "#7AB88A" },
-  { name: "Infotainment",   position: [0, 0.15, 0.1],     geometry: "box",         scale: [0.4, 0.25, 0.25],  color: "#D4956A" },
+  { name: "Infotainment",   position: [1.4, 0.2, 0.2],    geometry: "box",         scale: [0.4, 0.25, 0.25],  color: "#D4956A" },
   { name: "ADAS",           position: [0.1, 0.6, 1.3],    geometry: "sphere",      scale: [0.3, 0.3, 0.3],    color: "#B87C3A" },
 ];
 
@@ -98,15 +98,15 @@ function ECUComponent({ def, isActive, variantScale }: { def: ECUDef; isActive: 
       {/* Visible block only when active */}
       {isActive && (
         <mesh position={scaledPos}>
-          <boxGeometry args={[0.8, 0.6, 0.6]} />
+          <boxGeometry args={[0.4, 0.35, 0.35]} />
           <meshPhysicalMaterial 
             color={def.color} 
             emissive={def.color}
-            emissiveIntensity={0.6}
+            emissiveIntensity={0.7}
             transparent 
-            opacity={0.45}
-            metalness={0.7}
-            roughness={0.3}
+            opacity={0.55}
+            metalness={0.8}
+            roughness={0.25}
             side={THREE.DoubleSide}
           />
         </mesh>
