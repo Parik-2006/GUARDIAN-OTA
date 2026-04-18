@@ -5,7 +5,6 @@ import Landing from "@/components/landing";
 import Dashboard from "@/components/dashboard";
 
 export default function Page() {
-  // FIX: added state to toggle between landing and dashboard
   const [showDashboard, setShowDashboard] = useState(false);
 
   if (showDashboard) {
