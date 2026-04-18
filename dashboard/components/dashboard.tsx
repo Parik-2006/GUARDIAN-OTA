@@ -4,33 +4,33 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import * as THREE from "three";
 
-/* ─── DESIGN TOKENS — Cream Glassmorphism ─── */
+/* ─── DESIGN TOKENS — TACTICAL CYBER-LUXE ─── */
 const C = {
-  bg:        "linear-gradient(135deg, #FAF8F3 0%, #F2EDE3 50%, #EDE5D8 100%)",
-  surface:   "rgba(255,252,245,0.7)",
-  surfaceHi: "rgba(255,252,245,0.9)",
-  panel:     "rgba(250,248,243,0.6)",
-  card:      "rgba(255,253,248,0.8)",
-  glass:     "rgba(255,255,255,0.45)",
-  border:    "rgba(212,180,140,0.25)",
-  borderHi:  "rgba(212,180,140,0.55)",
-  gold:      "#C4922A",
-  goldLight: "#E8B84B",
-  goldDark:  "#8B6420",
-  goldDim:   "rgba(196,146,42,0.12)",
-  goldGlow:  "rgba(196,146,42,0.3)",
-  cream:     "#FBF8F0",
-  bone:      "#4A3F2F",
-  boneDim:   "#7A6B57",
-  muted:     "#A8957E",
+  bg:        "linear-gradient(135deg, #0D0D0D 0%, #1A1A1A 50%, #0F0F0F 100%)",
+  surface:   "rgba(245,245,220,0.05)",
+  surfaceHi: "rgba(245,245,220,0.08)",
+  panel:     "rgba(245,245,220,0.04)",
+  card:      "rgba(245,245,220,0.06)",
+  glass:     "rgba(245,245,220,0.08)",
+  border:    "rgba(212,175,55,0.15)",
+  borderHi:  "rgba(212,175,55,0.35)",
+  gold:      "#D4AF37",
+  goldLight: "#E5C158",
+  goldDark:  "#A68A00",
+  goldDim:   "rgba(212,175,55,0.12)",
+  goldGlow:  "rgba(212,175,55,0.30)",
+  cream:     "#F5F5DC",
+  boneText:  "#E2E8F0",
+  textDim:   "#A8957E",
+  textMuted: "#7A6B57",
   safe:      "#5A8C5E",
   safeDim:   "rgba(90,140,94,0.12)",
   warn:      "#C17A3A",
   warnDim:   "rgba(193,122,58,0.12)",
   danger:    "#B85050",
   dangerDim: "rgba(184,80,80,0.12)",
-  shadow:    "0 8px 32px rgba(100,80,50,0.12)",
-  shadowHi:  "0 16px 48px rgba(100,80,50,0.2)",
+  shadow:    "0 4px 24px rgba(0,0,0,0.4)",
+  shadowHi:  "0 0 0 1px rgba(212,175,55,0.3), 0 8px 40px rgba(0,0,0,0.5)",
 } as const;
 
 /* ─── TYPES ─── */
