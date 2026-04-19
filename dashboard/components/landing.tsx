@@ -115,6 +115,91 @@ function GlassStatCard({ icon, value, label, sub, delay = 0 }: {
 }
 
 /* ══════════════════════════════════════════
+   SECURITY PATTERN ICONS
+══════════════════════════════════════════ */
+function SecurityPatternIcon({ title }: { title: string }) {
+  const patterns: Record<string, JSX.Element> = {
+    "ECC P-256 Signature": (
+      <svg viewBox="0 0 60 60" style={{ width: "100%", height: "100%" }}>
+        <defs>
+          <pattern id="eccPattern" x="0" y="0" width="10" height="10" patternUnits="userSpaceOnUse">
+            <circle cx="5" cy="5" r="1.5" fill="currentColor" opacity="0.6" />
+            <line x1="5" y1="0" x2="5" y2="10" stroke="currentColor" strokeWidth="0.5" opacity="0.3" />
+            <line x1="0" y1="5" x2="10" y2="5" stroke="currentColor" strokeWidth="0.5" opacity="0.3" />
+          </pattern>
+        </defs>
+        <circle cx="30" cy="30" r="25" fill="url(#eccPattern)" />
+        <path d="M30 10 L45 20 L45 40 L30 50 L15 40 L15 20 Z" stroke="currentColor" strokeWidth="1.5" fill="none" opacity="0.8" />
+      </svg>
+    ),
+    "SHA-256 Integrity": (
+      <svg viewBox="0 0 60 60" style={{ width: "100%", height: "100%" }}>
+        <defs>
+          <pattern id="hashPattern" x="0" y="0" width="8" height="8" patternUnits="userSpaceOnUse">
+            <line x1="0" y1="4" x2="8" y2="4" stroke="currentColor" strokeWidth="0.8" opacity="0.5" />
+            <line x1="4" y1="0" x2="4" y2="8" stroke="currentColor" strokeWidth="0.8" opacity="0.5" />
+          </pattern>
+        </defs>
+        <rect x="10" y="15" width="40" height="30" rx="3" fill="url(#hashPattern)" stroke="currentColor" strokeWidth="1.5" />
+        <circle cx="20" cy="22" r="3" stroke="currentColor" strokeWidth="1" fill="none" />
+        <circle cx="40" cy="22" r="3" stroke="currentColor" strokeWidth="1" fill="none" />
+        <circle cx="20" cy="38" r="3" stroke="currentColor" strokeWidth="1" fill="none" />
+        <circle cx="40" cy="38" r="3" stroke="currentColor" strokeWidth="1" fill="none" />
+      </svg>
+    ),
+    "Safety Gate": (
+      <svg viewBox="0 0 60 60" style={{ width: "100%", height: "100%" }}>
+        <path d="M30 10 L50 20 L50 45 C50 48 48 50 45 50 L15 50 C12 50 10 48 10 45 L10 20 Z" stroke="currentColor" strokeWidth="1.5" fill="none" />
+        <line x1="30" y1="10" x2="30" y2="30" stroke="currentColor" strokeWidth="2" />
+        <line x1="22" y1="30" x2="38" y2="30" stroke="currentColor" strokeWidth="2" />
+        <circle cx="30" cy="30" r="8" stroke="currentColor" strokeWidth="1" fill="none" opacity="0.5" />
+      </svg>
+    ),
+    "Automatic Rollback": (
+      <svg viewBox="0 0 60 60" style={{ width: "100%", height: "100%" }}>
+        <defs>
+          <pattern id="rotatePattern" x="0" y="0" width="6" height="6" patternUnits="userSpaceOnUse">
+            <circle cx="3" cy="3" r="1" fill="currentColor" opacity="0.4" />
+          </pattern>
+        </defs>
+        <circle cx="30" cy="30" r="20" fill="url(#rotatePattern)" stroke="currentColor" strokeWidth="1.5" />
+        <path d="M50 30 C50 41 41 50 30 50 C19 50 10 41 10 30" stroke="currentColor" strokeWidth="2" fill="none" />
+        <path d="M50 30 L45 24 L45 36 Z" fill="currentColor" />
+      </svg>
+    ),
+    "TLS MQTT Transport": (
+      <svg viewBox="0 0 60 60" style={{ width: "100%", height: "100%" }}>
+        <defs>
+          <pattern id="wavePattern" x="0" y="0" width="4" height="20" patternUnits="userSpaceOnUse">
+            <path d="M2 0 Q0 5 2 10 T2 20" stroke="currentColor" strokeWidth="0.8" fill="none" opacity="0.6" />
+          </pattern>
+        </defs>
+        <rect x="12" y="15" width="36" height="30" rx="3" fill="url(#wavePattern)" stroke="currentColor" strokeWidth="1.5" />
+        <circle cx="18" cy="22" r="2" fill="currentColor" opacity="0.8" />
+        <circle cx="42" cy="22" r="2" fill="currentColor" opacity="0.8" />
+      </svg>
+    ),
+    "eFuse MAC Identity": (
+      <svg viewBox="0 0 60 60" style={{ width: "100%", height: "100%" }}>
+        <defs>
+          <pattern id="chipPattern" x="0" y="0" width="6" height="6" patternUnits="userSpaceOnUse">
+            <rect x="1" y="1" width="4" height="4" stroke="currentColor" strokeWidth="0.5" fill="none" opacity="0.5" />
+          </pattern>
+        </defs>
+        <rect x="15" y="18" width="30" height="24" rx="2" fill="url(#chipPattern)" stroke="currentColor" strokeWidth="1.5" />
+        <line x1="12" y1="24" x2="10" y2="24" stroke="currentColor" strokeWidth="1.5" />
+        <line x1="12" y1="30" x2="10" y2="30" stroke="currentColor" strokeWidth="1.5" />
+        <line x1="12" y1="36" x2="10" y2="36" stroke="currentColor" strokeWidth="1.5" />
+        <line x1="48" y1="24" x2="50" y2="24" stroke="currentColor" strokeWidth="1.5" />
+        <line x1="48" y1="30" x2="50" y2="30" stroke="currentColor" strokeWidth="1.5" />
+        <line x1="48" y1="36" x2="50" y2="36" stroke="currentColor" strokeWidth="1.5" />
+      </svg>
+    ),
+  };
+  return patterns[title] || <div />;
+}
+
+/* ══════════════════════════════════════════
    FEATURE ROW
 ══════════════════════════════════════════ */
 function FeatureRow({ items }: { items: { icon: string; title: string; desc: string }[] }) {
@@ -123,7 +208,9 @@ function FeatureRow({ items }: { items: { icon: string; title: string; desc: str
       {items.map((item, i) => (
         <motion.div key={i} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.08, duration: 0.55 }} className="lp-feature-card">
           <div className="lp-feature-shine" />
-          <div className="lp-feature-icon">{item.icon}</div>
+          <div className="lp-feature-icon" style={{ color: "#D4A96A" }}>
+            <SecurityPatternIcon title={item.title} />
+          </div>
           <h3 className="lp-feature-title">{item.title}</h3>
           <p className="lp-feature-desc">{item.desc}</p>
         </motion.div>
@@ -296,12 +383,12 @@ export default function Landing({ onEnterDashboard }: { onEnterDashboard: () => 
         </p>
         <SecurityBadges />
         <FeatureRow items={[
-          { icon: "🔐", title: "ECC P-256 Signature",  desc: "mbedTLS verifies OTA payload against embedded public key. Prevents forged firmware and supply-chain tampering." },
-          { icon: "🔑", title: "SHA-256 Integrity",    desc: "Firmware binary hash compared to signed manifest. Prevents corruption replay and altered binary attacks." },
-          { icon: "🛡",  title: "Safety Gate",          desc: "OTA blocked when brake ECU reports UNSAFE state. No updates during active safety-critical conditions." },
-          { icon: "↩",  title: "Automatic Rollback",   desc: "ESP-IDF dual-partition scheme — failed health-check triggers esp_ota_mark_app_invalid_rollback_and_reboot." },
-          { icon: "📡", title: "TLS MQTT Transport",   desc: "Encrypted command channel prevents MITM sniffing and injection on OTA command topics." },
-          { icon: "🪪", title: "eFuse MAC Identity",   desc: "Device-specific identity derived from immutable hardware MAC. Prevents logical node spoofing." },
+          { icon: "", title: "ECC P-256 Signature",  desc: "mbedTLS verifies OTA payload against embedded public key. Prevents forged firmware and supply-chain tampering." },
+          { icon: "", title: "SHA-256 Integrity",    desc: "Firmware binary hash compared to signed manifest. Prevents corruption replay and altered binary attacks." },
+          { icon: "",  title: "Safety Gate",          desc: "OTA blocked when brake ECU reports UNSAFE state. No updates during active safety-critical conditions." },
+          { icon: "",  title: "Automatic Rollback",   desc: "ESP-IDF dual-partition scheme — failed health-check triggers esp_ota_mark_app_invalid_rollback_and_reboot." },
+          { icon: "", title: "TLS MQTT Transport",   desc: "Encrypted command channel prevents MITM sniffing and injection on OTA command topics." },
+          { icon: "", title: "eFuse MAC Identity",   desc: "Device-specific identity derived from immutable hardware MAC. Prevents logical node spoofing." },
         ]} />
       </section>
 
