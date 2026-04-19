@@ -8,8 +8,10 @@ import I from "./Icon";
 export default function UpdatePanel() {
   const [file, setFile] = useState<File | null>(null);
   const [pushing, setPushing] = useState(false);
+  const [rollingBack, setRollingBack] = useState(false);
   const [progress, setProgress] = useState(0);
   const [done, setDone] = useState(false);
+  const [rolledBack, setRolledBack] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const handleSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
@@ -22,28 +24,42 @@ export default function UpdatePanel() {
   }, []);
 
   const handlePush = useCallback(() => {
-    if (!file || pushing) return;
+    if (!file || pushing || rollingBack) return;
     setPushing(true);
     setProgress(0);
     setDone(false);
-  }, [file, pushing]);
+    setRolledBack(false);
+  }, [file, pushing, rollingBack]);
 
-  // Simulate push progress
+  const handleRollback = useCallback(() => {
+    if (pushing || !done) return;
+    setRollingBack(true);
+    setProgress(0);
+    setDone(false);
+  }, [pushing, done]);
+
+  // Simulate push/rollback progress
   useEffect(() => {
-    if (!pushing) return;
+    if (!pushing && !rollingBack) return;
     const timer = setInterval(() => {
       setProgress(prev => {
         if (prev >= 100) {
           clearInterval(timer);
-          setPushing(false);
-          setDone(true);
+          if (pushing) {
+            setPushing(false);
+            setDone(true);
+          } else if (rollingBack) {
+            setRollingBack(false);
+            setRolledBack(true);
+            setFile(null);
+          }
           return 100;
         }
         return prev + 2;
       });
     }, 60);
     return () => clearInterval(timer);
-  }, [pushing]);
+  }, [pushing, rollingBack]);
 
   const formatSize = (bytes: number) => {
     if (bytes < 1024) return `${bytes} B`;
@@ -122,7 +138,7 @@ export default function UpdatePanel() {
       )}
 
       {/* Push progress */}
-      {(pushing || done) && (
+      {(pushing || done || rollingBack || rolledBack) && (
         <div style={{
           background: P.cockpit, border: `1px solid ${P.bDim}`,
           borderRadius: 4, padding: "14px 16px",
@@ -133,8 +149,10 @@ export default function UpdatePanel() {
           }}>
             <span style={{
               fontFamily: "'JetBrains Mono',monospace", fontSize: "0.58rem",
-              color: done ? P.sage : P.cognac, fontWeight: 600,
-            }}>{done ? "PUSH COMPLETE" : "UPLOADING FIRMWARE..."}</span>
+              color: rolledBack ? P.copper : done ? P.sage : pushing ? P.cognac : P.copper, fontWeight: 600,
+            }}>
+              {rollingBack ? "ROLLING BACK..." : rolledBack ? "ROLLBACK COMPLETE" : done ? "PUSH COMPLETE" : "UPLOADING FIRMWARE..."}
+            </span>
             <span style={{
               fontFamily: "'JetBrains Mono',monospace", fontSize: "0.58rem",
               color: P.whisper,
@@ -148,12 +166,12 @@ export default function UpdatePanel() {
               transition={{ duration: 0.1 }}
               style={{
                 height: "100%",
-                background: done ? P.sage : P.cognac,
+                background: rolledBack ? P.copper : done && !rollingBack ? P.sage : pushing ? P.cognac : P.copper,
                 borderRadius: 2,
               }}
             />
           </div>
-          {done && (
+          {done && !rollingBack && (
             <div style={{
               fontFamily: "'JetBrains Mono',monospace", fontSize: "0.5rem",
               color: P.whisper, marginTop: 8,
@@ -161,6 +179,16 @@ export default function UpdatePanel() {
             }}>
               <I n="check_circle" f sz={12} col={P.sage} />
               Firmware delivered. Device rebooting...
+            </div>
+          )}
+          {rolledBack && (
+            <div style={{
+              fontFamily: "'JetBrains Mono',monospace", fontSize: "0.5rem",
+              color: P.whisper, marginTop: 8,
+              display: "flex", alignItems: "center", gap: 5,
+            }}>
+              <I n="restore" f sz={12} col={P.copper} />
+              Firmware rolled back to previous version.
             </div>
           )}
         </div>
@@ -198,6 +226,35 @@ export default function UpdatePanel() {
       >
         <I n="send" sz={16} col="inherit" /> Push Update
       </button>
+
+      {/* Rollback button - appears after successful push */}
+      {done && !rolledBack && !rollingBack && (
+        <button
+          onClick={handleRollback}
+          style={{
+            width: "100%", padding: "10px 0",
+            background: P.copDim,
+            color: P.copper,
+            fontFamily: "'Cormorant Garamond',serif", fontWeight: 700,
+            fontSize: "0.9rem", letterSpacing: "0.08em",
+            borderRadius: 3,
+            border: `1px solid ${P.bHi}`,
+            cursor: "pointer",
+            transition: "all 0.22s",
+            display: "flex", alignItems: "center", justifyContent: "center", gap: 7,
+          }}
+          onMouseEnter={e => {
+            e.currentTarget.style.background = P.copper;
+            e.currentTarget.style.color = P.ivory;
+          }}
+          onMouseLeave={e => {
+            e.currentTarget.style.background = P.copDim;
+            e.currentTarget.style.color = P.copper;
+          }}
+        >
+          <I n="restore" sz={16} col="inherit" /> Rollback Update
+        </button>
+      )}
     </div>
   );
 }
