@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { P } from "./theme";
 
 interface BrandLogoProps {
@@ -8,127 +9,79 @@ interface BrandLogoProps {
   style?: React.CSSProperties;
 }
 
-// SVG Logos for each brand
-const BRAND_LOGOS: Record<string, (size: number, style?: React.CSSProperties) => JSX.Element> = {
-  "audi": (size, style) => (
-    <svg width={size} height={size} viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" style={style}>
-      <circle cx="20" cy="50" r="12" fill="#DC143C" />
-      <circle cx="40" cy="50" r="12" fill="#DC143C" />
-      <circle cx="60" cy="50" r="12" fill="#DC143C" />
-      <circle cx="80" cy="50" r="12" fill="#DC143C" />
-    </svg>
-  ),
-  "mercedes": (size, style) => (
-    <svg width={size} height={size} viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" style={style}>
-      <circle cx="50" cy="50" r="35" fill="none" stroke="#00A3E0" strokeWidth="2.5" />
-      <circle cx="50" cy="50" r="8" fill="#00A3E0" />
-      <line x1="50" y1="50" x2="50" y2="20" stroke="#00A3E0" strokeWidth="2.5" />
-      <line x1="50" y1="50" x2="73" y2="65" stroke="#00A3E0" strokeWidth="2.5" />
-      <line x1="50" y1="50" x2="27" y2="65" stroke="#00A3E0" strokeWidth="2.5" />
-    </svg>
-  ),
-  "bmw": (size, style) => (
-    <svg width={size} height={size} viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" style={style}>
-      <rect x="25" y="25" width="25" height="50" fill="#1f4788" />
-      <rect x="50" y="25" width="25" height="50" fill="white" />
-      <circle cx="50" cy="50" r="30" fill="none" stroke="#1f4788" strokeWidth="2" />
-      <line x1="50" y1="20" x2="50" y2="80" stroke="#1f4788" strokeWidth="2.5" />
-    </svg>
-  ),
-  "tesla": (size, style) => (
-    <svg width={size} height={size} viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" style={style}>
-      <path d="M50 15 L75 50 L50 85 L25 50 Z" fill="#E82127" />
-      <text x="50" y="55" fontSize="24" fontWeight="bold" fill="white" textAnchor="middle">T</text>
-    </svg>
-  ),
-  "porsche": (size, style) => (
-    <svg width={size} height={size} viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" style={style}>
-      <rect x="15" y="20" width="70" height="60" rx="5" fill="#000" />
-      <circle cx="35" cy="50" r="10" fill="white" stroke="#FFD700" strokeWidth="1.5" />
-      <circle cx="65" cy="50" r="10" fill="none" stroke="#FFD700" strokeWidth="1.5" />
-      <text x="50" y="28" fontSize="12" fontWeight="bold" fill="#FFD700" textAnchor="middle">PORSCHE</text>
-    </svg>
-  ),
-  "volkswagen": (size, style) => (
-    <svg width={size} height={size} viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" style={style}>
-      <circle cx="50" cy="50" r="35" fill="#0066B2" />
-      <path d="M50 30 L60 55 L40 55 Z" fill="white" />
-      <path d="M50 55 L65 70 L35 70 Z" fill="white" />
-    </svg>
-  ),
-  "ford": (size, style) => (
-    <svg width={size} height={size} viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" style={style}>
-      <rect x="20" y="20" width="60" height="60" fill="#003478" rx="3" />
-      <text x="50" y="65" fontSize="32" fontWeight="bold" fill="white" textAnchor="middle">F</text>
-    </svg>
-  ),
-  "chevrolet": (size, style) => (
-    <svg width={size} height={size} viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" style={style}>
-      <rect x="25" y="30" width="18" height="40" fill="#FFB81C" />
-      <rect x="57" y="30" width="18" height="40" fill="#FFB81C" />
-      <rect x="41" y="38" width="18" height="24" fill="#FFB81C" />
-    </svg>
-  ),
-  "toyota": (size, style) => (
-    <svg width={size} height={size} viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" style={style}>
-      <ellipse cx="50" cy="40" rx="15" ry="18" fill="none" stroke="#EB0A1E" strokeWidth="2.5" />
-      <ellipse cx="35" cy="65" rx="12" ry="15" fill="none" stroke="#EB0A1E" strokeWidth="2.5" />
-      <ellipse cx="65" cy="65" rx="12" ry="15" fill="none" stroke="#EB0A1E" strokeWidth="2.5" />
-    </svg>
-  ),
-  "honda": (size, style) => (
-    <svg width={size} height={size} viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" style={style}>
-      <rect x="25" y="25" width="50" height="50" fill="#C60C30" rx="4" />
-      <text x="50" y="60" fontSize="28" fontWeight="bold" fill="white" textAnchor="middle">H</text>
-    </svg>
-  ),
-  "nissan": (size, style) => (
-    <svg width={size} height={size} viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" style={style}>
-      <rect x="20" y="30" width="60" height="40" fill="#C8102E" rx="2" />
-      <text x="50" y="60" fontSize="24" fontWeight="bold" fill="white" textAnchor="middle">N</text>
-    </svg>
-  ),
-  "hyundai": (size, style) => (
-    <svg width={size} height={size} viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" style={style}>
-      <rect x="20" y="20" width="60" height="60" fill="#003478" rx="3" />
-      <path d="M45 40 L50 50 L55 40 M45 60 L50 50 L55 60" stroke="white" strokeWidth="3" fill="none" strokeLinecap="round" />
-    </svg>
-  ),
-  "lexus": (size, style) => (
-    <svg width={size} height={size} viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" style={style}>
-      <circle cx="50" cy="50" r="32" fill="none" stroke="#0066B2" strokeWidth="2.5" />
-      <text x="50" y="60" fontSize="20" fontWeight="bold" fill="#0066B2" textAnchor="middle">L</text>
-    </svg>
-  ),
-  "lamborghini": (size, style) => (
-    <svg width={size} height={size} viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" style={style}>
-      <polygon points="50,20 80,50 80,80 20,80 20,50" fill="none" stroke="#FFD700" strokeWidth="2.5" strokeLinejoin="round" />
-      <text x="50" y="60" fontSize="18" fontWeight="bold" fill="#FFD700" textAnchor="middle">λ</text>
-    </svg>
-  ),
-  "ferrari": (size, style) => (
-    <svg width={size} height={size} viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" style={style}>
-      <rect x="20" y="20" width="60" height="60" fill="#DC143C" rx="3" />
-      <circle cx="50" cy="50" r="15" fill="none" stroke="#FFD700" strokeWidth="2" />
-      <text x="50" y="55" fontSize="16" fontWeight="bold" fill="#FFD700" textAnchor="middle">F</text>
-    </svg>
-  ),
+const BRAND_DOMAINS: Record<string, string> = {
+  "audi": "audi.com",
+  "mercedes": "mercedes-benz.com",
+  "bmw": "bmw.com",
+  "tesla": "tesla.com",
+  "porsche": "porsche.com",
+  "volkswagen": "volkswagen.com",
+  "ford": "ford.com",
+  "chevrolet": "chevrolet.com",
+  "toyota": "toyota.com",
+  "honda": "honda.com",
+  "nissan": "nissan.com",
+  "hyundai": "hyundai.com",
+  "lexus": "lexus.com",
+  "lamborghini": "lamborghini.com",
+  "ferrari": "ferrari.com",
 };
 
 export default function BrandLogo({ vehicleName, size = 32, style }: BrandLogoProps) {
-  // Extract brand from vehicle name
-  const nameLower = vehicleName.toLowerCase();
-  let brand: string | null = null;
+  const [logoUrl, setLogoUrl] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
-  for (const key of Object.keys(BRAND_LOGOS)) {
-    if (nameLower.includes(key)) {
-      brand = key;
-      break;
+  useEffect(() => {
+    const nameLower = vehicleName.toLowerCase();
+    let domain = "";
+
+    for (const [brand, domainUrl] of Object.entries(BRAND_DOMAINS)) {
+      if (nameLower.includes(brand)) {
+        domain = domainUrl;
+        break;
+      }
     }
+
+    if (!domain) {
+      setIsLoading(false);
+      return;
+    }
+
+    // Use Brandfetch API - free tier available
+    // Returns official company logos with proper licensing
+    const brandName = domain.split(".")[0];
+    const url = `https://cdn.brandfetch.io/${brandName}/logo/square/200`;
+
+    const img = new Image();
+    img.onload = () => {
+      setLogoUrl(url);
+      setIsLoading(false);
+    };
+    img.onerror = () => {
+      setIsLoading(false);
+      // Fallback to clearbit
+      const fallbackUrl = `https://logo.clearbit.com/${domain}?size=200`;
+      setLogoUrl(fallbackUrl);
+    };
+    img.src = url;
+  }, [vehicleName]);
+
+  if (isLoading) {
+    return (
+      <div
+        style={{
+          width: size,
+          height: size,
+          borderRadius: 4,
+          background: "rgba(240,235,224,0.1)",
+          animation: "pulse 2s ease-in-out infinite",
+          ...style,
+        }}
+      />
+    );
   }
 
-  if (!brand) {
-    // Fallback: Generic shield
+  if (!logoUrl) {
     return (
       <svg
         width={size}
@@ -149,5 +102,19 @@ export default function BrandLogo({ vehicleName, size = 32, style }: BrandLogoPr
     );
   }
 
-  return BRAND_LOGOS[brand](size, style);
+  return (
+    <img
+      src={logoUrl}
+      alt={vehicleName}
+      style={{
+        width: size,
+        height: size,
+        objectFit: "contain",
+        padding: 2,
+        filter: "brightness(1.1) contrast(1.1)",
+        ...style,
+      }}
+      onError={() => setLogoUrl(null)}
+    />
+  );
 }
