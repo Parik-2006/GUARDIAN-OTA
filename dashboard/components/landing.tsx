@@ -114,55 +114,7 @@ function GlassStatCard({ icon, value, label, sub, delay = 0 }: {
   );
 }
 
-/* ══════════════════════════════════════════
-   SECURITY PATTERN ICONS (Small 2-4px)
-══════════════════════════════════════════ */
-function SecurityPatternIcon({ title }: { title: string }) {
-  const patterns: Record<string, JSX.Element> = {
-    "ECC P-256 Signature": (
-      <svg viewBox="0 0 8 8" style={{ width: "4px", height: "4px" }}>
-        <circle cx="4" cy="4" r="2" fill="none" stroke="currentColor" strokeWidth="0.8" opacity="0.7" />
-        <circle cx="4" cy="4" r="1" fill="currentColor" opacity="0.8" />
-      </svg>
-    ),
-    "SHA-256 Integrity": (
-      <svg viewBox="0 0 8 8" style={{ width: "4px", height: "4px" }}>
-        <line x1="2" y1="4" x2="6" y2="4" stroke="currentColor" strokeWidth="0.8" opacity="0.8" />
-        <line x1="4" y1="2" x2="4" y2="6" stroke="currentColor" strokeWidth="0.8" opacity="0.8" />
-        <circle cx="4" cy="4" r="0.5" fill="currentColor" />
-      </svg>
-    ),
-    "Safety Gate": (
-      <svg viewBox="0 0 8 8" style={{ width: "4px", height: "4px" }}>
-        <path d="M4 1 L6.5 3 L6.5 6 L4 7 L1.5 6 L1.5 3 Z" stroke="currentColor" strokeWidth="0.7" fill="none" opacity="0.8" />
-        <line x1="4" y1="2.5" x2="4" y2="5" stroke="currentColor" strokeWidth="0.6" opacity="0.7" />
-      </svg>
-    ),
-    "Automatic Rollback": (
-      <svg viewBox="0 0 8 8" style={{ width: "4px", height: "4px" }}>
-        <path d="M6 4 A2 2 0 0 0 2 4" stroke="currentColor" strokeWidth="0.8" fill="none" opacity="0.8" />
-        <path d="M6 4 L5.5 3 L5.5 4.5 Z" fill="currentColor" opacity="0.8" />
-      </svg>
-    ),
-    "TLS MQTT Transport": (
-      <svg viewBox="0 0 8 8" style={{ width: "4px", height: "4px" }}>
-        <path d="M4 1 L4 3 M3 2 L5 2" stroke="currentColor" strokeWidth="0.8" opacity="0.8" />
-        <path d="M4 4 L4 6 M3 5 L5 5" stroke="currentColor" strokeWidth="0.8" opacity="0.7" />
-        <line x1="4" y1="3" x2="4" y2="4" stroke="currentColor" strokeWidth="0.5" opacity="0.5" />
-      </svg>
-    ),
-    "eFuse MAC Identity": (
-      <svg viewBox="0 0 8 8" style={{ width: "4px", height: "4px" }}>
-        <rect x="2" y="2" width="4" height="3" rx="0.5" fill="none" stroke="currentColor" strokeWidth="0.7" opacity="0.8" />
-        <line x1="1" y1="3" x2="1.5" y2="3" stroke="currentColor" strokeWidth="0.6" opacity="0.7" />
-        <line x1="1" y1="4" x2="1.5" y2="4" stroke="currentColor" strokeWidth="0.6" opacity="0.7" />
-        <line x1="6.5" y1="3" x2="7" y2="3" stroke="currentColor" strokeWidth="0.6" opacity="0.7" />
-        <line x1="6.5" y1="4" x2="7" y2="4" stroke="currentColor" strokeWidth="0.6" opacity="0.7" />
-      </svg>
-    ),
-  };
-  return patterns[title] || <div />;
-}
+
 
 /* ══════════════════════════════════════════
    FEATURE ROW
@@ -173,13 +125,10 @@ function FeatureRow({ items }: { items: { icon: string; title: string; desc: str
       {items.map((item, i) => (
         <motion.div key={i} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.08, duration: 0.55 }} className="lp-feature-card">
           <div className="lp-feature-shine" />
-          <div className="lp-feature-icon" style={{ color: "#D4A96A" }}>
-            <SecurityPatternIcon title={item.title} />
-          </div>
           <h3 className="lp-feature-title">{item.title}</h3>
           <p className="lp-feature-desc">{item.desc}</p>
         </motion.div>
-      ))}
+      ))
     </div>
   );
 }
