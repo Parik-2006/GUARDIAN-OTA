@@ -719,10 +719,10 @@ export default function Landing({ onEnterDashboard }: { onEnterDashboard: () => 
 
         {/* SECURITY */}
         <section className="lp-section" id="security">
-          <p className="lp-section-label">02 · Security Controls</p>
+          <p className="lp-section-label">02 Security Controls</p>
           <h2 className="lp-section-h2">Cryptographic <em>Defense</em> Chain</h2>
           <p className="lp-section-body">
-            Multi-layer hardening across the entire update pipeline — from eFuse hardware identity pinning and TLS transport encryption, through ECC payload authentication and SHA-256 integrity verification, to pre-update safety validation and automatic dual-partition rollback on failure.
+            Multi-layer hardening across the entire update pipeline from eFuse hardware identity pinning and TLS transport encryption, through ECC payload authentication and SHA-256 integrity verification, to pre-update safety validation and automatic dual-partition rollback on failure.
           </p>
           <SecurityBadges />
           <FeatureRow items={[
@@ -739,10 +739,10 @@ export default function Landing({ onEnterDashboard }: { onEnterDashboard: () => 
 
         {/* STACK */}
         <section className="lp-section" id="stack">
-          <p className="lp-section-label">03 · Technology Stack</p>
+          <p className="lp-section-label">03 Technology Stack</p>
           <h2 className="lp-section-h2">Full-Stack <em>Production</em> Platform</h2>
           <p className="lp-section-body">
-            Battle-tested technologies across every layer — from bare-metal FreeRTOS task runtime and mbedTLS cryptography on ESP32, through Go microservices with PostgreSQL persistence, to a production-grade Next.js dashboard with real-time WebSocket telemetry and cinematic motion graphics.
+            Battle-tested technologies across every layer from bare-metal FreeRTOS task runtime and mbedTLS cryptography on ESP32, through Go microservices with PostgreSQL persistence, to a production-grade Next.js dashboard with real-time WebSocket telemetry and cinematic motion graphics.
           </p>
           <StackRow />
         </section>
