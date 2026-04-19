@@ -24,7 +24,7 @@ function eventToRow(e: BackendEvent) {
   // Derive a human-readable message
   let message = "";
   let icon = "info";
-  let color = P.whisper;
+  let color: string = P.whisper;
   let tag: string | null = null;
 
   if (isDevice) {

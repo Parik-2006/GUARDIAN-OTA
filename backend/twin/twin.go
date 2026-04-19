@@ -63,12 +63,14 @@ func (r *Registry) InitSchema(ctx context.Context) error {
 			last_seen TIMESTAMPTZ NOT NULL,
 			threat_level TEXT NOT NULL,
 			ota_progress INT NOT NULL DEFAULT 0,
+			ota_status TEXT NOT NULL DEFAULT 'online',
 			signature_ok BOOLEAN NOT NULL DEFAULT true,
 			integrity_ok BOOLEAN NOT NULL DEFAULT true,
 			tls_healthy BOOLEAN NOT NULL DEFAULT true,
 			rollback_armed BOOLEAN NOT NULL DEFAULT true,
 			campaign_id TEXT
 		);
+		ALTER TABLE devices ADD COLUMN IF NOT EXISTS ota_status TEXT NOT NULL DEFAULT 'online';
 	`)
 	if err != nil {
 		return err
@@ -76,7 +78,7 @@ func (r *Registry) InitSchema(ctx context.Context) error {
 
 	rows, err := r.pool.Query(ctx, `
 		SELECT device_id, primary_device, ota_version, safety_state, ecu_states, 
-		last_seen, threat_level, ota_progress, signature_ok, integrity_ok, 
+		last_seen, threat_level, ota_progress, ota_status, signature_ok, integrity_ok, 
 		tls_healthy, rollback_armed, campaign_id FROM devices
 	`)
 	if err != nil {
@@ -93,7 +95,7 @@ func (r *Registry) InitSchema(ctx context.Context) error {
 		var cmpId *string
 		err := rows.Scan(
 			&d.DeviceID, &d.Primary, &d.OTAVersion, &d.SafetyState, &ecuBytes,
-			&d.LastSeen, &d.ThreatLevel, &d.OTAProgress, &d.SignatureOK, &d.IntegrityOK,
+			&d.LastSeen, &d.ThreatLevel, &d.OTAProgress, &d.OTAStatus, &d.SignatureOK, &d.IntegrityOK,
 			&d.TLSHealthy, &d.RollbackArmed, &cmpId,
 		)
 		if err == nil {
@@ -122,9 +124,9 @@ func (r *Registry) writeToDB(d *DeviceState) {
 	_, err := r.pool.Exec(context.Background(), `
 		INSERT INTO devices (
 			device_id, primary_device, ota_version, safety_state, ecu_states, 
-			last_seen, threat_level, ota_progress, signature_ok, integrity_ok, 
+			last_seen, threat_level, ota_progress, ota_status, signature_ok, integrity_ok, 
 			tls_healthy, rollback_armed, campaign_id
-		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
 		ON CONFLICT (device_id) DO UPDATE SET
 			primary_device = EXCLUDED.primary_device,
 			ota_version = EXCLUDED.ota_version,
@@ -133,13 +135,14 @@ func (r *Registry) writeToDB(d *DeviceState) {
 			last_seen = EXCLUDED.last_seen,
 			threat_level = EXCLUDED.threat_level,
 			ota_progress = EXCLUDED.ota_progress,
+			ota_status = EXCLUDED.ota_status,
 			signature_ok = EXCLUDED.signature_ok,
 			integrity_ok = EXCLUDED.integrity_ok,
 			tls_healthy = EXCLUDED.tls_healthy,
 			rollback_armed = EXCLUDED.rollback_armed,
 			campaign_id = EXCLUDED.campaign_id
 	`, d.DeviceID, d.Primary, d.OTAVersion, d.SafetyState, ecuBytes, 
-		d.LastSeen, d.ThreatLevel, d.OTAProgress, d.SignatureOK, d.IntegrityOK, 
+		d.LastSeen, d.ThreatLevel, d.OTAProgress, d.OTAStatus, d.SignatureOK, d.IntegrityOK, 
 		d.TLSHealthy, d.RollbackArmed, cmpId,
 	)
 

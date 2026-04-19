@@ -53,6 +53,11 @@ type TerminalRequest struct {
 	Command string `json:"command" binding:"required"`
 }
 
+// RollbackRequest is the JSON body accepted by POST /api/ota/rollback.
+type RollbackRequest struct {
+	TargetDevice string `json:"targetDevice" binding:"required"`
+}
+
 // RegisterRoutes wires all routes onto the given Gin engine.
 func RegisterRoutes(r *gin.Engine, d *Deps) {
 	r.GET("/health", handleHealth)
@@ -63,6 +68,7 @@ func RegisterRoutes(r *gin.Engine, d *Deps) {
 	r.GET("/api/campaigns/:id", d.handleCampaign)
 	r.GET("/api/events", d.handleEvents)
 	r.POST("/api/terminal", d.handleTerminal)
+	r.POST("/api/ota/rollback", d.handleRollback)
 	r.GET("/ws/events", gin.WrapF(d.Hub.ServeHTTP))
 }
 
@@ -159,6 +165,30 @@ func (d *Deps) handleEvents(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"events": evts, "count": len(evts)})
+}
+
+func (d *Deps) handleRollback(c *gin.Context) {
+	var req RollbackRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	slog.Info("api: rollback requested", "device", req.TargetDevice)
+
+	// Publish rollback command via MQTT
+	if err := d.Publisher.PublishRollbackCommand(req.TargetDevice); err != nil {
+		slog.Error("api: rollback publish failed", "err", err, "device", req.TargetDevice)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to publish rollback command"})
+		return
+	}
+
+	// Log event
+	d.Events.Write(context.Background(), "rollback_requested", map[string]string{
+		"device_id": req.TargetDevice,
+	})
+
+	c.JSON(http.StatusOK, gin.H{"status": "queued", "device": req.TargetDevice})
 }
 
 func (d *Deps) handleUpload(c *gin.Context) {

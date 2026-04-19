@@ -4,6 +4,11 @@
 
 A production-grade, security-hardened **Over-The-Air (OTA) firmware update system** for Software-Defined Vehicles (SDVs). This platform demonstrates end-to-end orchestration with secure canary rollouts, cryptographic signature verification, real-time telemetry, and automated rollback protection.
 
+<div align="center">
+  <img src="images/demo.png" alt="Guardian OTA Dashboard" width="800">
+  <p><i>The Guardian OTA Control Center: Glassmorphic UI with real-time 3D fleet visualization.</i></p>
+</div>
+
 [![Status](https://img.shields.io/badge/status-production--ready-green)]()
 [![License](https://img.shields.io/badge/license-MIT-blue)]()
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.5-blue)]()
@@ -62,8 +67,10 @@ bash start.sh
 - **Canary Rollouts**: Deployment campaigns with configurable fleet percentage targets (1-100%)
 - **Anti-Brick Resilience**: Dual-slot partition scheme with automatic rollback on boot failure
 - **Multi-Vehicle Support**: Manages diverse fleet (Audi A8, Mercedes-AMG S63, BMW M5 with different ECU configs)
-- **Real-Time Event Streaming**: Live campaign progress, device status, and security alerts via WebSocket
-- **Persistent Campaign History**: PostgreSQL-backed campaign tracking and audit trail
+- **Integrated Project CLI**: Embedded dashboard terminal supporting `fleet list`, `logs show`, and `device reboot` commands.
+- **Remote OTA Rollback**: Mission-critical safety gate allowing operators to flip boot partitions remotely via MQTT.
+- **Blockchain Anchoring**: Firmware integrity hash anchoring on **Ethereum Sepolia** for immutable audit trails.
+- **Persistent Campaign History**: Supabase/PostgreSQL-backed campaign tracking and persistent activity logs.
 
 ### 🏗️ Architecture Features
 
@@ -80,28 +87,11 @@ bash start.sh
 ### System Diagram
 
 ```
-┌─────────────────────────────────────────────┐
-│       Next.js Dashboard (3000)              │
-│   - Fleet Overview                          │
-│   - Vehicle Details                         │
-│   - OTA Deployment Control                  │
-└─────────────────────────────────────────────┘
-              ↓ HTTP REST API ↓
-┌─────────────────────────────────────────────┐
-│     Go Backend (8080)                       │
-│   - API Handlers                            │
-│   - Campaign Manager                        │
-│   - Device Twin Registry                    │
-│   - Event Store                             │
-└─────────────────────────────────────────────┘
-              ↓ MQTT Broker ↓
-          (Mosquitto:1883)
-         ↙           ↘
-┌──────────────┐  ┌──────────────┐
-│  PostgreSQL  │  │  ESP32 Nodes │
-│  (Events)    │  │  (Firmware)  │
-└──────────────┘  └──────────────┘
-```
+
+<div align="center">
+  <img src="images/OTA Sequence Diagram (Process Flow) .png" alt="OTA Process Flow" width="800">
+  <p><i>Phase-by-Phase OTA Sequence: From Backend Upload to Hardware Partition Flip.</i></p>
+</div>
 
 ### Component Responsibilities
 
@@ -140,11 +130,19 @@ bash start.sh
 - **Security**: mbedTLS
 - **MQTT Client**: Paho MQTT
 
+### Hardware & Circuitry
+
+<div align="center">
+  <img src="images/hardwaremapping.png" alt="Hardware Mapping" width="700">
+  <p><i>SDV Gateway Hardware: ESP32-WROOM with HD44780 LCD & ECU Simulation Interface.</i></p>
+</div>
+
 ### Infrastructure
+- **Blockchain**: Ethereum Sepolia (Integrity Anchoring)
 - **Container**: Docker & Docker Compose
 - **MQTT**: Mosquitto 2
-- **Storage**: MinIO (S3-compatible)
-- **Database**: PostgreSQL
+- **Storage**: Supabase / MinIO
+- **Database**: Supabase PostgreSQL
 
 ---
 
@@ -723,14 +721,9 @@ Built with:
 
 ## 📞 Contact
 
-**Project Lead**: Parik-2006  
-**Repository**: https://github.com/Parik-2006/GUARDIAN-OTA
-
----
-
 <div align="center">
 
-**Made with ❤️ for Software-Defined Vehicles**
+**Made with ❤️ for MAHE Mobility Challenge 2026**
 
 [⬆ Back to Top](#-guadian-ota-secure-sdv-over-the-air-firmware-update-platform)
 

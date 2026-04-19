@@ -154,6 +154,12 @@ static void mqtt_event_handler(void *arg, esp_event_base_t base, int32_t event_i
         case MQTT_EVENT_CONNECTED:
             ESP_LOGI(TAG, "connected to broker");
             esp_mqtt_client_subscribe(s_client, "sdv/ota/command", 1);
+            
+            char cmd_topic[80];
+            snprintf(cmd_topic, sizeof(cmd_topic), "sdv/device/command/%s", s_device_id);
+            esp_mqtt_client_subscribe(s_client, cmd_topic, 1);
+            ESP_LOGI(TAG, "subscribed to %s", cmd_topic);
+
             mqtt_publish_status(NULL, "online", NULL);
             break;
 
@@ -165,6 +171,22 @@ static void mqtt_event_handler(void *arg, esp_event_base_t base, int32_t event_i
                     if (xQueueSend(g_ota_queue, &cmd, pdMS_TO_TICKS(100)) != pdTRUE) {
                         ESP_LOGW(TAG, "OTA queue full, command dropped");
                     }
+                }
+            } else if (strstr(event->topic, "/device/command/")) {
+                /* Handle direct device commands: { "action": "reboot" | "rollback" } */
+                char *buf = strndup(event->data, event->data_len);
+                cJSON *root = cJSON_Parse(buf);
+                free(buf);
+                if (root) {
+                    cJSON *act = cJSON_GetObjectItemCaseSensitive(root, "action");
+                    if (cJSON_IsString(act)) {
+                        if (strcmp(act->valuestring, "rollback") == 0) {
+                            ota_rollback_and_reboot();
+                        } else if (strcmp(act->valuestring, "reboot") == 0) {
+                            ota_reboot();
+                        }
+                    }
+                    cJSON_Delete(root);
                 }
             }
             break;

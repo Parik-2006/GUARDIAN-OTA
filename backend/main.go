@@ -61,6 +61,7 @@ func main() {
 
 	// MQTT consumer — handle device status acks
 	consumer := mqttclient.NewConsumer(mqttClient, func(update mqttclient.StatusUpdate) {
+		slog.Info("mqtt: status received", "device", update.DeviceID, "status", update.Status, "progress", update.Status)
 		// Always update the twin directly so fleet_tick broadcasts the latest
 		// status immediately — regardless of whether UpdateDeviceStatus finds the campaign.
 		registry.Update(update.DeviceID, func(d *twin.DeviceState) {

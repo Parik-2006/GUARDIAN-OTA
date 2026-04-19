@@ -45,10 +45,13 @@ export default function UpdatePanel({ specificDeviceId, vehicle }: { specificDev
     if (stepIdx !== undefined) setActiveStep(stepIdx);
     setProgress(vehicle.otaProgress ?? 0);
 
-    if (st === "success") {
+    // If we get "success", it's a clean win.
+    // If we was in "verifying" and the device reboots (status online), it's also a win.
+    if (st === "success" || (deploying && st === "online" && activeStep >= 3)) {
       setDone(true);
       setDeploying(false);
       setActiveStep(4);
+      setProgress(100);
     }
     if (st === "error" || st === "rollback") {
       // Show the error inline at the last reached step — don't clear the list
@@ -85,7 +88,7 @@ export default function UpdatePanel({ specificDeviceId, vehicle }: { specificDev
         fd.append("targetDevice", specificDeviceId);
       }
 
-      const res = await fetch("http://localhost:8080/api/ota/upload", {
+      const res = await fetch("/api/ota/upload", {
         method: "POST",
         body: fd,
       });
@@ -107,7 +110,7 @@ export default function UpdatePanel({ specificDeviceId, vehicle }: { specificDev
     if (!done || rollingBack) return;
     setRollingBack(true);
     try {
-      const res = await fetch("http://localhost:8080/api/ota/rollback", {
+      const res = await fetch("/api/ota/rollback", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ targetDevice: specificDeviceId }),

@@ -84,6 +84,19 @@ func (p *Publisher) PublishRebootCommand(deviceID string) error {
 	return token.Error()
 }
 
+// PublishRollbackCommand sends a direct rollback request to a specific device.
+func (p *Publisher) PublishRollbackCommand(deviceID string) error {
+	payload := map[string]string{
+		"action":    "rollback",
+		"device_id": deviceID,
+		"issued_at": time.Now().UTC().Format(time.RFC3339),
+	}
+	b, _ := json.Marshal(payload)
+	token := p.client.Publish(fmt.Sprintf("sdv/device/command/%s", deviceID), 1, false, b)
+	token.Wait()
+	return token.Error()
+}
+
 // -------------------------------------------------------------------
 // Consumer
 // -------------------------------------------------------------------

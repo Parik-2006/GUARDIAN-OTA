@@ -209,3 +209,16 @@ void ota_task(void *arg) {
         esp_restart();
     }
 }
+
+void ota_rollback_and_reboot(void) {
+    ESP_LOGI(TAG, "Rollback triggered via remote command");
+    mqtt_publish_status(NULL, "rollback", NULL);
+    vTaskDelay(pdMS_TO_TICKS(100)); // allow MQTT to send
+    esp_ota_mark_app_invalid_rollback_and_reboot();
+}
+
+void ota_reboot(void) {
+    ESP_LOGI(TAG, "Reboot triggered via remote command");
+    vTaskDelay(pdMS_TO_TICKS(100));
+    esp_restart();
+}

@@ -8,6 +8,7 @@ import (
 	"log/slog"
 	"math/big"
 	"os"
+	"sync"
 
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
@@ -20,6 +21,9 @@ type Service struct {
 	client     *ethclient.Client
 	privateKey *ecdsa.PrivateKey
 	address    common.Address
+	mu         sync.Mutex
+	lastNonce  uint64
+	nonceInit  bool
 }
 
 func NewService() (*Service, error) {
@@ -29,8 +33,8 @@ func NewService() (*Service, error) {
 	}
 
 	pkHex := os.Getenv("ETH_PRIVATE_KEY")
-	if pkHex == "" {
-		slog.Warn("ETH_PRIVATE_KEY not set, blockchain features will be read-only or fail")
+	if pkHex != "" {
+		// validate pkHex length/format if needed
 	}
 
 	client, err := ethclient.Dial(rpcUrl)
@@ -68,10 +72,20 @@ func (s *Service) LogFirmwareHash(ctx context.Context, version string, hash stri
 		return "", errors.New("cannot log firmware hash: ETH_PRIVATE_KEY not configured")
 	}
 
-	nonce, err := s.client.PendingNonceAt(ctx, s.address)
-	if err != nil {
-		return "", err
+	s.mu.Lock()
+	if !s.nonceInit {
+		n, err := s.client.PendingNonceAt(ctx, s.address)
+		if err != nil {
+			s.mu.Unlock()
+			return "", err
+		}
+		s.lastNonce = n
+		s.nonceInit = true
+	} else {
+		s.lastNonce++
 	}
+	nonce := s.lastNonce
+	s.mu.Unlock()
 
 	gasPrice, err := s.client.SuggestGasPrice(ctx)
 	if err != nil {

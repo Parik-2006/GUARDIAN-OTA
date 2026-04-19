@@ -29,3 +29,13 @@ QueueHandle_t ota_init_queue(void);
  * HTTPS OTA download, reboot and rollback as needed.
  */
 void ota_task(void *arg);
+
+/**
+ * Force an immediate rollback to the previous partition and reboot.
+ */
+void ota_rollback_and_reboot(void);
+
+/**
+ * Force a plain hardware reboot.
+ */
+void ota_reboot(void);
