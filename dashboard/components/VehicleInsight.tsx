@@ -4,6 +4,7 @@ import { useState, Suspense } from "react";
 import { motion } from "framer-motion";
 import { P } from "./theme";
 import I from "./Icon";
+import BrandLogo from "./BrandLogo";
 import { useFleet, FleetVehicle } from "./FleetContext";
 import ECUPanel from "./ECUPanel";
 import SecurityPanel from "./SecurityPanel";
@@ -75,8 +76,15 @@ export default function VehicleInsight() {
             <h2 style={{
               fontFamily: "'Cormorant Garamond',serif", fontWeight: 700,
               fontSize: "1.3rem", color: P.ivory, letterSpacing: "0.02em",
-              display: "flex", alignItems: "center", gap: 8,
+              display: "flex", alignItems: "center", gap: 12,
             }}>
+              <div style={{
+                width: 40, height: 40, borderRadius: 4,
+                background: P.cgnDim, border: `1px solid ${P.bHi}`,
+                display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
+              }}>
+                <BrandLogo vehicleName={vehicle.name} size={24} />
+              </div>
               {vehicle.name}
               <span style={{
                 fontFamily: "'JetBrains Mono',monospace", fontSize: "0.52rem",

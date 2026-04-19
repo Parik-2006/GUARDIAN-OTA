@@ -3,15 +3,8 @@
 import { motion } from "framer-motion";
 import { P } from "./theme";
 import I from "./Icon";
+import BrandLogo from "./BrandLogo";
 import { useFleet } from "./FleetContext";
-
-const MODEL_ICONS: Record<string, string> = {
-  Interceptor: "speed",
-  Sentinel: "shield",
-  Voyager: "explore",
-  Phantom: "visibility_off",
-  Eclipse: "dark_mode",
-};
 
 export default function FleetDashboard() {
   const { fleet, selectVehicle, deleteDevice } = useFleet();
@@ -80,15 +73,15 @@ export default function FleetDashboard() {
                 pointerEvents: "none",
               }} />
 
-              {/* Top row: icon + model name */}
+              {/* Top row: brand logo + model name */}
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "start", marginBottom: 16 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
                   <div style={{
-                    width: 42, height: 42, borderRadius: 6,
+                    width: 48, height: 48, borderRadius: 6,
                     background: P.cgnDim, border: `1px solid ${P.bHi}`,
                     display: "flex", alignItems: "center", justifyContent: "center",
                   }}>
-                    <I n={MODEL_ICONS[v.model] || "directions_car"} f sz={22} col={P.cognac} />
+                    <BrandLogo vehicleName={v.name} size={28} />
                   </div>
                   <div>
                     <h3 style={{
