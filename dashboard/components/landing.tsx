@@ -320,21 +320,6 @@ export default function Landing({ onEnterDashboard }: { onEnterDashboard: () => 
 
       <div className="lp-divider" />
 
-      {/* CAR SHOWCASE SECTION */}
-      <section className="lp-car-showcase" id="car-showcase">
-        <div style={{ position: "relative", zIndex: 2 }}>
-          <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.7 }}>
-            <p className="lp-section-label" style={{ justifyContent: "center" }}>Performance Visuals</p>
-            <h2 className="lp-section-h2" style={{ textAlign: "center" }}>Automotive <em>Excellence</em></h2>
-            <p className="lp-section-body" style={{ textAlign: "center", margin: "0 auto 48px", maxWidth: 620 }}>
-              From embedded firmware to cloud orchestration — every component engineered for autonomous vehicle infrastructure at automotive scale.
-            </p>
-          </motion.div>
-        </div>
-      </section>
-
-      <div className="lp-divider" />
-
       {/* FOOTER CTA */}
       <section style={{ position: "relative", zIndex: 1, padding: "80px 32px", textAlign: "center" }}>
         <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}>
