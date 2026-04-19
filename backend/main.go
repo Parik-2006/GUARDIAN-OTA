@@ -10,8 +10,10 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/joho/godotenv"
 
 	"sdv-ota/backend/api"
+	"sdv-ota/backend/blockchain"
 	"sdv-ota/backend/campaign"
 	"sdv-ota/backend/events"
 	mqttclient "sdv-ota/backend/mqtt"
@@ -20,6 +22,8 @@ import (
 )
 
 func main() {
+	_ = godotenv.Load() // Load from .env if present
+
 	slog.SetDefault(slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
 		Level: slog.LevelInfo,
 	})))
@@ -36,35 +40,47 @@ func main() {
 	}
 
 	// ── Domain services ───────────────────────────────────────────
-	registry := twin.NewRegistry()
+	registry := twin.NewRegistry(pool)
+	if err := registry.InitSchema(context.Background()); err != nil {
+		slog.Warn("twin: schema init failed", "err", err)
+	}
 	// bootstrapFleet(registry) // Disabled for Production: Hardware Only
 
 	hub := ws.NewHub()
-	mgr := campaign.NewManager(registry)
+	mgr := campaign.NewManager(registry, pool)
+	if err := mgr.InitSchema(context.Background()); err != nil {
+		slog.Warn("campaigns: schema init failed", "err", err)
+	}
 	pub := mqttclient.NewPublisher(mqttClient)
+
+	// ── Blockchain ────────────────────────────────────────────────
+	bcSvc, err := blockchain.NewService()
+	if err != nil {
+		slog.Warn("blockchain service failed to init", "err", err)
+	}
 
 	// MQTT consumer — handle device status acks
 	consumer := mqttclient.NewConsumer(mqttClient, func(update mqttclient.StatusUpdate) {
-		if _, ok := registry.Get(update.DeviceID); !ok {
-			registry.Set(&twin.DeviceState{
-				DeviceID:      update.DeviceID,
-				Primary:       false,
-				OTAVersion:    "1.0.0",
-				SafetyState:   "SAFE",
-				ECUStates:     map[string]string{"brake": "green", "powertrain": "green", "sensor": "green", "infotainment": "green"},
-				LastSeen:      time.Now().UTC(),
-				ThreatLevel:   "LOW",
-				SignatureOK:   true,
-				IntegrityOK:   true,
-				TLSHealthy:    true,
-				RollbackArmed: true,
-			})
-			slog.Info("auto-registered new device via MQTT", "device_id", update.DeviceID)
-		} else {
-			registry.Update(update.DeviceID, func(d *twin.DeviceState) {
-				d.LastSeen = time.Now().UTC()
-			})
-		}
+		// Always update the twin directly so fleet_tick broadcasts the latest
+		// status immediately — regardless of whether UpdateDeviceStatus finds the campaign.
+		registry.Update(update.DeviceID, func(d *twin.DeviceState) {
+			d.LastSeen = time.Now().UTC()
+			d.OTAStatus = update.Status
+			switch update.Status {
+			case "ack":
+				d.OTAProgress = 10
+			case "downloading":
+				d.OTAProgress = 30
+			case "verifying":
+				d.OTAProgress = 75
+			case "success":
+				d.OTAProgress = 100
+			case "online":
+				// keep progress as-is after reboot
+			case "error", "rollback":
+				d.OTAProgress = 0
+			}
+		})
 
 		mgr.UpdateDeviceStatus(update.CampaignID, update.DeviceID, update.Status, update.ErrorMsg)
 		hub.Broadcast(ws.Event{
@@ -99,12 +115,15 @@ func main() {
 	})
 	r.Use(requestLogger())
 
+	r.Static("/firmware_bin", "./firmware_bin")
+
 	api.RegisterRoutes(r, &api.Deps{
-		Registry:  registry,
-		Campaigns: mgr,
-		Events:    evStore,
-		Hub:       hub,
-		Publisher: pub,
+		Registry:   registry,
+		Campaigns:  mgr,
+		Events:     evStore,
+		Hub:        hub,
+		Publisher:  pub,
+		Blockchain: bcSvc,
 	})
 
 	addr := ":" + getenv("PORT", "8080")

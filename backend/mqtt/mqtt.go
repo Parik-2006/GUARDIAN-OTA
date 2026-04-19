@@ -91,7 +91,11 @@ func (c *Consumer) Subscribe() error {
 			slog.Warn("mqtt: unparseable status message", "topic", msg.Topic(), "err", err)
 			return
 		}
-		slog.Info("mqtt: device status", "device", update.DeviceID, "status", update.Status)
+		args := []any{"device", update.DeviceID, "status", update.Status}
+		if update.ErrorMsg != "" {
+			args = append(args, "error", update.ErrorMsg)
+		}
+		slog.Info("mqtt: device status", args...)
 		c.handler(update)
 	})
 	token.Wait()

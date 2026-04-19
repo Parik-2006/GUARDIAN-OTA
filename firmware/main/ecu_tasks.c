@@ -90,15 +90,15 @@ void sensor_ecu_task(void *arg) {
  */
 void infotainment_ecu_task(void *arg) {
     for (;;) {
-        send_can(ECU_INFOTAINMENT, ECU_POWERTRAIN, "ui_heartbeat: [ VERSION 3 ]");
+        send_can(ECU_INFOTAINMENT, ECU_POWERTRAIN, "ui_heartbeat: [ VERSION 1 ]");
         
         lcd_clear();
         lcd_set_cursor(0, 0);
-        lcd_print("GUARDIAN-OTA SEC");
+        lcd_print("GUARDIAN-OTA");
         lcd_set_cursor(1, 0);
-        lcd_print("ACTIVE: V-3.0(a)");
+        lcd_print("ACTIVE: V-1.0(a)");
 
-        ESP_LOGI(TAG, "LCD DISPLAY -> [ RUNNING FIRMWARE VERSION 3 ]");
+        ESP_LOGI(TAG, "LCD DISPLAY -> [ RUNNING FIRMWARE VERSION 1 ]");
         vTaskDelay(pdMS_TO_TICKS(1100));
     }
 }
