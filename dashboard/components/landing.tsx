@@ -161,11 +161,11 @@ function SecurityBadges() {
 ══════════════════════════════════════════ */
 function StackRow() {
   const stack = [
-    { layer: "Edge",      name: "ESP32 + FreeRTOS",  detail: "mbedTLS · ESP-IDF OTA",                 color: "#D4A96A" },
-    { layer: "Messaging", name: "Mosquitto MQTT",     detail: "TLS · MQTTS:8883",                       color: "#6A9DB8" },
-    { layer: "Storage",   name: "MinIO S3",           detail: "Firmware Artifacts · Signed Manifest",   color: "#D4956A" },
-    { layer: "Backend",   name: "Go + Gin",           detail: "WebSocket · PostgreSQL · MQTT",          color: "#7AB88A" },
-    { layer: "Frontend",  name: "Next.js 14",         detail: "App Router · Framer Motion · TailwindCSS", color: "#D4A96A" },
+    { layer: "Edge",      name: "ESP32 FreeRTOS",  detail: "mbedTLS ESP-IDF OTA",                 color: "#D4A96A" },
+    { layer: "Messaging", name: "Mosquitto MQTT",     detail: "TLS MQTTS:8883",                       color: "#6A9DB8" },
+    { layer: "Storage",   name: "MinIO S3",           detail: "Firmware Artifacts Signed Manifest",   color: "#D4956A" },
+    { layer: "Backend",   name: "Go Gin",           detail: "WebSocket PostgreSQL MQTT",          color: "#7AB88A" },
+    { layer: "Frontend",  name: "Next.js 14",         detail: "App Router Framer Motion TailwindCSS", color: "#D4A96A" },
   ];
   return (
     <div className="lp-stack-col">

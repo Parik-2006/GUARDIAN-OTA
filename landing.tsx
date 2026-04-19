@@ -189,11 +189,11 @@ function SecurityBadges() {
 ══════════════════════════════════════════ */
 function StackRow() {
   const stack = [
-    { layer: "Edge", name: "ESP32 + FreeRTOS", detail: "mbedTLS · ESP-IDF OTA", color: "#D4A96A" },
-    { layer: "Messaging", name: "Mosquitto MQTT", detail: "TLS · MQTTS:8883", color: "#6A9DB8" },
-    { layer: "Storage", name: "MinIO S3", detail: "Firmware Artifacts · Signed Manifest", color: "#D4956A" },
-    { layer: "Backend", name: "Go + Gin", detail: "WebSocket · PostgreSQL · MQTT", color: "#7AB88A" },
-    { layer: "Frontend", name: "Next.js 14", detail: "App Router · Framer Motion · TailwindCSS", color: "#D4A96A" },
+    { layer: "Edge", name: "ESP32 FreeRTOS", detail: "mbedTLS ESP-IDF OTA", color: "#D4A96A" },
+    { layer: "Messaging", name: "Mosquitto MQTT", detail: "TLS MQTTS:8883", color: "#6A9DB8" },
+    { layer: "Storage", name: "MinIO S3", detail: "Firmware Artifacts Signed Manifest", color: "#D4956A" },
+    { layer: "Backend", name: "Go Gin", detail: "WebSocket PostgreSQL MQTT", color: "#7AB88A" },
+    { layer: "Frontend", name: "Next.js 14", detail: "App Router Framer Motion TailwindCSS", color: "#D4A96A" },
   ];
   return (
     <div className="lp-stack-col">
@@ -689,10 +689,10 @@ export default function Landing({ onEnterDashboard }: { onEnterDashboard: () => 
 
           {/* STAT CARDS */}
           <div className="lp-stat-row">
-            <GlassStatCard icon="◈" value="20" label="Fleet Vehicles" sub="Simulated ECUs" delay={0.45} />
-            <GlassStatCard icon="⬡" value="6" label="Security Gates" sub="Cryptographic" delay={0.52} />
-            <GlassStatCard icon="◎" value="P-256" label="ECC Signature" sub="mbedTLS" delay={0.58} />
-            <GlassStatCard icon="▣" value="∞" label="Live Events" sub="WebSocket stream" delay={0.65} />
+            <GlassStatCard icon="" value="20" label="Fleet Vehicles" sub="Simulated ECUs" delay={0.45} />
+            <GlassStatCard icon="" value="6" label="Security Gates" sub="Cryptographic" delay={0.52} />
+            <GlassStatCard icon="" value="P-256" label="ECC Signature" sub="mbedTLS" delay={0.58} />
+            <GlassStatCard icon="" value="" label="Live Events" sub="WebSocket stream" delay={0.65} />
           </div>
         </section>
 
@@ -706,12 +706,12 @@ export default function Landing({ onEnterDashboard }: { onEnterDashboard: () => 
             A single ESP32 hosts the complete edge gateway runtime — brake, powertrain, sensor, and infotainment ECU tasks with simulated CAN bus queue transport. The Go backend orchestrates canary OTA campaigns, persists events to PostgreSQL, and broadcasts live fleet state to the dashboard via WebSocket bridge.
           </p>
           <FeatureRow items={[
-            { icon: "◈", title: "ESP32 Edge Gateway", desc: "FreeRTOS task architecture with virtual CAN queue transport. Four concurrent ECUs (brake, powertrain, sensor, infotainment) with OTA safety-gated by brake ECU state." },
-            { icon: "⬡", title: "Mosquitto MQTT Broker", desc: "TLS-encrypted command plane on port 8883. Commands published to sdv/ota/command with device MAC filtering and QoS 1 delivery guarantee." },
-            { icon: "◎", title: "MinIO S3 Artifact Store", desc: "Firmware binary and signed manifest hosting. ECC signature verification and SHA-256 integrity checksums embedded in OTA payloads." },
-            { icon: "▣", title: "Go Backend Service", desc: "Canary deployment orchestration, event audit log persistence, WebSocket broadcast to connected dashboards. CORS-enabled REST API at :8080." },
-            { icon: "⬥", title: "PostgreSQL Event Log", desc: "Immutable ota_events table with full JSONB payloads. Deployment history, fleet snapshots, and security events indexed for compliance audits." },
-            { icon: "◇", title: "Next.js Dashboard", desc: "Real-time fleet visualization with live WebSocket feed, Framer Motion cinematic interactions, and 3D SVG orbital car model rendering." },
+            { icon: "", title: "ESP32 Edge Gateway", desc: "FreeRTOS task architecture with virtual CAN queue transport. Four concurrent ECUs (brake, powertrain, sensor, infotainment) with OTA safety-gated by brake ECU state." },
+            { icon: "", title: "Mosquitto MQTT Broker", desc: "TLS-encrypted command plane on port 8883. Commands published to sdv/ota/command with device MAC filtering and QoS 1 delivery guarantee." },
+            { icon: "", title: "MinIO S3 Artifact Store", desc: "Firmware binary and signed manifest hosting. ECC signature verification and SHA-256 integrity checksums embedded in OTA payloads." },
+            { icon: "", title: "Go Backend Service", desc: "Canary deployment orchestration, event audit log persistence, WebSocket broadcast to connected dashboards. CORS-enabled REST API at :8080." },
+            { icon: "", title: "PostgreSQL Event Log", desc: "Immutable ota_events table with full JSONB payloads. Deployment history, fleet snapshots, and security events indexed for compliance audits." },
+            { icon: "", title: "Next.js Dashboard", desc: "Real-time fleet visualization with live WebSocket feed, Framer Motion cinematic interactions, and 3D SVG orbital car model rendering." },
           ]} />
         </section>
 
