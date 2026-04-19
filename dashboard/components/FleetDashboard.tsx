@@ -77,11 +77,12 @@ export default function FleetDashboard() {
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "start", marginBottom: 16 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
                   <div style={{
-                    width: 48, height: 48, borderRadius: 6,
+                    width: 56, height: 56, borderRadius: 6,
                     background: P.cgnDim, border: `1px solid ${P.bHi}`,
                     display: "flex", alignItems: "center", justifyContent: "center",
+                    overflow: "hidden",
                   }}>
-                    <BrandLogo vehicleName={v.name} size={28} />
+                    <BrandLogo vehicleName={v.name} size={44} />
                   </div>
                   <div>
                     <h3 style={{

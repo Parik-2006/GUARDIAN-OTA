@@ -79,11 +79,12 @@ export default function VehicleInsight() {
               display: "flex", alignItems: "center", gap: 12,
             }}>
               <div style={{
-                width: 40, height: 40, borderRadius: 4,
+                width: 48, height: 48, borderRadius: 4,
                 background: P.cgnDim, border: `1px solid ${P.bHi}`,
                 display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
+                overflow: "hidden",
               }}>
-                <BrandLogo vehicleName={vehicle.name} size={24} />
+                <BrandLogo vehicleName={vehicle.name} size={36} />
               </div>
               {vehicle.name}
               <span style={{

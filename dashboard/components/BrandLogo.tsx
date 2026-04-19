@@ -69,6 +69,8 @@ export default function BrandLogo({ vehicleName, size = 32, style }: BrandLogoPr
         width: size,
         height: size,
         objectFit: "contain",
+        padding: 2,
+        filter: "brightness(1.1) contrast(1.2)",
         ...style,
       }}
     />
