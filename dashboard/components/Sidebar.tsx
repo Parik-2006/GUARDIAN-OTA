@@ -2,6 +2,7 @@
 
 import { P } from "./theme";
 import I from "./Icon";
+import GuardianLogo from "./GuardianLogo";
 import { useFleet } from "./FleetContext";
 
 export default function Sidebar({ onBack }: { onBack?: () => void }) {
@@ -20,11 +21,12 @@ export default function Sidebar({ onBack }: { onBack?: () => void }) {
       <div style={{ padding: "20px 20px 16px", borderBottom: `1px solid ${P.bDim}` }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 15 }}>
           <div style={{
-            width: 36, height: 36, background: P.cockpit, borderRadius: 4,
+            width: 40, height: 40, background: P.cockpit, borderRadius: 4,
             border: `1px solid ${P.bHi}`,
             display: "flex", alignItems: "center", justifyContent: "center",
+            flexShrink: 0,
           }}>
-            <I n="shield" f sz={19} col={P.cognac} />
+            <GuardianLogo size={28} />
           </div>
           <div>
             <div style={{
