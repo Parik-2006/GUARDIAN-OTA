@@ -19,7 +19,9 @@ const STAGES: Stage[] = [
   { label: "Secure Boot Validation",    icon: "security", duration: 800 },
 ];
 
-export default function VerificationSim() {
+import { FleetVehicle } from "./FleetContext";
+
+export default function VerificationSim({ vehicle }: { vehicle?: FleetVehicle }) {
   const [running, setRunning] = useState(false);
   const [currentStage, setCurrentStage] = useState(-1);
   const [stageProgress, setStageProgress] = useState(0);
@@ -40,6 +42,13 @@ export default function VerificationSim() {
     setCurrentStage(0);
   }, [reset]);
 
+  // Auto-trigger during OTA deployment
+  useEffect(() => {
+    if (vehicle && vehicle.otaProgress > 0 && vehicle.otaProgress < 100 && !running && !done) {
+      runVerification();
+    }
+  }, [vehicle?.otaProgress, running, done, runVerification]);
+
   // Drive the simulation
   useEffect(() => {
     if (!running || currentStage < 0 || currentStage >= STAGES.length) return;
@@ -53,16 +62,31 @@ export default function VerificationSim() {
         const next = prev + increment;
         if (next >= 100) {
           clearInterval(timer);
-          setCompleted(p => [...p, currentStage]);
-          if (currentStage < STAGES.length - 1) {
-            setTimeout(() => {
-              setCurrentStage(s => s + 1);
-              setStageProgress(0);
-            }, 300);
-          } else {
-            setDone(true);
-            setRunning(false);
+          
+          let pass = true;
+          if (vehicle) {
+            if (currentStage === 2 && !vehicle.integrityOk) pass = false;
+            if (currentStage === 3 && !vehicle.signatureOk) pass = false;
+            if (currentStage === 4 && vehicle.threatLevel === "HIGH") pass = false;
           }
+
+          if (pass) {
+            setCompleted(p => [...p, currentStage]);
+            if (currentStage < STAGES.length - 1) {
+              setTimeout(() => {
+                setCurrentStage(s => s + 1);
+                setStageProgress(0);
+              }, 300);
+            } else {
+              setDone(true);
+              setRunning(false);
+            }
+          } else {
+            // Fail dynamically
+            setRunning(false);
+            setDone(true);
+          }
+
           return 100;
         }
         return next;
@@ -70,7 +94,7 @@ export default function VerificationSim() {
     }, interval);
 
     return () => clearInterval(timer);
-  }, [running, currentStage]);
+  }, [running, currentStage, vehicle, STAGES.length]);
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
@@ -160,10 +184,10 @@ export default function VerificationSim() {
               {/* Status */}
               <span style={{
                 fontFamily: "'JetBrains Mono',monospace", fontSize: "0.5rem",
-                color: isCompleted ? P.sage : isCurrent ? P.cognac : P.whisper,
+                color: isCompleted ? P.sage : (isCurrent && done) ? P.burg : isCurrent ? P.cognac : P.whisper,
                 flexShrink: 0,
               }}>
-                {isCompleted ? "PASS" : isCurrent ? `${Math.round(stageProgress)}%` : "—"}
+                {isCompleted ? "PASS" : (isCurrent && done) ? "FAIL" : isCurrent ? `${Math.round(stageProgress)}%` : "—"}
               </span>
             </motion.div>
           );
@@ -198,21 +222,28 @@ export default function VerificationSim() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0 }}
             style={{
-              background: P.sageDim, border: `1px solid rgba(122,158,114,0.3)`,
+              background: completed.length === STAGES.length ? P.sageDim : "rgba(196,107,107,0.1)",
+              border: `1px solid ${completed.length === STAGES.length ? "rgba(122,158,114,0.3)" : "rgba(196,107,107,0.3)"}`,
               borderRadius: 3, padding: "10px 14px",
               display: "flex", alignItems: "center", gap: 8,
             }}
           >
-            <I n="check_circle" f sz={18} col={P.sage} />
+            <I n={completed.length === STAGES.length ? "check_circle" : "error"} f sz={18} col={completed.length === STAGES.length ? P.sage : P.burg} />
             <div>
               <div style={{
                 fontFamily: "'JetBrains Mono',monospace", fontSize: "0.68rem",
-                color: P.sage, fontWeight: 600,
-              }}>VERIFICATION COMPLETE</div>
+                color: completed.length === STAGES.length ? P.sage : P.burg, fontWeight: 600,
+              }}>
+                {completed.length === STAGES.length ? "VERIFICATION COMPLETE" : "VERIFICATION FAILED"}
+              </div>
               <div style={{
                 fontFamily: "'JetBrains Mono',monospace", fontSize: "0.5rem",
                 color: P.whisper, marginTop: 2,
-              }}>All {STAGES.length} cryptographic gates passed</div>
+              }}>
+                {completed.length === STAGES.length 
+                  ? `All ${STAGES.length} cryptographic gates passed` 
+                  : `Failed at stage: ${STAGES[currentStage]?.label}`}
+              </div>
             </div>
           </motion.div>
         )}

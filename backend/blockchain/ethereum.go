@@ -9,6 +9,7 @@ import (
 	"math/big"
 	"os"
 
+	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
@@ -86,7 +87,7 @@ func (s *Service) LogFirmwareHash(ctx context.Context, version string, hash stri
 	data := []byte(fmt.Sprintf("GUARDIAN-OTA:%s:%s", version, hash))
 
 	// Estimate gas
-	gasLimit, err := s.client.EstimateGas(ctx, common.CallMsg{
+	gasLimit, err := s.client.EstimateGas(ctx, ethereum.CallMsg{
 		From:     s.address,
 		To:       &s.address,
 		GasPrice: gasPrice,

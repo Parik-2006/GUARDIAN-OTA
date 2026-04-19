@@ -94,7 +94,7 @@ void infotainment_ecu_task(void *arg) {
         
         lcd_clear();
         lcd_set_cursor(0, 0);
-        lcd_print("GUARDIAN-OTA SEC");
+        lcd_print("GUARDIAN-OTA");
         lcd_set_cursor(1, 0);
         lcd_print("ACTIVE: V-1.0(a)");
 

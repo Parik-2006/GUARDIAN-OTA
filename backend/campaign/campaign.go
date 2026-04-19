@@ -1,13 +1,17 @@
-// Package campaign manages OTA campaign lifecycle:
-// creation → canary target selection → per-device progress tracking → completion.
+// Package campaign manages persistent OTA campaign lifecycle logic, storing historical deployment targets
+// securely within PostgreSQL tables.
 package campaign
 
 import (
+	"context"
+	"encoding/json"
 	"fmt"
+	"log/slog"
 	"math/rand"
 	"sync"
 	"time"
 
+	"github.com/jackc/pgx/v5/pgxpool"
 	"sdv-ota/backend/twin"
 )
 
@@ -47,37 +51,135 @@ type Campaign struct {
 	FailureCount  int                        `json:"failureCount"`
 }
 
-// Manager maintains all campaigns and applies state transitions.
+// Manager maintains all campaigns and applies persistent state transitions.
 type Manager struct {
 	mu        sync.RWMutex
 	campaigns map[string]*Campaign
 	registry  *twin.Registry
+	pool      *pgxpool.Pool
 }
 
-// NewManager creates a campaign manager backed by the given device twin registry.
-func NewManager(reg *twin.Registry) *Manager {
+// NewManager creates a database-backed campaign manager.
+func NewManager(reg *twin.Registry, pool *pgxpool.Pool) *Manager {
 	return &Manager{
 		campaigns: make(map[string]*Campaign),
 		registry:  reg,
+		pool:      pool,
 	}
 }
 
-// Create builds a new campaign and selects canary targets from the registry.
-// Returns the campaign. Does NOT publish the MQTT command — that is caller's responsibility.
-func (m *Manager) Create(version, url, hash, sigB64 string, canaryPct int) (*Campaign, error) {
+// InitSchema structures the campaign logging framework into PostgreSQL and loads past payloads.
+func (m *Manager) InitSchema(ctx context.Context) error {
+	if m.pool == nil {
+		slog.Warn("campaigns: no database pool, running fully in memory")
+		return nil
+	}
+
+	_, err := m.pool.Exec(ctx, `
+		CREATE TABLE IF NOT EXISTS campaigns (
+			id TEXT PRIMARY KEY,
+			version TEXT NOT NULL,
+			firmware_url TEXT NOT NULL,
+			firmware_hash TEXT NOT NULL,
+			signature_b64 TEXT NOT NULL,
+			canary_percent INT NOT NULL,
+			targets JSONB NOT NULL,
+			progress JSONB NOT NULL,
+			status TEXT NOT NULL,
+			created_at TIMESTAMPTZ NOT NULL,
+			updated_at TIMESTAMPTZ NOT NULL,
+			success_count INT NOT NULL,
+			failure_count INT NOT NULL
+		);
+	`)
+	if err != nil {
+		return err
+	}
+
+	rows, err := m.pool.Query(ctx, `
+		SELECT id, version, firmware_url, firmware_hash, signature_b64, canary_percent, 
+		targets, progress, status, created_at, updated_at, success_count, failure_count FROM campaigns
+	`)
+	if err != nil {
+		return err
+	}
+	defer rows.Close()
+
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	for rows.Next() {
+		var c Campaign
+		var tgtBytes, progBytes []byte
+		err := rows.Scan(
+			&c.ID, &c.Version, &c.FirmwareURL, &c.FirmwareHash, &c.SignatureB64,
+			&c.CanaryPercent, &tgtBytes, &progBytes, &c.Status,
+			&c.CreatedAt, &c.UpdatedAt, &c.SuccessCount, &c.FailureCount,
+		)
+		if err == nil {
+			_ = json.Unmarshal(tgtBytes, &c.Targets)
+			_ = json.Unmarshal(progBytes, &c.Progress)
+			m.campaigns[c.ID] = &c
+		}
+	}
+	slog.Info("campaigns: loaded historical OTA payloads from db", "count", len(m.campaigns))
+	return nil
+}
+
+// writeToDB flushes the heavy campaign structs accurately into JSONB fields
+func (m *Manager) writeToDB(c *Campaign) {
+	if m.pool == nil {
+		return
+	}
+	targetsBytes, _ := json.Marshal(c.Targets)
+	progressBytes, _ := json.Marshal(c.Progress)
+
+	_, err := m.pool.Exec(context.Background(), `
+		INSERT INTO campaigns (
+			id, version, firmware_url, firmware_hash, signature_b64, canary_percent, 
+			targets, progress, status, created_at, updated_at, success_count, failure_count
+		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+		ON CONFLICT (id) DO UPDATE SET
+			status = EXCLUDED.status,
+			updated_at = EXCLUDED.updated_at,
+			success_count = EXCLUDED.success_count,
+			failure_count = EXCLUDED.failure_count,
+			progress = EXCLUDED.progress
+	`, c.ID, c.Version, c.FirmwareURL, c.FirmwareHash, c.SignatureB64, 
+		c.CanaryPercent, targetsBytes, progressBytes, c.Status, 
+		c.CreatedAt, c.UpdatedAt, c.SuccessCount, c.FailureCount,
+	)
+	if err != nil {
+		slog.Error("campaigns: postgres write failed", "campaign", c.ID, "err", err)
+	}
+}
+
+// Create builds a newly isolated or broad OTA push depending on the config arguments.
+func (m *Manager) Create(version, url, hash, sigB64 string, canaryPct int, targetDevice string) (*Campaign, error) {
 	if canaryPct < 1 || canaryPct > 100 {
 		return nil, fmt.Errorf("canaryPercent must be 1–100, got %d", canaryPct)
 	}
 
-	targets := m.selectTargets(canaryPct)
-	if len(targets) == 0 {
-		return nil, fmt.Errorf("no devices registered in fleet")
+	var targets []string
+	if targetDevice != "" {
+		targets = []string{targetDevice}
+	} else {
+		targets = m.selectTargets(canaryPct)
+		if len(targets) == 0 {
+			return nil, fmt.Errorf("no devices registered in fleet")
+		}
 	}
 
 	id := fmt.Sprintf("cmp-%d", time.Now().UnixMilli())
 	progress := make(map[string]*DeviceProgress, len(targets))
 	for _, t := range targets {
 		progress[t] = &DeviceProgress{DeviceID: t, Status: "pending", UpdatedAt: time.Now().UTC()}
+        
+		// Hard-reset the edge device progress meters across the mesh
+		m.registry.Update(t, func(d *twin.DeviceState) {
+			d.OTAProgress = 0
+			d.CampaignID = id
+		})
 	}
 
 	c := &Campaign{
@@ -97,17 +199,16 @@ func (m *Manager) Create(version, url, hash, sigB64 string, canaryPct int) (*Cam
 	m.mu.Lock()
 	m.campaigns[id] = c
 	m.mu.Unlock()
+	m.writeToDB(c)
 	return c, nil
 }
 
-// UpdateDeviceStatus applies a status update received from a device via MQTT.
-// Automatically advances campaign status to done/failed when all devices have reported.
+// UpdateDeviceStatus merges progress pings asynchronously sent over MQTT bridging.
 func (m *Manager) UpdateDeviceStatus(campaignID, deviceID, status, errMsg string) {
 	m.mu.Lock()
-	defer m.mu.Unlock()
-
 	c, ok := m.campaigns[campaignID]
 	if !ok {
+		m.mu.Unlock()
 		return
 	}
 
@@ -143,16 +244,21 @@ func (m *Manager) UpdateDeviceStatus(campaignID, deviceID, status, errMsg string
 		} else if success == 0 {
 			c.Status = StatusFailed
 		} else {
-			c.Status = StatusDone // partial success counts as done
+			c.Status = StatusDone 
 		}
 	}
 	if c.Status == StatusQueued {
 		c.Status = StatusRunning
 	}
+	m.mu.Unlock()
 
-	// Mirror progress to device twin
+	// Flush to SQL post lock
+	m.writeToDB(c)
+
+	// Mirror progress to device twin globally
 	m.registry.Update(deviceID, func(d *twin.DeviceState) {
 		d.CampaignID = campaignID
+		d.OTAStatus = status
 		switch status {
 		case "success":
 			d.OTAVersion = c.Version
@@ -161,13 +267,19 @@ func (m *Manager) UpdateDeviceStatus(campaignID, deviceID, status, errMsg string
 			d.OTAProgress = 30
 		case "verifying":
 			d.OTAProgress = 75
+		case "pending", "ack":
+			d.OTAProgress = 10
+		case "online":
+			d.OTAProgress = 0
+			d.OTAStatus = "online"
 		case "rollback", "error":
 			d.OTAProgress = 0
+			d.OTAStatus = status
 		}
 	})
 }
 
-// GetAll returns a snapshot of all campaigns, newest first.
+// GetAll returns a snapshot of all historical campaigns deployed to Postgres.
 func (m *Manager) GetAll() []Campaign {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
@@ -176,7 +288,6 @@ func (m *Manager) GetAll() []Campaign {
 		cp := *c
 		out = append(out, cp)
 	}
-	// sort newest first
 	for i := range out {
 		for j := i + 1; j < len(out); j++ {
 			if out[i].CreatedAt.Before(out[j].CreatedAt) {
@@ -187,7 +298,7 @@ func (m *Manager) GetAll() []Campaign {
 	return out
 }
 
-// Get returns a single campaign by ID.
+// Get returns isolated metadata by ID.
 func (m *Manager) Get(id string) (Campaign, bool) {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
@@ -198,8 +309,6 @@ func (m *Manager) Get(id string) (Campaign, bool) {
 	return *c, true
 }
 
-// selectTargets picks a percentage of registered device IDs at random.
-// Always returns at least one device.
 func (m *Manager) selectTargets(pct int) []string {
 	ids := m.registry.IDs()
 	if len(ids) == 0 {

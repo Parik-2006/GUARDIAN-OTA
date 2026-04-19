@@ -6,7 +6,7 @@ import (
 )
 
 func TestTwinRegistry(t *testing.T) {
-	r := NewRegistry()
+	r := NewRegistry(nil)
 
 	// Test Set and Get
 	dev := &DeviceState{
