@@ -7,6 +7,7 @@ import Sidebar from "./Sidebar";
 import TopBar from "./TopBar";
 import DeviceBar from "./DeviceBar";
 import AddDeviceModal from "./AddDeviceModal";
+import LogsModal from "./LogsModal";
 import FleetDashboard from "./FleetDashboard";
 import VehicleInsight from "./VehicleInsight";
 import Terminal from "./Terminal";
@@ -19,6 +20,7 @@ function DashboardInner({ onBackToLanding }: { onBackToLanding?: () => void }) {
   const { currentView, fleet, setFleet } = useFleet();
   const [connected, setConnected] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
+  const [logsOpen, setLogsOpen] = useState(false);
 
   /* ── WebSocket + simulation tick ── */
   useEffect(() => {
@@ -68,7 +70,7 @@ function DashboardInner({ onBackToLanding }: { onBackToLanding?: () => void }) {
         background: "radial-gradient(ellipse 55% 45% at 18% 0%, rgba(200,145,74,0.03) 0%, transparent 52%), radial-gradient(ellipse 38% 30% at 82% 100%, rgba(184,124,58,0.02) 0%, transparent 48%)",
       }} />
 
-      <Sidebar onBack={onBackToLanding} />
+      <Sidebar onBack={onBackToLanding} onLogs={() => setLogsOpen(true)} />
 
       <div style={{
         flex: 1, display: "flex", flexDirection: "column",
@@ -95,6 +97,7 @@ function DashboardInner({ onBackToLanding }: { onBackToLanding?: () => void }) {
       </div>
 
       <AddDeviceModal open={modalOpen} onClose={() => setModalOpen(false)} />
+      <LogsModal open={logsOpen} onClose={() => setLogsOpen(false)} />
     </div>
   );
 }

@@ -5,7 +5,7 @@ import I from "./Icon";
 import GuardianLogo from "./GuardianLogo";
 import { useFleet } from "./FleetContext";
 
-export default function Sidebar({ onBack }: { onBack?: () => void }) {
+export default function Sidebar({ onBack, onLogs }: { onBack?: () => void; onLogs?: () => void }) {
   const { currentView, goToDashboard, goToTerminal, goToDocumentation } = useFleet();
   const isDashboard = currentView === "fleet";
   const isTerminal = currentView === "terminal";
@@ -102,6 +102,36 @@ export default function Sidebar({ onBack }: { onBack?: () => void }) {
           <I n="terminal" f={isTerminal} sz={18} col={isTerminal ? P.cognac : undefined} />
           <span>Terminal</span>
         </div>
+
+        {/* Logs Button */}
+        {onLogs && (
+          <div
+            onClick={onLogs}
+            style={{
+              display: "flex", alignItems: "center", gap: 10,
+              padding: "12px 14px", borderRadius: 3, cursor: "pointer",
+              transition: "all 0.18s",
+              color: P.cashmere,
+              background: "transparent",
+              borderLeft: `2px solid transparent`,
+              fontWeight: 600, fontSize: "0.88rem",
+            }}
+            onMouseEnter={e => {
+              e.currentTarget.style.background = P.cockpit;
+              e.currentTarget.style.color = P.champagne;
+              e.currentTarget.style.borderLeftColor = P.bHi;
+            }}
+            onMouseLeave={e => {
+              e.currentTarget.style.background = "transparent";
+              e.currentTarget.style.color = P.cashmere;
+              e.currentTarget.style.borderLeftColor = "transparent";
+            }}
+            title="View activity logs"
+          >
+            <I n="history" sz={18} col={undefined} />
+            <span>Logs</span>
+          </div>
+        )}
 
         <div
           onClick={goToDocumentation}

@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import { P } from "./theme";
 import I from "./Icon";
-import LogsModal from "./LogsModal";
 
 function nowStr() { return new Date().toLocaleTimeString("en-US", { hour12: false }); }
 
@@ -15,7 +14,6 @@ export default function TopBar({
   onAddDevice: () => void;
 }) {
   const [clock, setClock] = useState("");
-  const [logsOpen, setLogsOpen] = useState(false);
 
   useEffect(() => {
     setClock(nowStr());
@@ -24,10 +22,8 @@ export default function TopBar({
   }, []);
 
   return (
-    <>
-      <LogsModal open={logsOpen} onClose={() => setLogsOpen(false)} />
-      <header style={{
-        height: 52, background: P.bg,
+    <header style={{
+      height: 52, background: P.bg,
         borderBottom: `1px solid ${P.bDim}`,
         display: "flex", alignItems: "center", justifyContent: "space-between",
         padding: "0 20px", flexShrink: 0, zIndex: 20,
@@ -73,23 +69,6 @@ export default function TopBar({
             <I n="add" sz={13} col="inherit" /> Add Device
           </button>
 
-          {/* Logs Button */}
-          <button
-            onClick={() => setLogsOpen(true)}
-            style={{
-              padding: "4px 14px", background: P.cgnDim, color: P.cognac,
-              fontSize: "0.64rem", fontWeight: 700, borderRadius: 2, cursor: "pointer",
-              letterSpacing: "0.06em", textTransform: "uppercase",
-              border: `1px solid ${P.bHi}`, fontFamily: "'JetBrains Mono',monospace",
-              transition: "all 0.2s", display: "flex", alignItems: "center", gap: 5,
-            }}
-            onMouseEnter={e => { e.currentTarget.style.background = P.cgnGlow; e.currentTarget.style.color = P.ivory; }}
-            onMouseLeave={e => { e.currentTarget.style.background = P.cgnDim; e.currentTarget.style.color = P.cognac; }}
-            title="View activity logs"
-          >
-            <I n="history" sz={13} col="inherit" /> Logs
-          </button>
-
           {/* Live indicator */}
           <div style={{
             display: "flex", alignItems: "center", gap: 5,
@@ -120,6 +99,5 @@ export default function TopBar({
           </div>
         </div>
       </header>
-    </>
   );
 }
