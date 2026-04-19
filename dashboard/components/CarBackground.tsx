@@ -15,48 +15,43 @@ export function CarBackground() {
 
   useEffect(() => {
     const handleScroll = () => {
-      const scrollPos = window.scrollY + window.innerHeight / 2;
+      const scrollPos = window.scrollY;
+      const heroHeight = window.innerHeight;
       
       // Get section positions
+      const heroSection = document.querySelector(".lp-hero");
       const archSection = document.getElementById("architecture");
-      const stackSection = document.getElementById("stack");
+      const securitySection = document.getElementById("security");
 
-      if (!archSection || !stackSection) {
+      if (!heroSection) {
         setOpacity(0);
         return;
       }
 
-      const archTop = archSection.offsetTop;
-      const archHeight = archSection.offsetHeight;
-      const stackTop = stackSection.offsetTop;
-      const stackHeight = stackSection.offsetHeight;
+      const heroTop = heroSection.getBoundingClientRect().top + window.scrollY;
+      const heroBottom = heroTop + heroSection.clientHeight;
+      
+      // Car starts appearing at the bottom of hero, fully visible after scrolling past hero
+      const showStartPos = heroBottom - window.innerHeight * 0.5; // Start fading in earlier
+      const showEndPos = heroBottom + window.innerHeight * 0.3; // Fully visible after hero
 
-      // Show car if user is viewing architecture or stack sections
-      if (scrollPos >= archTop && scrollPos <= stackTop + stackHeight) {
-        // Calculate smooth opacity curves
-        const archEnd = archTop + archHeight;
-        const stackEnd = stackTop + stackHeight;
-
-        if (scrollPos <= archEnd) {
-          // Fade in during architecture (0 → 1)
-          const progress = (scrollPos - archTop) / archHeight;
-          setOpacity(Math.max(0, Math.min(1, progress * 1.2)));
-        } else if (scrollPos >= stackTop) {
-          // Fade out during stack (1 → 0)
-          const progress = (scrollPos - stackTop) / stackHeight;
-          setOpacity(Math.max(0, 1 - progress * 1.2));
+      if (scrollPos >= showStartPos) {
+        // Calculate smooth fade in
+        if (scrollPos <= showEndPos) {
+          const progress = (scrollPos - showStartPos) / (showEndPos - showStartPos);
+          setOpacity(Math.max(0, Math.min(1, progress)));
         } else {
-          // Full opacity in between
+          // Car remains visible while scrolling through content
           setOpacity(1);
         }
       } else {
         setOpacity(0);
       }
 
-      // Subtle parallax + breathing effect
-      const parallaxOffset = (scrollPos % 100) * 0.03;
-      const breathe = Math.sin(scrollPos * 0.005) * 0.02 + 1;
-      setPosition({ x: parallaxOffset, y: parallaxOffset * 0.2 });
+      // Subtle parallax effect - slow movement as user scrolls
+      const parallaxOffset = (scrollPos * 0.1) % 50;
+      const breathe = Math.sin((scrollPos / 100) * Math.PI) * 0.03 + 1;
+      setPosition({ x: parallaxOffset, y: Math.sin(scrollPos * 0.002) * 15 });
       setScale(breathe);
     };
 
@@ -70,9 +65,11 @@ export function CarBackground() {
     <motion.div
       className="lp-car-background"
       animate={{ opacity }}
-      transition={{ duration: 0.12, ease: "easeOut" }}
+      transition={{ duration: 0.2, ease: "easeOut" }}
       style={{
-        transform: `translate(${position.x}px, ${position.y}px) scale(${scale})`,
+        x: position.x,
+        y: position.y,
+        scale,
       }}
       aria-hidden
     >
