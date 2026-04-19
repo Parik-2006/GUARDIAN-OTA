@@ -7,12 +7,12 @@ import (
 )
 
 func TestCampaignManager(t *testing.T) {
-	reg := twin.NewRegistry()
+	reg := twin.NewRegistry(nil)
 	for i := 0; i < 10; i++ {
 		reg.Update(string(rune('A'+i)), func(d *twin.DeviceState) {})
 	}
 
-	mgr := NewManager(reg)
+	mgr := NewManager(reg, nil)
 
 	// Test Create
 	cmp, err := mgr.Create("2.0.0", "url", "hash", "sig", 50)

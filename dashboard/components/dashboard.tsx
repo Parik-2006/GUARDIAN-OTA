@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { FleetProvider, useFleet } from "./FleetContext";
+import { FleetProvider, useFleet, FleetVehicle, randomCarVariant, randomModel, createDefaultVehicle } from "./FleetContext";
 import Sidebar from "./Sidebar";
 import TopBar from "./TopBar";
 import DeviceBar from "./DeviceBar";
@@ -22,33 +22,71 @@ function DashboardInner({ onBackToLanding }: { onBackToLanding?: () => void }) {
   const [modalOpen, setModalOpen] = useState(false);
   const [logsOpen, setLogsOpen] = useState(false);
 
-  /* ── WebSocket + simulation tick ── */
+  /* ── Fetch Initial Fleet + WebSocket ── */
   useEffect(() => {
-    // Simulate live fleet updates
-    const iv = setInterval(() => {
-      setFleet(prev =>
-        prev.map(d => {
-          const r = Math.random();
-          return {
-            ...d,
-            lastSeen: new Date().toISOString(),
-            safetyState: r < 0.03 ? "UNSAFE" : "SAFE",
-            threatLevel: (r < 0.03 ? "HIGH" : r < 0.08 ? "MEDIUM" : "LOW") as "LOW" | "MEDIUM" | "HIGH",
-          };
-        })
-      );
-    }, 2200);
+    let isSubscribed = true;
 
-    // Attempt WebSocket connection
-    try {
-      const ws = new WebSocket("ws://localhost:8080/ws/events");
-      ws.onopen = () => setConnected(true);
-      ws.onclose = () => setConnected(false);
-      return () => { clearInterval(iv); ws.close(); };
-    } catch {
-      return () => clearInterval(iv);
-    }
-  }, [setFleet]);
+    // 1. Hydrate Initial State
+    fetch("http://localhost:8080/api/fleet")
+      .then(res => res.json())
+      .then(data => {
+        if (!isSubscribed) return;
+        if (data.devices) {
+          setFleet(prev => {
+            const newMap = new Map(prev.map(v => [v.deviceId, v]));
+            Object.values(data.devices).forEach((state: any) => {
+              if (!newMap.has(state.deviceId)) {
+                newMap.set(state.deviceId, {
+                  ...createDefaultVehicle(state.deviceId, `Simulated Car (${state.deviceId.split("-").pop()})`, randomCarVariant()),
+                  ...state,
+                  model: randomModel(),
+                });
+              }
+            });
+            return Array.from(newMap.values());
+          });
+        }
+      })
+      .catch(err => console.error("Initial fleet fetch failed", err));
+
+    // 2. Open WebSocket for live metrics over twin mesh
+    const ws = new WebSocket("ws://localhost:8080/ws/events");
+    ws.onopen = () => setConnected(true);
+    
+    ws.onmessage = (e) => {
+      try {
+        const evt = JSON.parse(e.data);
+        if (evt.type === "fleet_tick" && evt.payload) {
+          setFleet(prev => {
+            const current = new Map(prev.map(v => [v.deviceId, v]));
+            Object.values(evt.payload).forEach((state: any) => {
+              const existing = current.get(state.deviceId);
+              if (existing) {
+                current.set(state.deviceId, { ...existing, ...state });
+              } else {
+                current.set(state.deviceId, {
+                  ...createDefaultVehicle(state.deviceId, `Simulated Car (${state.deviceId.slice(-4)})`, randomCarVariant()),
+                  ...state,
+                  model: randomModel(),
+                });
+              }
+            });
+            return Array.from(current.values());
+          });
+        }
+      } catch (err) {
+        // Drop bad frames silently
+      }
+    };
+
+    ws.onclose = () => setConnected(false);
+    ws.onerror = () => setConnected(false);
+
+    return () => {
+      isSubscribed = false;
+      ws.close();
+    };
+  }, [setFleet]); // Removed unstable 'fleet', 'activeEcu', 'addDevice' dependencies.
 
   const P_bg = "#0D0B08";
   const P_ivory = "#EEE6D3";

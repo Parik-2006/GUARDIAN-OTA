@@ -7,6 +7,7 @@ firmware/sdkconfig.old
 firmware/*.bin
 firmware/*.elf
 firmware/*.map
+firmware/outputs/
 
 # --- NEW: Security & Sensitive Files ---
 *.pem
@@ -50,3 +51,6 @@ backend/main
 backend/backend
 backend/*.exe
 *.log
+
+# Uploaded firmware binaries (runtime only, not source)
+backend/firmware_bin/

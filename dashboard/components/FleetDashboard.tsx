@@ -3,12 +3,18 @@
 import { motion } from "framer-motion";
 import { P } from "./theme";
 import I from "./Icon";
-import BrandLogo from "./BrandLogo";
 import { useFleet } from "./FleetContext";
-import { COMPANY_LOGOS } from "./companyLogos";
+
+const MODEL_ICONS: Record<string, string> = {
+  Interceptor: "speed",
+  Sentinel: "shield",
+  Voyager: "explore",
+  Phantom: "visibility_off",
+  Eclipse: "dark_mode",
+};
 
 export default function FleetDashboard() {
-  const { fleet, selectVehicle, deleteDevice } = useFleet();
+  const { fleet, selectVehicle, deleteDevice, goToTerminal } = useFleet();
 
   return (
     <div style={{ flex: 1, overflowY: "auto", padding: "24px 28px" }}>
@@ -74,16 +80,15 @@ export default function FleetDashboard() {
                 pointerEvents: "none",
               }} />
 
-              {/* Top row: brand logo + model name */}
+              {/* Top row: icon + model name */}
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "start", marginBottom: 16 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
                   <div style={{
-                    width: 56, height: 56, borderRadius: 6,
+                    width: 42, height: 42, borderRadius: 6,
                     background: P.cgnDim, border: `1px solid ${P.bHi}`,
                     display: "flex", alignItems: "center", justifyContent: "center",
-                    overflow: "hidden",
                   }}>
-                    <BrandLogo vehicleName={v.name} size={44} />
+                    <I n={MODEL_ICONS[v.model] || "directions_car"} f sz={22} col={P.cognac} />
                   </div>
                   <div>
                     <h3 style={{
@@ -93,7 +98,7 @@ export default function FleetDashboard() {
                     <span style={{
                       fontFamily: "'JetBrains Mono',monospace", fontSize: "0.52rem",
                       color: P.whisper, letterSpacing: "0.12em",
-                    }}>{Object.values(COMPANY_LOGOS)[v.companyLogoIndex % Object.values(COMPANY_LOGOS).length].name} · {v.deviceId}</span>
+                    }}>{v.model.toUpperCase()} · {v.deviceId}</span>
                   </div>
                 </div>
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
@@ -201,6 +206,8 @@ export default function FleetDashboard() {
           );
         })}
       </div>
+
+
     </div>
   );
 }

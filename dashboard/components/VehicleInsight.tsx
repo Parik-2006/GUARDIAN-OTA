@@ -229,8 +229,8 @@ export default function VehicleInsight() {
               transition={{ duration: 0.2 }}
             >
               {activeTab === "security" && <SecurityPanel vehicle={vehicle} />}
-              {activeTab === "verification" && <VerificationSim />}
-              {activeTab === "updates" && <UpdatePanel />}
+              {activeTab === "verification" && <VerificationSim vehicle={vehicle} />}
+              {activeTab === "updates" && <UpdatePanel specificDeviceId={vehicle.deviceId} vehicle={vehicle} />}
             </motion.div>
           </div>
         </div>

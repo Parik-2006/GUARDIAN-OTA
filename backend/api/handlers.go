@@ -3,15 +3,24 @@
 package api
 
 import (
+	"bytes"
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"log/slog"
+	"net"
 	"net/http"
+	"os"
+	"os/exec"
+	"path/filepath"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 
+	"sdv-ota/backend/blockchain"
 	"sdv-ota/backend/campaign"
 	"sdv-ota/backend/events"
 	mqttclient "sdv-ota/backend/mqtt"
@@ -26,6 +35,7 @@ type Deps struct {
 	Events    *events.Store
 	Hub       *ws.Hub
 	Publisher *mqttclient.Publisher
+	Blockchain *blockchain.Service
 }
 
 // OTADeployRequest is the JSON body accepted by POST /api/ota/deploy.
@@ -42,6 +52,7 @@ func RegisterRoutes(r *gin.Engine, d *Deps) {
 	r.GET("/health", handleHealth)
 	r.GET("/api/fleet", d.handleFleet)
 	r.POST("/api/ota/deploy", d.handleDeploy)
+	r.POST("/api/ota/upload", d.handleUpload)
 	r.GET("/api/campaigns", d.handleCampaigns)
 	r.GET("/api/campaigns/:id", d.handleCampaign)
 	r.GET("/api/events", d.handleEvents)
@@ -68,7 +79,7 @@ func (d *Deps) handleDeploy(c *gin.Context) {
 	}
 
 	// Create campaign
-	cmp, err := d.Campaigns.Create(req.Version, req.FirmwareURL, req.FirmwareHash, req.SignatureB64, req.CanaryPercent)
+	cmp, err := d.Campaigns.Create(req.Version, req.FirmwareURL, req.FirmwareHash, req.SignatureB64, req.CanaryPercent, "")
 	if err != nil {
 		slog.Error("api: campaign creation failed", "err", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -141,4 +152,127 @@ func (d *Deps) handleEvents(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"events": evts, "count": len(evts)})
+}
+
+func (d *Deps) handleUpload(c *gin.Context) {
+	file, err := c.FormFile("file")
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "no file uploaded"})
+		return
+	}
+	version := c.PostForm("version")
+	if version == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "version required"})
+		return
+	}
+
+	canaryStr := c.PostForm("canaryPercent")
+	canaryPercent := 10
+	if p, err := strconv.Atoi(canaryStr); err == nil {
+		canaryPercent = p
+	}
+	targetDevice := c.PostForm("targetDevice")
+
+	// Create firmware_bin dir
+	os.MkdirAll("firmware_bin", 0755)
+
+	// Save file
+	hashName := "fw_" + uuid.NewString()[:8] + ".bin"
+	filePath := filepath.Join("firmware_bin", hashName)
+	if err := c.SaveUploadedFile(file, filePath); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to save file"})
+		return
+	}
+
+	// Read for hash
+	fBytes, err := os.ReadFile(filePath)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "read failed"})
+		return
+	}
+	h := sha256.Sum256(fBytes)
+	hashHex := hex.EncodeToString(h[:])
+
+	// Sign using external OpenSSL
+	cmd := exec.Command("sh", "-c", "openssl dgst -sha256 -sign ota-key.pem "+filePath+" | base64 -w 0")
+	var out bytes.Buffer
+	cmd.Stdout = &out
+	if err := cmd.Run(); err != nil {
+		slog.Error("signing failed", "err", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "signing failed"})
+		return
+	}
+	sigB64 := strings.TrimSpace(out.String())
+
+	// Call Campaigns.Create
+	host := c.Request.Host
+	if strings.HasPrefix(host, "localhost") || strings.HasPrefix(host, "127.0.0.1") {
+		_, port, err := net.SplitHostPort(host)
+		if err != nil {
+			port = "8080"
+		}
+		host = getLocalIP() + ":" + port
+	}
+	scheme := "http"
+	if c.Request.TLS != nil {
+		scheme = "https"
+	}
+	firmwareURL := scheme + "://" + host + "/firmware_bin/" + hashName
+
+	cmp, err := d.Campaigns.Create(version, firmwareURL, hashHex, sigB64, canaryPercent, targetDevice)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "campaign create failed"})
+		return
+	}
+
+	// Publish OTA MQTT
+	otaCmd := mqttclient.OTACommand{
+		CampaignID:   cmp.ID,
+		Version:      version,
+		FirmwareURL:  firmwareURL,
+		FirmwareHash: hashHex,
+		SignatureB64: sigB64,
+		Targets:      cmp.Targets,
+		Nonce:        uuid.NewString(),
+		IssuedAt:     time.Now().UTC().Format(time.RFC3339),
+		TTLSeconds:   300,
+	}
+	if d.Publisher != nil {
+		d.Publisher.PublishOTACommand(otaCmd)
+	}
+
+	// Blockchain Logger
+	if d.Blockchain != nil {
+		go func() {
+			tx, err := d.Blockchain.LogFirmwareHash(context.Background(), version, hashHex)
+			if err != nil {
+				slog.Error("blockchain log failed", "err", err)
+			} else {
+				slog.Info("blockchain hash logged", "tx", tx)
+			}
+		}()
+	}
+
+	// Broadcast + persist
+	payload := gin.H{"campaign": cmp, "command": otaCmd}
+	d.Hub.Broadcast(ws.Event{Type: "ota_deploy_requested", Timestamp: time.Now().UTC(), Payload: payload})
+	d.Events.Write(context.Background(), "ota_deploy_requested", payload)
+
+	c.JSON(http.StatusOK, gin.H{
+		"queued":     true,
+		"campaignId": cmp.ID,
+		"targets":    cmp.Targets,
+		"count":      len(cmp.Targets),
+		"txPending":  d.Blockchain != nil,
+	})
+}
+
+func getLocalIP() string {
+	conn, err := net.Dial("udp", "8.8.8.8:80")
+	if err != nil {
+		return "127.0.0.1"
+	}
+	defer conn.Close()
+	localAddr := conn.LocalAddr().(*net.UDPAddr)
+	return localAddr.IP.String()
 }

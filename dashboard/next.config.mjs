@@ -1,24 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  experimental: {
-    optimizePackageImports: ["framer-motion"]
-  },
-  images: {
-    remotePatterns: [
-      {
-        protocol: 'https',
-        hostname: 'logo.clearbit.com',
-      },
-      {
-        protocol: 'https',
-        hostname: 'cdn.brandfetch.io',
-      },
-      {
-        protocol: 'https',
-        hostname: 'cdn.worldvectorlogo.com',
-      },
-    ],
-  },
+  // Removed optimizePackageImports as it can cause OOM hangs with framer-motion
 };
 
 export default nextConfig;
