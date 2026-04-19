@@ -173,7 +173,7 @@ function FeatureRow({ items }: { items: { icon: string; title: string; desc: str
       {items.map((item, i) => (
         <motion.div key={i} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.08, duration: 0.55 }} className="lp-feature-card">
           <div className="lp-feature-shine" />
-          <div className="lp-feature-icon" style={{ color: "#D4A96A" }}>
+          <div className="lp-feature-icon" style={{ color: "#D4A96A", fontSize: "4px", width: "4px", height: "4px", marginBottom: "16px", display: "inline-flex", alignItems: "center", justifyContent: "center" }}>
             <SecurityPatternIcon title={item.title} />
           </div>
           <h3 className="lp-feature-title">{item.title}</h3>
