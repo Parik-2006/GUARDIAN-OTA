@@ -143,8 +143,6 @@ function FeatureRow({ items }: {
           transition={{ delay: i * 0.08, duration: 0.55 }}
           className="lp-feature-card"
         >
-          <div className="lp-feature-shine" />
-          <div className="lp-feature-icon">{item.icon}</div>
           <h3 className="lp-feature-title">{item.title}</h3>
           <p className="lp-feature-desc">{item.desc}</p>
         </motion.div>
@@ -189,11 +187,11 @@ function SecurityBadges() {
 ══════════════════════════════════════════ */
 function StackRow() {
   const stack = [
-    { layer: "Edge", name: "ESP32 + FreeRTOS", detail: "mbedTLS · ESP-IDF OTA", color: "#D4A96A" },
-    { layer: "Messaging", name: "Mosquitto MQTT", detail: "TLS · MQTTS:8883", color: "#6A9DB8" },
-    { layer: "Storage", name: "MinIO S3", detail: "Firmware Artifacts · Signed Manifest", color: "#D4956A" },
-    { layer: "Backend", name: "Go + Gin", detail: "WebSocket · PostgreSQL · MQTT", color: "#7AB88A" },
-    { layer: "Frontend", name: "Next.js 14", detail: "App Router · Framer Motion · TailwindCSS", color: "#D4A96A" },
+    { layer: "Edge", name: "ESP32 FreeRTOS", detail: "mbedTLS ESP-IDF OTA", color: "#D4A96A" },
+    { layer: "Messaging", name: "Mosquitto MQTT", detail: "TLS MQTTS:8883", color: "#6A9DB8" },
+    { layer: "Storage", name: "MinIO S3", detail: "Firmware Artifacts Signed Manifest", color: "#D4956A" },
+    { layer: "Backend", name: "Go Gin", detail: "WebSocket PostgreSQL MQTT", color: "#7AB88A" },
+    { layer: "Frontend", name: "Next.js 14", detail: "App Router Framer Motion TailwindCSS", color: "#D4A96A" },
   ];
   return (
     <div className="lp-stack-col">
@@ -505,19 +503,7 @@ export default function Landing({ onEnterDashboard }: { onEnterDashboard: () => 
           transition:border-color 0.3s, box-shadow 0.3s, transform 0.3s;
           cursor:default;
         }
-        .lp-feature-shine {
-          position:absolute; inset:0; border-radius:inherit;
-          background:linear-gradient(135deg, rgba(240,235,224,0.03) 0%, transparent 55%);
-          pointer-events:none;
-        }
-        .lp-feature-card::before {
-          content:''; position:absolute; top:0; left:-100%;
-          width:80%; height:2px;
-          background:linear-gradient(90deg, transparent, rgba(212,169,106,0.6), transparent);
-          transition:left 0.5s ease;
-        }
         .lp-feature-card:hover { border-color:rgba(212,169,106,0.28); box-shadow:0 0 32px rgba(212,169,106,0.08), 0 12px 40px rgba(0,0,0,0.35); transform:translateY(-4px) scale(1.008); }
-        .lp-feature-card:hover::before { left:120%; }
         .lp-feature-icon { font-size:1.8rem; margin-bottom:16px; }
         .lp-feature-title {
           font-family:'Rajdhani',sans-serif; font-weight:600;
@@ -689,10 +675,10 @@ export default function Landing({ onEnterDashboard }: { onEnterDashboard: () => 
 
           {/* STAT CARDS */}
           <div className="lp-stat-row">
-            <GlassStatCard icon="◈" value="20" label="Fleet Vehicles" sub="Simulated ECUs" delay={0.45} />
-            <GlassStatCard icon="⬡" value="6" label="Security Gates" sub="Cryptographic" delay={0.52} />
-            <GlassStatCard icon="◎" value="P-256" label="ECC Signature" sub="mbedTLS" delay={0.58} />
-            <GlassStatCard icon="▣" value="∞" label="Live Events" sub="WebSocket stream" delay={0.65} />
+            <GlassStatCard icon="" value="20" label="Fleet Vehicles" sub="Simulated ECUs" delay={0.45} />
+            <GlassStatCard icon="" value="6" label="Security Gates" sub="Cryptographic" delay={0.52} />
+            <GlassStatCard icon="" value="P-256" label="ECC Signature" sub="mbedTLS" delay={0.58} />
+            <GlassStatCard icon="" value="" label="Live Events" sub="WebSocket stream" delay={0.65} />
           </div>
         </section>
 
@@ -706,12 +692,12 @@ export default function Landing({ onEnterDashboard }: { onEnterDashboard: () => 
             A single ESP32 hosts the complete edge gateway runtime — brake, powertrain, sensor, and infotainment ECU tasks with simulated CAN bus queue transport. The Go backend orchestrates canary OTA campaigns, persists events to PostgreSQL, and broadcasts live fleet state to the dashboard via WebSocket bridge.
           </p>
           <FeatureRow items={[
-            { icon: "◈", title: "ESP32 Edge Gateway", desc: "FreeRTOS task architecture with virtual CAN queue transport. Four concurrent ECUs (brake, powertrain, sensor, infotainment) with OTA safety-gated by brake ECU state." },
-            { icon: "⬡", title: "Mosquitto MQTT Broker", desc: "TLS-encrypted command plane on port 8883. Commands published to sdv/ota/command with device MAC filtering and QoS 1 delivery guarantee." },
-            { icon: "◎", title: "MinIO S3 Artifact Store", desc: "Firmware binary and signed manifest hosting. ECC signature verification and SHA-256 integrity checksums embedded in OTA payloads." },
-            { icon: "▣", title: "Go Backend Service", desc: "Canary deployment orchestration, event audit log persistence, WebSocket broadcast to connected dashboards. CORS-enabled REST API at :8080." },
-            { icon: "⬥", title: "PostgreSQL Event Log", desc: "Immutable ota_events table with full JSONB payloads. Deployment history, fleet snapshots, and security events indexed for compliance audits." },
-            { icon: "◇", title: "Next.js Dashboard", desc: "Real-time fleet visualization with live WebSocket feed, Framer Motion cinematic interactions, and 3D SVG orbital car model rendering." },
+            { icon: "", title: "ESP32 Edge Gateway", desc: "FreeRTOS task architecture with virtual CAN queue transport. Four concurrent ECUs (brake, powertrain, sensor, infotainment) with OTA safety-gated by brake ECU state." },
+            { icon: "", title: "Mosquitto MQTT Broker", desc: "TLS-encrypted command plane on port 8883. Commands published to sdv/ota/command with device MAC filtering and QoS 1 delivery guarantee." },
+            { icon: "", title: "MinIO S3 Artifact Store", desc: "Firmware binary and signed manifest hosting. ECC signature verification and SHA-256 integrity checksums embedded in OTA payloads." },
+            { icon: "", title: "Go Backend Service", desc: "Canary deployment orchestration, event audit log persistence, WebSocket broadcast to connected dashboards. CORS-enabled REST API at :8080." },
+            { icon: "", title: "PostgreSQL Event Log", desc: "Immutable ota_events table with full JSONB payloads. Deployment history, fleet snapshots, and security events indexed for compliance audits." },
+            { icon: "", title: "Next.js Dashboard", desc: "Real-time fleet visualization with live WebSocket feed, Framer Motion cinematic interactions, and 3D SVG orbital car model rendering." },
           ]} />
         </section>
 
@@ -719,19 +705,19 @@ export default function Landing({ onEnterDashboard }: { onEnterDashboard: () => 
 
         {/* SECURITY */}
         <section className="lp-section" id="security">
-          <p className="lp-section-label">02 · Security Controls</p>
+          <p className="lp-section-label">02 Security Controls</p>
           <h2 className="lp-section-h2">Cryptographic <em>Defense</em> Chain</h2>
           <p className="lp-section-body">
-            Multi-layer hardening across the entire update pipeline — from eFuse hardware identity pinning and TLS transport encryption, through ECC payload authentication and SHA-256 integrity verification, to pre-update safety validation and automatic dual-partition rollback on failure.
+            Multi-layer hardening across the entire update pipeline from eFuse hardware identity pinning and TLS transport encryption, through ECC payload authentication and SHA-256 integrity verification, to pre-update safety validation and automatic dual-partition rollback on failure.
           </p>
           <SecurityBadges />
           <FeatureRow items={[
-            { icon: "🔐", title: "ECC P-256 Signature Verification", desc: "mbedTLS verifies firmware payload against embedded public key before any OTA acceptance. Blocks forged and supply-chain backdoor attacks." },
-            { icon: "🔑", title: "SHA-256 Binary Integrity", desc: "Firmware hash verified against signed manifest before installation. Detects corruption, replay, and altered binary attacks at reception." },
-            { icon: "🛡", title: "Pre-Update Safety Gate", desc: "OTA execution blocked when brake ECU reports UNSAFE state. Prevents firmware updates during active safety-critical vehicle operation." },
-            { icon: "↩", title: "Dual-Partition Rollback", desc: "ESP-IDF dual OTA slot with automatic revert on health-check failure. Prevents bricking and ensures safe recovery to verified firmware." },
-            { icon: "📡", title: "TLS MQTT Transport", desc: "All OTA commands encrypted over MQTT 8883 with certificate validation. Blocks MITM interception, command injection, and replay attacks." },
-            { icon: "🪪", title: "eFuse MAC Device Identity", desc: "Immutable hardware MAC-based device identifier stored in ESP32 eFuse. Eliminates logical node spoofing and supports fine-grained access control." },
+            { icon: "", title: "ECC P-256 Signature Verification", desc: "mbedTLS verifies firmware payload against embedded public key before any OTA acceptance. Blocks forged and supply-chain backdoor attacks." },
+            { icon: "", title: "SHA-256 Binary Integrity", desc: "Firmware hash verified against signed manifest before installation. Detects corruption, replay, and altered binary attacks at reception." },
+            { icon: "", title: "Pre-Update Safety Gate", desc: "OTA execution blocked when brake ECU reports UNSAFE state. Prevents firmware updates during active safety-critical vehicle operation." },
+            { icon: "", title: "Dual-Partition Rollback", desc: "ESP-IDF dual OTA slot with automatic revert on health-check failure. Prevents bricking and ensures safe recovery to verified firmware." },
+            { icon: "", title: "TLS MQTT Transport", desc: "All OTA commands encrypted over MQTT 8883 with certificate validation. Blocks MITM interception, command injection, and replay attacks." },
+            { icon: "", title: "eFuse MAC Device Identity", desc: "Immutable hardware MAC-based device identifier stored in ESP32 eFuse. Eliminates logical node spoofing and supports fine-grained access control." },
           ]} />
         </section>
 
@@ -739,10 +725,10 @@ export default function Landing({ onEnterDashboard }: { onEnterDashboard: () => 
 
         {/* STACK */}
         <section className="lp-section" id="stack">
-          <p className="lp-section-label">03 · Technology Stack</p>
+          <p className="lp-section-label">03 Technology Stack</p>
           <h2 className="lp-section-h2">Full-Stack <em>Production</em> Platform</h2>
           <p className="lp-section-body">
-            Battle-tested technologies across every layer — from bare-metal FreeRTOS task runtime and mbedTLS cryptography on ESP32, through Go microservices with PostgreSQL persistence, to a production-grade Next.js dashboard with real-time WebSocket telemetry and cinematic motion graphics.
+            Battle-tested technologies across every layer from bare-metal FreeRTOS task runtime and mbedTLS cryptography on ESP32, through Go microservices with PostgreSQL persistence, to a production-grade Next.js dashboard with real-time WebSocket telemetry and cinematic motion graphics.
           </p>
           <StackRow />
         </section>

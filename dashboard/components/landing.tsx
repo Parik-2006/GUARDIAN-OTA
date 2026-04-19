@@ -114,6 +114,8 @@ function GlassStatCard({ icon, value, label, sub, delay = 0 }: {
   );
 }
 
+
+
 /* ══════════════════════════════════════════
    FEATURE ROW
 ══════════════════════════════════════════ */
@@ -122,12 +124,10 @@ function FeatureRow({ items }: { items: { icon: string; title: string; desc: str
     <div className="lp-feature-row">
       {items.map((item, i) => (
         <motion.div key={i} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.08, duration: 0.55 }} className="lp-feature-card">
-          <div className="lp-feature-shine" />
-          <div className="lp-feature-icon">{item.icon}</div>
           <h3 className="lp-feature-title">{item.title}</h3>
           <p className="lp-feature-desc">{item.desc}</p>
         </motion.div>
-      ))}
+      ))
     </div>
   );
 }
@@ -160,11 +160,11 @@ function SecurityBadges() {
 ══════════════════════════════════════════ */
 function StackRow() {
   const stack = [
-    { layer: "Edge",      name: "ESP32 + FreeRTOS",  detail: "mbedTLS · ESP-IDF OTA",                 color: "#D4A96A" },
-    { layer: "Messaging", name: "Mosquitto MQTT",     detail: "TLS · MQTTS:8883",                       color: "#6A9DB8" },
-    { layer: "Storage",   name: "MinIO S3",           detail: "Firmware Artifacts · Signed Manifest",   color: "#D4956A" },
-    { layer: "Backend",   name: "Go + Gin",           detail: "WebSocket · PostgreSQL · MQTT",          color: "#7AB88A" },
-    { layer: "Frontend",  name: "Next.js 14",         detail: "App Router · Framer Motion · TailwindCSS", color: "#D4A96A" },
+    { layer: "Edge",      name: "ESP32 FreeRTOS",  detail: "mbedTLS ESP-IDF OTA",                 color: "#D4A96A" },
+    { layer: "Messaging", name: "Mosquitto MQTT",     detail: "TLS MQTTS:8883",                       color: "#6A9DB8" },
+    { layer: "Storage",   name: "MinIO S3",           detail: "Firmware Artifacts Signed Manifest",   color: "#D4956A" },
+    { layer: "Backend",   name: "Go Gin",           detail: "WebSocket PostgreSQL MQTT",          color: "#7AB88A" },
+    { layer: "Frontend",  name: "Next.js 14",         detail: "App Router Framer Motion TailwindCSS", color: "#D4A96A" },
   ];
   return (
     <div className="lp-stack-col">
@@ -289,19 +289,19 @@ export default function Landing({ onEnterDashboard }: { onEnterDashboard: () => 
 
       {/* SECURITY */}
       <section className="lp-section" id="security">
-        <p className="lp-section-label">02 · Security Controls</p>
+        <p className="lp-section-label">02 Security Controls</p>
         <h2 className="lp-section-h2">Cryptographic <em>Defense</em> Chain</h2>
         <p className="lp-section-body">
-          Every layer of the update pipeline is hardened — from hardware identity pinning on the ESP32 eFuse MAC, through TLS transport and ECC payload verification, to automatic rollback on health-check failure.
+          Every layer of the update pipeline is hardened from hardware identity pinning on the ESP32 eFuse MAC, through TLS transport and ECC payload verification, to automatic rollback on health-check failure.
         </p>
         <SecurityBadges />
         <FeatureRow items={[
-          { icon: "🔐", title: "ECC P-256 Signature",  desc: "mbedTLS verifies OTA payload against embedded public key. Prevents forged firmware and supply-chain tampering." },
-          { icon: "🔑", title: "SHA-256 Integrity",    desc: "Firmware binary hash compared to signed manifest. Prevents corruption replay and altered binary attacks." },
-          { icon: "🛡",  title: "Safety Gate",          desc: "OTA blocked when brake ECU reports UNSAFE state. No updates during active safety-critical conditions." },
-          { icon: "↩",  title: "Automatic Rollback",   desc: "ESP-IDF dual-partition scheme — failed health-check triggers esp_ota_mark_app_invalid_rollback_and_reboot." },
-          { icon: "📡", title: "TLS MQTT Transport",   desc: "Encrypted command channel prevents MITM sniffing and injection on OTA command topics." },
-          { icon: "🪪", title: "eFuse MAC Identity",   desc: "Device-specific identity derived from immutable hardware MAC. Prevents logical node spoofing." },
+          { icon: "", title: "ECC P-256 Signature",  desc: "mbedTLS verifies OTA payload against embedded public key. Prevents forged firmware and supply-chain tampering." },
+          { icon: "", title: "SHA-256 Integrity",    desc: "Firmware binary hash compared to signed manifest. Prevents corruption replay and altered binary attacks." },
+          { icon: "",  title: "Safety Gate",          desc: "OTA blocked when brake ECU reports UNSAFE state. No updates during active safety-critical conditions." },
+          { icon: "",  title: "Automatic Rollback",   desc: "ESP-IDF dual-partition scheme failed health-check triggers esp_ota_mark_app_invalid_rollback_and_reboot." },
+          { icon: "", title: "TLS MQTT Transport",   desc: "Encrypted command channel prevents MITM sniffing and injection on OTA command topics." },
+          { icon: "", title: "eFuse MAC Identity",   desc: "Device-specific identity derived from immutable hardware MAC. Prevents logical node spoofing." },
         ]} />
       </section>
 
@@ -309,10 +309,10 @@ export default function Landing({ onEnterDashboard }: { onEnterDashboard: () => 
 
       {/* STACK */}
       <section className="lp-section" id="stack">
-        <p className="lp-section-label">03 · Technology Stack</p>
+        <p className="lp-section-label">03 Technology Stack</p>
         <h2 className="lp-section-h2">Full-Stack <em>Embedded</em> Platform</h2>
         <p className="lp-section-body">
-          From bare-metal C on ESP-IDF through Go microservices to a cinematic Next.js dashboard — every layer chosen for production readiness and security posture.
+          From bare-metal C on ESP-IDF through Go microservices to a cinematic Next.js dashboard every layer chosen for production readiness and security posture.
         </p>
         <StackRow />
       </section>
