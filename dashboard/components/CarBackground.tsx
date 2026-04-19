@@ -16,43 +16,73 @@ export function CarBackground() {
   useEffect(() => {
     const handleScroll = () => {
       const scrollPos = window.scrollY;
-      const heroHeight = window.innerHeight;
       
-      // Get section positions
-      const heroSection = document.querySelector(".lp-hero");
-      const archSection = document.getElementById("architecture");
-      const securitySection = document.getElementById("security");
+      // Get the footer CTA section (Enter the Command Center)
+      const footerCTA = document.querySelector("section:has(> h2:contains('Command Center'))") || 
+                        document.evaluate(
+                          "//h2[contains(text(), 'Command Center')]/ancestor::section",
+                          document,
+                          null,
+                          XPathResult.FIRST_ORDERED_NODE_TYPE,
+                          null
+                        ).singleNodeValue;
 
-      if (!heroSection) {
-        setOpacity(0);
+      if (!footerCTA) {
+        // Fallback: detect by finding all sections and getting the last one
+        const sections = document.querySelectorAll("section");
+        const lastSection = Array.from(sections).filter(s => s.id !== "architecture" && s.id !== "security" && s.id !== "stack").pop();
+        
+        if (!lastSection) {
+          setOpacity(0);
+          return;
+        }
+
+        const sectionTop = (lastSection as HTMLElement).offsetTop;
+        const sectionHeight = (lastSection as HTMLElement).clientHeight;
+        
+        // Car appears when user reaches the footer CTA section
+        const showStart = sectionTop - window.innerHeight * 0.3;
+        const showEnd = sectionTop + sectionHeight + window.innerHeight * 0.2;
+
+        if (scrollPos >= showStart && scrollPos <= showEnd) {
+          const progress = (scrollPos - showStart) / (showEnd - showStart);
+          setOpacity(Math.max(0, Math.min(1, progress * 1.3)));
+        } else if (scrollPos > showEnd) {
+          setOpacity(1);
+        } else {
+          setOpacity(0);
+        }
+
+        // Parallax effect
+        const parallaxOffset = (scrollPos * 0.08) % 40;
+        const verticalShift = Math.sin(scrollPos * 0.003) * 20;
+        setPosition({ x: parallaxOffset, y: verticalShift });
+        setScale(1 + Math.sin(scrollPos * 0.002) * 0.05);
+
         return;
       }
 
-      const heroTop = heroSection.getBoundingClientRect().top + window.scrollY;
-      const heroBottom = heroTop + heroSection.clientHeight;
+      const sectionTop = (footerCTA as HTMLElement).offsetTop;
+      const sectionHeight = (footerCTA as HTMLElement).clientHeight;
       
-      // Car starts appearing at the bottom of hero, fully visible after scrolling past hero
-      const showStartPos = heroBottom - window.innerHeight * 0.5; // Start fading in earlier
-      const showEndPos = heroBottom + window.innerHeight * 0.3; // Fully visible after hero
+      // Car appears when user reaches the footer CTA section
+      const showStart = sectionTop - window.innerHeight * 0.3;
+      const showEnd = sectionTop + sectionHeight + window.innerHeight * 0.2;
 
-      if (scrollPos >= showStartPos) {
-        // Calculate smooth fade in
-        if (scrollPos <= showEndPos) {
-          const progress = (scrollPos - showStartPos) / (showEndPos - showStartPos);
-          setOpacity(Math.max(0, Math.min(1, progress)));
-        } else {
-          // Car remains visible while scrolling through content
-          setOpacity(1);
-        }
+      if (scrollPos >= showStart && scrollPos <= showEnd) {
+        const progress = (scrollPos - showStart) / (showEnd - showStart);
+        setOpacity(Math.max(0, Math.min(1, progress * 1.3)));
+      } else if (scrollPos > showEnd) {
+        setOpacity(1);
       } else {
         setOpacity(0);
       }
 
-      // Subtle parallax effect - slow movement as user scrolls
-      const parallaxOffset = (scrollPos * 0.1) % 50;
-      const breathe = Math.sin((scrollPos / 100) * Math.PI) * 0.03 + 1;
-      setPosition({ x: parallaxOffset, y: Math.sin(scrollPos * 0.002) * 15 });
-      setScale(breathe);
+      // Parallax effect
+      const parallaxOffset = (scrollPos * 0.08) % 40;
+      const verticalShift = Math.sin(scrollPos * 0.003) * 20;
+      setPosition({ x: parallaxOffset, y: verticalShift });
+      setScale(1 + Math.sin(scrollPos * 0.002) * 0.05);
     };
 
     window.addEventListener("scroll", handleScroll, { passive: true });
@@ -65,11 +95,9 @@ export function CarBackground() {
     <motion.div
       className="lp-car-background"
       animate={{ opacity }}
-      transition={{ duration: 0.2, ease: "easeOut" }}
+      transition={{ duration: 0.25, ease: "easeOut" }}
       style={{
-        x: position.x,
-        y: position.y,
-        scale,
+        transform: `translate(${position.x}px, ${position.y}px) scale(${scale})`,
       }}
       aria-hidden
     >
