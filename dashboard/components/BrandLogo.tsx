@@ -1,6 +1,5 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import { P } from "./theme";
 
 interface BrandLogoProps {
@@ -9,105 +8,39 @@ interface BrandLogoProps {
   style?: React.CSSProperties;
 }
 
-// Brand to company name mapping for logo API
-const BRAND_COMPANY_MAP: Record<string, string> = {
-  "audi": "Audi",
-  "mercedes": "Mercedes-Benz",
-  "bmw": "BMW",
-  "tesla": "Tesla",
-  "porsche": "Porsche",
-  "volkswagen": "Volkswagen",
-  "ford": "Ford Motor Company",
-  "gm": "General Motors",
-  "chevrolet": "Chevrolet",
-  "ram": "Ram Trucks",
-  "toyota": "Toyota",
-  "honda": "Honda",
-  "nissan": "Nissan",
-  "lexus": "Lexus",
-  "hyundai": "Hyundai",
+// Brand to logo file mapping
+const BRAND_LOGO_MAP: Record<string, string> = {
+  "audi": "/logos/audi.png",
+  "mercedes": "/logos/mercedes.png",
+  "bmw": "/logos/bmw.png",
+  "tesla": "/logos/tesla.png",
+  "porsche": "/logos/porsche.png",
+  "volkswagen": "/logos/volkswagen.png",
+  "ford": "/logos/ford.png",
+  "chevrolet": "/logos/chevrolet.png",
+  "toyota": "/logos/toyota.png",
+  "honda": "/logos/honda.png",
+  "nissan": "/logos/nissan.png",
+  "hyundai": "/logos/hyundai.png",
+  "lexus": "/logos/lexus.png",
+  "lamborghini": "/logos/lamborghini.png",
+  "ferrari": "/logos/ferrari.png",
 };
 
 export default function BrandLogo({ vehicleName, size = 32, style }: BrandLogoProps) {
-  const [logoUrl, setLogoUrl] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [hasError, setHasError] = useState(false);
+  // Extract brand from vehicle name
+  let logoUrl: string | null = null;
+  const nameLower = vehicleName.toLowerCase();
 
-  useEffect(() => {
-    // Extract brand from vehicle name
-    let brand = "";
-    const nameLower = vehicleName.toLowerCase();
-
-    for (const [key] of Object.entries(BRAND_COMPANY_MAP)) {
-      if (nameLower.includes(key)) {
-        brand = key;
-        break;
-      }
+  for (const [brand, url] of Object.entries(BRAND_LOGO_MAP)) {
+    if (nameLower.includes(brand)) {
+      logoUrl = url;
+      break;
     }
-
-    if (!brand) {
-      setIsLoading(false);
-      setHasError(true);
-      return;
-    }
-
-    const companyName = BRAND_COMPANY_MAP[brand];
-
-    // Use Clearbit logo API (free, no auth required)
-    // Alternative: https://api.brandfetch.io/v2/logo?domain=audi.com
-    const logoUrl = `https://logo.clearbit.com/${companyName.toLowerCase().replace(/\s+/g, "")}.com?size=200`;
-
-    // Test if logo exists and is loadable
-    const img = new Image();
-    img.onload = () => {
-      setLogoUrl(logoUrl);
-      setIsLoading(false);
-    };
-    img.onerror = () => {
-      // Try alternative: Brandfetch API
-      const brandFetchUrl = `https://cdn.brandfetch.io/${companyName.toLowerCase().replace(/\s+/g, "-")}/logo/square/200`;
-      
-      const img2 = new Image();
-      img2.onload = () => {
-        setLogoUrl(brandFetchUrl);
-        setIsLoading(false);
-      };
-      img2.onerror = () => {
-        // Try another fallback: Worldvectorlogo CDN
-        const wvlUrl = `https://cdn.worldvectorlogo.com/logos/${brand.toLowerCase()}.svg`;
-        const img3 = new Image();
-        img3.onload = () => {
-          setLogoUrl(wvlUrl);
-          setIsLoading(false);
-        };
-        img3.onerror = () => {
-          setHasError(true);
-          setIsLoading(false);
-        };
-        img3.src = wvlUrl;
-      };
-      img2.src = brandFetchUrl;
-    };
-    img.src = logoUrl;
-  }, [vehicleName]);
-
-  if (isLoading) {
-    return (
-      <div
-        style={{
-          width: size,
-          height: size,
-          borderRadius: 4,
-          background: "rgba(240,235,224,0.1)",
-          animation: "pulse 2s ease-in-out infinite",
-          ...style,
-        }}
-      />
-    );
   }
 
-  if (hasError || !logoUrl) {
-    // Fallback: Generic shield
+  if (!logoUrl) {
+    // Fallback: Generic shield for unknown brands
     return (
       <svg
         width={size}
@@ -138,7 +71,6 @@ export default function BrandLogo({ vehicleName, size = 32, style }: BrandLogoPr
         objectFit: "contain",
         ...style,
       }}
-      onError={() => setHasError(true)}
     />
   );
 }
