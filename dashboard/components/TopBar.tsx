@@ -34,41 +34,10 @@ export default function TopBar({
             fontFamily: "'Cormorant Garamond',serif", fontWeight: 700,
             fontSize: "1rem", letterSpacing: "0.16em", color: P.ivory,
           }}>SENTINEL COMMAND</span>
-          <nav style={{ display: "flex", height: 52 }}>
-            {["Fleet Metrics", "Firmware Repo", "Crypto Audit"].map((l, i) => (
-              <a key={l} href="#" style={{
-                height: "100%", display: "flex", alignItems: "center", padding: "0 13px",
-                fontSize: "0.65rem", fontWeight: 500, letterSpacing: "0.09em",
-                textTransform: "uppercase", textDecoration: "none",
-                color: i === 0 ? P.cognac : P.whisper,
-                borderBottom: `2px solid ${i === 0 ? P.cognac : "transparent"}`,
-                transition: "all 0.2s", fontFamily: "'JetBrains Mono',monospace",
-              }}
-                onMouseEnter={e => { if (i !== 0) (e.currentTarget as HTMLAnchorElement).style.color = P.parchment; }}
-                onMouseLeave={e => { if (i !== 0) (e.currentTarget as HTMLAnchorElement).style.color = P.whisper; }}
-              >{l}</a>
-            ))}
-          </nav>
         </div>
 
         {/* RIGHT */}
         <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
-          {/* Add Device Button */}
-          <button
-            onClick={onAddDevice}
-            style={{
-              padding: "4px 14px", background: P.cgnDim, color: P.cognac,
-              fontSize: "0.64rem", fontWeight: 700, borderRadius: 2, cursor: "pointer",
-              letterSpacing: "0.06em", textTransform: "uppercase",
-              border: `1px solid ${P.bHi}`, fontFamily: "'JetBrains Mono',monospace",
-              transition: "all 0.2s", display: "flex", alignItems: "center", gap: 5,
-            }}
-            onMouseEnter={e => { e.currentTarget.style.background = P.cgnGlow; e.currentTarget.style.color = P.ivory; }}
-            onMouseLeave={e => { e.currentTarget.style.background = P.cgnDim; e.currentTarget.style.color = P.cognac; }}
-          >
-            <I n="add" sz={13} col="inherit" /> Add Device
-          </button>
-
           {/* Live indicator */}
           <div style={{
             display: "flex", alignItems: "center", gap: 5,
