@@ -17,72 +17,47 @@ export function CarBackground() {
     const handleScroll = () => {
       const scrollPos = window.scrollY;
       
-      // Get the footer CTA section (Enter the Command Center)
-      const footerCTA = document.querySelector("section:has(> h2:contains('Command Center'))") || 
-                        document.evaluate(
-                          "//h2[contains(text(), 'Command Center')]/ancestor::section",
-                          document,
-                          null,
-                          XPathResult.FIRST_ORDERED_NODE_TYPE,
-                          null
-                        ).singleNodeValue;
+      // Get the car showcase section
+      const carShowcase = document.getElementById("car-showcase");
 
-      if (!footerCTA) {
-        // Fallback: detect by finding all sections and getting the last one
-        const sections = document.querySelectorAll("section");
-        const lastSection = Array.from(sections).filter(s => s.id !== "architecture" && s.id !== "security" && s.id !== "stack").pop();
-        
-        if (!lastSection) {
-          setOpacity(0);
-          return;
-        }
-
-        const sectionTop = (lastSection as HTMLElement).offsetTop;
-        const sectionHeight = (lastSection as HTMLElement).clientHeight;
-        
-        // Car appears when user reaches the footer CTA section
-        const showStart = sectionTop - window.innerHeight * 0.3;
-        const showEnd = sectionTop + sectionHeight + window.innerHeight * 0.2;
-
-        if (scrollPos >= showStart && scrollPos <= showEnd) {
-          const progress = (scrollPos - showStart) / (showEnd - showStart);
-          setOpacity(Math.max(0, Math.min(1, progress * 1.3)));
-        } else if (scrollPos > showEnd) {
-          setOpacity(1);
-        } else {
-          setOpacity(0);
-        }
-
-        // Parallax effect
-        const parallaxOffset = (scrollPos * 0.08) % 40;
-        const verticalShift = Math.sin(scrollPos * 0.003) * 20;
-        setPosition({ x: parallaxOffset, y: verticalShift });
-        setScale(1 + Math.sin(scrollPos * 0.002) * 0.05);
-
+      if (!carShowcase) {
+        setOpacity(0);
         return;
       }
 
-      const sectionTop = (footerCTA as HTMLElement).offsetTop;
-      const sectionHeight = (footerCTA as HTMLElement).clientHeight;
+      const sectionTop = carShowcase.offsetTop;
+      const sectionHeight = carShowcase.clientHeight;
+      const sectionBottom = sectionTop + sectionHeight;
       
-      // Car appears when user reaches the footer CTA section
-      const showStart = sectionTop - window.innerHeight * 0.3;
-      const showEnd = sectionTop + sectionHeight + window.innerHeight * 0.2;
+      // Car fades in as user approaches the showcase section
+      const showStart = sectionTop - window.innerHeight * 0.4;
+      const showFull = sectionTop + window.innerHeight * 0.1;
+      const hideStart = sectionBottom + window.innerHeight * 0.2;
 
-      if (scrollPos >= showStart && scrollPos <= showEnd) {
-        const progress = (scrollPos - showStart) / (showEnd - showStart);
-        setOpacity(Math.max(0, Math.min(1, progress * 1.3)));
-      } else if (scrollPos > showEnd) {
-        setOpacity(1);
+      let newOpacity = 0;
+
+      if (scrollPos < showStart) {
+        newOpacity = 0;
+      } else if (scrollPos < showFull) {
+        // Fade in smoothly
+        const progress = (scrollPos - showStart) / (showFull - showStart);
+        newOpacity = Math.max(0, Math.min(1, progress));
+      } else if (scrollPos < hideStart) {
+        // Full opacity while viewing showcase section
+        newOpacity = 1;
       } else {
-        setOpacity(0);
+        // Fade out after showcase
+        const progress = (scrollPos - hideStart) / (window.innerHeight * 0.3);
+        newOpacity = Math.max(0, 1 - progress);
       }
 
-      // Parallax effect
-      const parallaxOffset = (scrollPos * 0.08) % 40;
-      const verticalShift = Math.sin(scrollPos * 0.003) * 20;
+      setOpacity(newOpacity);
+
+      // Parallax effect synchronized with scroll
+      const parallaxOffset = (scrollPos * 0.08) % 50;
+      const verticalShift = Math.sin(scrollPos * 0.003) * 25;
       setPosition({ x: parallaxOffset, y: verticalShift });
-      setScale(1 + Math.sin(scrollPos * 0.002) * 0.05);
+      setScale(1 + Math.sin(scrollPos * 0.002) * 0.06);
     };
 
     window.addEventListener("scroll", handleScroll, { passive: true });
