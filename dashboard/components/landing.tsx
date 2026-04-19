@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import GuardianLogo from "./GuardianLogo";
+
 
 /* ══════════════════════════════════════════
    PARTICLE FIELD
@@ -198,7 +198,6 @@ function Nav({ onNav }: { onNav: () => void }) {
     <motion.nav initial={{ opacity: 0, y: -12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className={`lp-nav ${scrolled ? "lp-nav--scrolled" : ""}`}>
       <div className="lp-nav-inner">
         <div className="lp-nav-brand">
-          <GuardianLogo size={32} style={{ flexShrink: 0 }} />
           <span className="lp-nav-name">GUARDIAN<span style={{ color: "var(--lp-gold)" }}>·OTA</span></span>
         </div>
         <div className="lp-nav-links">
