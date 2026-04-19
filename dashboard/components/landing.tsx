@@ -336,6 +336,8 @@ export default function Landing({ onEnterDashboard }: { onEnterDashboard: () => 
       </section>
 
       <div className="lp-divider" />
+
+      {/* FOOTER CTA */}
       <section style={{ position: "relative", zIndex: 1, padding: "80px 32px", textAlign: "center" }}>
         <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}>
           <p className="lp-section-label" style={{ justifyContent: "center" }}>Ready</p>

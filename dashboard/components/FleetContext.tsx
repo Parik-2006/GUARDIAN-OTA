@@ -5,6 +5,19 @@ import type { DeviceState, ECUKey } from "@/types";
 import type { CarVariant } from "./CarModel3D";
 
 /* ═══════════════════════════════════════════════════════════════
+   ACTIVITY LOG TYPES
+═══════════════════════════════════════════════════════════════ */
+export interface ActivityLog {
+  id: string;
+  timestamp: Date;
+  type: "device_added" | "device_deleted" | "ota_started" | "ota_completed" | "device_connected" | "device_disconnected" | "encryption_toggled" | "ecu_status_changed";
+  vehicleId?: string;
+  vehicleName?: string;
+  message: string;
+  metadata?: Record<string, any>;
+}
+
+/* ═══════════════════════════════════════════════════════════════
    FLEET VEHICLE — extends DeviceState with display metadata
 ═══════════════════════════════════════════════════════════════ */
 export interface FleetVehicle extends DeviceState {
@@ -34,6 +47,8 @@ interface FleetContextValue {
   toggleEncryption: (vehicleId: string) => void;
   detectDeviceInfo: (deviceId: string) => { model: FleetVehicle["model"]; variant: CarVariant; name: string };
   getModelColor: (model: FleetVehicle["model"]) => { primary: string; glow: string; accent: string };
+  activityLogs: ActivityLog[];
+  addActivityLog: (log: Omit<ActivityLog, "id" | "timestamp">) => void;
 }
 
 const FleetContext = createContext<FleetContextValue | null>(null);
@@ -172,6 +187,7 @@ export function FleetProvider({ children }: { children: ReactNode }) {
   const [currentView, setCurrentView] = useState<ViewMode>("fleet");
   const [selectedVehicleId, setSelectedVehicleId] = useState<string | null>(null);
   const [activeEcu, setActiveEcu] = useState<string | null>(null);
+  const [activityLogs, setActivityLogs] = useState<ActivityLog[]>([]);
 
   const selectVehicle = useCallback((id: string) => {
     setSelectedVehicleId(id);
@@ -197,21 +213,47 @@ export function FleetProvider({ children }: { children: ReactNode }) {
     setActiveEcu(null);
   }, []);
 
+  const addActivityLog = useCallback((log: Omit<ActivityLog, "id" | "timestamp">) => {
+    setActivityLogs(prev => [{
+      ...log,
+      id: `LOG-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      timestamp: new Date(),
+    }, ...prev]);
+  }, []);
+
   const addDevice = useCallback((id: string) => {
     setFleet(prev => {
       // Auto-detect model, variant, and name based on device ID
       const detectedInfo = detectVehicleModel(id, prev);
       return [...prev, createDefaultVehicle(id, detectedInfo.name, detectedInfo.model, detectedInfo.variant)];
     });
-  }, []);
+    // Log the device addition activity
+    const detectedInfo = detectVehicleModel(id, fleet);
+    addActivityLog({
+      type: "device_added",
+      vehicleId: id,
+      vehicleName: detectedInfo.name,
+      message: `✓ Device added: ${detectedInfo.name} (${id})`,
+    });
+  }, [fleet, addActivityLog]);
 
   const deleteDevice = useCallback((deviceId: string) => {
+    const vehicle = fleet.find(v => v.deviceId === deviceId);
     setFleet(prev => prev.filter(v => v.deviceId !== deviceId));
     setSelectedVehicleId(null);
     setCurrentView("fleet");
-  }, []);
+    if (vehicle) {
+      addActivityLog({
+        type: "device_deleted",
+        vehicleId: deviceId,
+        vehicleName: vehicle.name,
+        message: `✗ Device removed: ${vehicle.name} (${deviceId})`,
+      });
+    }
+  }, [fleet, addActivityLog]);
 
   const toggleEncryption = useCallback((vehicleId: string) => {
+    const vehicle = fleet.find(v => v.deviceId === vehicleId);
     setFleet(prev =>
       prev.map(v =>
         v.deviceId === vehicleId
@@ -219,7 +261,16 @@ export function FleetProvider({ children }: { children: ReactNode }) {
           : v
       )
     );
-  }, []);
+    if (vehicle) {
+      addActivityLog({
+        type: "encryption_toggled",
+        vehicleId: vehicleId,
+        vehicleName: vehicle.name,
+        message: `🔐 Encryption ${!vehicle.encryptionEnabled ? "enabled" : "disabled"} on ${vehicle.name}`,
+        metadata: { encryptionEnabled: !vehicle.encryptionEnabled },
+      });
+    }
+  }, [fleet, addActivityLog]);
 
   const detectDeviceInfo = useCallback((deviceId: string) => {
     return detectVehicleModel(deviceId, fleet);
@@ -233,7 +284,7 @@ export function FleetProvider({ children }: { children: ReactNode }) {
     <FleetContext.Provider value={{
       fleet, setFleet, currentView, selectedVehicleId, activeEcu,
       setActiveEcu, selectVehicle, goToDashboard, goToTerminal, goToDocumentation, addDevice, deleteDevice, toggleEncryption,
-      detectDeviceInfo, getModelColor,
+      detectDeviceInfo, getModelColor, activityLogs, addActivityLog,
     }}>
       {children}
     </FleetContext.Provider>
