@@ -7,6 +7,7 @@
  */
 
 #include "ecu_tasks.h"
+#include "mqtt_transport.h"
 
 #include "esp_log.h"
 #include "esp_random.h"
@@ -78,9 +79,26 @@ void powertrain_ecu_task(void *arg) {
  */
 void sensor_ecu_task(void *arg) {
     can_msg_t rx;
+    uint32_t last_heartbeat = 0;
+
     for (;;) {
-        if (xQueueReceive(s_can_queue, &rx, pdMS_TO_TICKS(300)) == pdTRUE) {
+        if (xQueueReceive(s_can_queue, &rx, pdMS_TO_TICKS(100)) == pdTRUE) {
             ESP_LOGD(TAG, "CAN [%d→%d]: %s", rx.from, rx.to, rx.data);
+        }
+
+        // Publish heartbeat to cloud every 2 seconds
+        if ((xTaskGetTickCount() - last_heartbeat) > pdMS_TO_TICKS(2000)) {
+            last_heartbeat = xTaskGetTickCount();
+
+            // Brake health reflects s_safe_to_upd (can be toggled by brake_ecu_task)
+            const char* brake_st = s_safe_to_upd ? "green" : "red";
+            
+            char health_json[128];
+            snprintf(health_json, sizeof(health_json),
+                     "{\"brake\":\"%s\",\"powertrain\":\"green\",\"sensor\":\"green\",\"infotainment\":\"green\"}",
+                     brake_st);
+            
+            mqtt_publish_heartbeat(health_json);
         }
     }
 }

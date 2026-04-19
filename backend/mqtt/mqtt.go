@@ -36,6 +36,12 @@ type StatusUpdate struct {
 	ErrorMsg   string `json:"error,omitempty"`
 }
 
+// ECUStatusUpdate is received from devices on sdv/ecu/status/<device_id>.
+type ECUStatusUpdate struct {
+	DeviceID  string            `json:"device_id"`
+	ECUStates map[string]string `json:"ecu_states"`
+}
+
 // -------------------------------------------------------------------
 // Publisher
 // -------------------------------------------------------------------
@@ -65,6 +71,19 @@ func (p *Publisher) PublishOTACommand(cmd OTACommand) error {
 	return nil
 }
 
+// PublishRebootCommand sends a direct reboot request to a specific device.
+func (p *Publisher) PublishRebootCommand(deviceID string) error {
+	payload := map[string]string{
+		"action":    "reboot",
+		"device_id": deviceID,
+		"issued_at": time.Now().UTC().Format(time.RFC3339),
+	}
+	b, _ := json.Marshal(payload)
+	token := p.client.Publish(fmt.Sprintf("sdv/device/command/%s", deviceID), 1, false, b)
+	token.Wait()
+	return token.Error()
+}
+
 // -------------------------------------------------------------------
 // Consumer
 // -------------------------------------------------------------------
@@ -72,10 +91,14 @@ func (p *Publisher) PublishOTACommand(cmd OTACommand) error {
 // StatusHandler is called with parsed StatusUpdate messages.
 type StatusHandler func(update StatusUpdate)
 
+// ECUHandler is called with parsed ECUStatusUpdate messages.
+type ECUHandler func(update ECUStatusUpdate)
+
 // Consumer subscribes to device status topics.
 type Consumer struct {
-	client  pahomqtt.Client
-	handler StatusHandler
+	client     pahomqtt.Client
+	handler    StatusHandler
+	ecuHandler ECUHandler
 }
 
 // NewConsumer creates a Consumer. Call Subscribe to start receiving.
@@ -83,23 +106,36 @@ func NewConsumer(c pahomqtt.Client, h StatusHandler) *Consumer {
 	return &Consumer{client: c, handler: h}
 }
 
-// Subscribe subscribes to sdv/ota/status/# at QoS-1.
+// SetECUHandler registers the callback for hardware heartbeats.
+func (c *Consumer) SetECUHandler(h ECUHandler) {
+	c.ecuHandler = h
+}
+
+// Subscribe subscribes to both OTA status and ECU heartbeats.
 func (c *Consumer) Subscribe() error {
-	token := c.client.Subscribe("sdv/ota/status/#", 1, func(_ pahomqtt.Client, msg pahomqtt.Message) {
+	// Status updates
+	c.client.Subscribe("sdv/ota/status/#", 1, func(_ pahomqtt.Client, msg pahomqtt.Message) {
 		var update StatusUpdate
 		if err := json.Unmarshal(msg.Payload(), &update); err != nil {
 			slog.Warn("mqtt: unparseable status message", "topic", msg.Topic(), "err", err)
 			return
 		}
-		args := []any{"device", update.DeviceID, "status", update.Status}
-		if update.ErrorMsg != "" {
-			args = append(args, "error", update.ErrorMsg)
-		}
-		slog.Info("mqtt: device status", args...)
 		c.handler(update)
 	})
-	token.Wait()
-	return token.Error()
+
+	// ECU Heartbeats
+	c.client.Subscribe("sdv/ecu/status/#", 1, func(_ pahomqtt.Client, msg pahomqtt.Message) {
+		var update ECUStatusUpdate
+		if err := json.Unmarshal(msg.Payload(), &update); err != nil {
+			slog.Warn("mqtt: unparseable ecu status", "topic", msg.Topic(), "err", err)
+			return
+		}
+		if c.ecuHandler != nil {
+			c.ecuHandler(update)
+		}
+	})
+
+	return nil
 }
 
 // -------------------------------------------------------------------

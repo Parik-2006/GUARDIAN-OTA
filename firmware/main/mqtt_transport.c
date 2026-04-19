@@ -132,6 +132,20 @@ void mqtt_publish_status(const char *campaign_id, const char *status, const char
     ESP_LOGI(TAG, "status published [%s]: %s (msg_id=%d)", s_device_id, status, msg_id);
 }
 
+void mqtt_publish_heartbeat(const char *json_ecu_states) {
+    if (!s_client) return;
+
+    char topic[80];
+    snprintf(topic, sizeof(topic), "sdv/ecu/status/%s", s_device_id);
+
+    char payload[512];
+    snprintf(payload, sizeof(payload),
+             "{\"device_id\":\"%s\",\"ecu_states\":%s}",
+             s_device_id, json_ecu_states);
+
+    esp_mqtt_client_publish(s_client, topic, payload, 0, 0, 0); // QoS-0 for heartbeats
+}
+
 /* ── MQTT event handler ─────────────────────────────────────────────────── */
 
 static void mqtt_event_handler(void *arg, esp_event_base_t base, int32_t event_id, void *event_data) {

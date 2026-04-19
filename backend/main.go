@@ -90,6 +90,19 @@ func main() {
 		})
 		evStore.Write(context.Background(), "device_status", update)
 	})
+	consumer.SetECUHandler(func(update mqttclient.ECUStatusUpdate) {
+		registry.Update(update.DeviceID, func(d *twin.DeviceState) {
+			d.LastSeen = time.Now().UTC()
+			if d.ECUStates == nil {
+				d.ECUStates = make(map[string]string)
+			}
+			for k, v := range update.ECUStates {
+				d.ECUStates[k] = v
+			}
+		})
+		// Write to event store for the Activity Logs
+		evStore.Write(context.Background(), "ecu_status_changed", update)
+	})
 	if err := consumer.Subscribe(); err != nil {
 		slog.Warn("mqtt: consumer subscribe failed", "err", err)
 	}

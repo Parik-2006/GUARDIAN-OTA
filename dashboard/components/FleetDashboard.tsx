@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { P } from "./theme";
 import I from "./Icon";
 import { useFleet } from "./FleetContext";
+import FleetStats from "./FleetStats";
 
 const MODEL_ICONS: Record<string, string> = {
   Interceptor: "speed",
@@ -18,6 +19,8 @@ export default function FleetDashboard() {
 
   return (
     <div style={{ flex: 1, overflowY: "auto", padding: "24px 28px" }}>
+      <FleetStats />
+      
       {/* Header */}
       <div style={{ marginBottom: 28 }}>
         <h2 style={{

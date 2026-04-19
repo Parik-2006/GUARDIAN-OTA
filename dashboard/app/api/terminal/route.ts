@@ -4,33 +4,20 @@ import path from "path";
 
 const execAsync = promisify(exec);
 
-// List of allowed commands for security (whitelist approach)
-const ALLOWED_COMMANDS = [
-  "git",
-  "npm",
-  "npm run",
-  "git add",
-  "git commit",
-  "git push",
-  "git pull",
-  "git status",
-  "git log",
-  "git diff",
-  "git checkout",
-  "git branch",
-  "ls",
-  "pwd",
-  "whoami",
-  "date",
-  "echo",
-];
+// List of project-specific commands that should be forwarded to the Go backend
+const PROJECT_COMMANDS = ["fleet", "logs", "device", "blockchain", "ota", "campaigns"];
 
-function validateCommand(command: string): boolean {
-  // Check if command starts with an allowed command
-  const trimmedCmd = command.trim();
-  return ALLOWED_COMMANDS.some(allowed => 
-    trimmedCmd.startsWith(allowed) && (trimmedCmd[allowed.length] === " " || trimmedCmd[allowed.length] === undefined)
-  );
+// Essential shell commands allowed for repository management
+const SHELL_COMMANDS = ["git", "npm", "ls", "pwd", "date"];
+
+function isProjectCommand(command: string): boolean {
+  const baseCmd = command.trim().split(" ")[0];
+  return PROJECT_COMMANDS.includes(baseCmd);
+}
+
+function isShellCommand(command: string): boolean {
+  const baseCmd = command.trim().split(" ")[0];
+  return SHELL_COMMANDS.includes(baseCmd);
 }
 
 export async function POST(request: Request) {
@@ -44,11 +31,40 @@ export async function POST(request: Request) {
       );
     }
 
-    // Security Check
-    if (!validateCommand(command)) {
+    const trimmedCmd = command.trim();
+
+    // 1. Handle Project Commands (Forward to Go Backend)
+    if (isProjectCommand(trimmedCmd)) {
+      try {
+        const backendRes = await fetch("http://localhost:8080/api/terminal", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ command: trimmedCmd }),
+        });
+
+        if (!backendRes.ok) {
+          throw new Error(`Backend responded with ${backendRes.status}`);
+        }
+
+        const data = await backendRes.json();
+        return Response.json(data);
+      } catch (err) {
+        return Response.json({
+          output: [`[ERROR] Could not reach Go backend: ${err instanceof Error ? err.message : "Unknown error"}`],
+          status: "error",
+        }, { status: 502 });
+      }
+    }
+
+    // 2. Handle Allowed Shell Commands (Execute Locally)
+    if (!isShellCommand(trimmedCmd)) {
       return Response.json(
         { 
-          output: ["Error: Command not allowed. Allowed commands: git, npm, ls, pwd, etc."],
+          output: [
+            "Error: Command not recognized or allowed.",
+            "PROJECT COMMANDS: fleet, logs, device, blockchain",
+            "SYSTEM COMMANDS: git, npm, ls, pwd"
+          ],
           status: "error"
         },
         { status: 403 }

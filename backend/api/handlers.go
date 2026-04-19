@@ -7,6 +7,7 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
+	"fmt"
 	"log/slog"
 	"net"
 	"net/http"
@@ -47,6 +48,11 @@ type OTADeployRequest struct {
 	CanaryPercent int    `json:"canaryPercent"`
 }
 
+// TerminalRequest is the JSON body accepted by POST /api/terminal.
+type TerminalRequest struct {
+	Command string `json:"command" binding:"required"`
+}
+
 // RegisterRoutes wires all routes onto the given Gin engine.
 func RegisterRoutes(r *gin.Engine, d *Deps) {
 	r.GET("/health", handleHealth)
@@ -56,6 +62,7 @@ func RegisterRoutes(r *gin.Engine, d *Deps) {
 	r.GET("/api/campaigns", d.handleCampaigns)
 	r.GET("/api/campaigns/:id", d.handleCampaign)
 	r.GET("/api/events", d.handleEvents)
+	r.POST("/api/terminal", d.handleTerminal)
 	r.GET("/ws/events", gin.WrapF(d.Hub.ServeHTTP))
 }
 
@@ -265,6 +272,99 @@ func (d *Deps) handleUpload(c *gin.Context) {
 		"count":      len(cmp.Targets),
 		"txPending":  d.Blockchain != nil,
 	})
+}
+
+func (d *Deps) handleTerminal(c *gin.Context) {
+	var req TerminalRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid command format"})
+		return
+	}
+
+	parts := strings.Fields(req.Command)
+	if len(parts) == 0 {
+		c.JSON(http.StatusOK, gin.H{"status": "success", "output": []string{""}})
+		return
+	}
+
+	cmd := parts[0]
+	args := parts[1:]
+
+	output := []string{}
+	status := "success"
+
+	switch cmd {
+	case "fleet":
+		if len(args) > 0 && args[0] == "list" {
+			devices := d.Registry.Snapshot()
+			output = append(output, "╔═══════════════════════════════════════════════════════╗")
+			output = append(output, "║ DEVICE ID          │ STATUS      │ VERSION │ LAST SEEN   ║")
+			output = append(output, "╟────────────────────┼─────────────┼─────────┼─────────────╢")
+			for _, state := range devices {
+				statusLine := state.OTAStatus
+				if statusLine == "" {
+					statusLine = "online"
+				}
+				output = append(output, fmt.Sprintf("║ %-18s │ %-11s │ %-7s │ %-11s ║",
+					state.DeviceID, statusLine, state.OTAVersion, state.LastSeen.Format("15:04:05")))
+			}
+			output = append(output, "╚═══════════════════════════════════════════════════════╝")
+		} else {
+			output = []string{"Usage: fleet list"}
+		}
+
+	case "logs":
+		if len(args) > 0 && args[0] == "show" {
+			limit := 10
+			if len(args) > 1 {
+				if l, err := strconv.Atoi(args[1]); err == nil {
+					limit = l
+				}
+			}
+			evts, _ := d.Events.Query(context.Background(), "", limit)
+			output = append(output, fmt.Sprintf("[INFO] Showing last %d system events:", len(evts)))
+			for _, e := range evts {
+				output = append(output, fmt.Sprintf("[%s] %-15s | %s",
+					e.CreatedAt.Format("15:04:05"), e.EventType, string(e.Payload)))
+			}
+		} else {
+			output = []string{"Usage: logs show [limit]"}
+		}
+
+	case "device":
+		if len(args) > 1 && args[0] == "reboot" {
+			deviceID := args[1]
+			output = append(output, fmt.Sprintf("[INFO] Sending REBOOT command to %s...", deviceID))
+			if d.Publisher != nil {
+				if err := d.Publisher.PublishRebootCommand(deviceID); err != nil {
+					output = append(output, "[ERROR] MQTT publish failed: "+err.Error())
+					status = "error"
+				} else {
+					output = append(output, "✓ Command sent via MQTT bridge.")
+				}
+			} else {
+				output = append(output, "[ERROR] MQTT publisher unavailable.")
+				status = "error"
+			}
+		} else {
+			output = []string{"Usage: device reboot <device_id>"}
+		}
+
+	case "blockchain":
+		if d.Blockchain == nil {
+			output = []string{"[ERROR] Blockchain service disabled."}
+			status = "error"
+		} else {
+			output = append(output, "STATUS: CONNECTED (SEPOLIA)")
+			output = append(output, "LAST TX: 0x...")
+		}
+
+	default:
+		output = []string{fmt.Sprintf("[ERROR] Unknown command: %s", cmd), "Type 'help' for available commands."}
+		status = "error"
+	}
+
+	c.JSON(http.StatusOK, gin.H{"status": status, "output": output})
 }
 
 func getLocalIP() string {

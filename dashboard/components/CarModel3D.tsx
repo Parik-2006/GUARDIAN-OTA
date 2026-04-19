@@ -1,10 +1,11 @@
 "use client";
 
 import { useRef, useMemo, useState } from "react";
-import { Canvas, useFrame } from "@react-three/fiber";
+import { useFrame, Canvas } from "@react-three/fiber";
 import { OrbitControls } from "@react-three/drei";
 import * as THREE from "three";
 import { useFleet } from "./FleetContext";
+import { P } from "./theme";
 
 interface ECUDef {
   name: string;
@@ -104,16 +105,17 @@ const CAR_MODELS: Record<CarVariant, CarModelDef> = {
   }
 };
 
-function ECUComponent({ def, isActive, variantScale }: { def: ECUDef; isActive: boolean; variantScale: number }) {
+function ECUComponent({ def, isActive, variantScale, liveColor }: { def: ECUDef; isActive: boolean; variantScale: number; liveColor: string }) {
   const scaledPos = [def.position[0] * variantScale, def.position[1] * variantScale, def.position[2] * variantScale] as [number, number, number];
+  const color = liveColor === "red" ? P.burg : liveColor === "green" ? "#7AB88A" : def.color;
 
   return (
     <>
       {/* Dynamic lighting */}
       {isActive && (
         <>
-          <pointLight position={scaledPos} intensity={4.5} color={def.color} distance={5.0} decay={2} />
-          <pointLight position={[scaledPos[0], scaledPos[1] - 0.3, scaledPos[2]]} intensity={3.5} color={def.color} distance={4.5} decay={2} />
+          <pointLight position={scaledPos} intensity={4.5} color={color} distance={5.0} decay={2} />
+          <pointLight position={[scaledPos[0], scaledPos[1] - 0.3, scaledPos[2]]} intensity={3.5} color={color} distance={4.5} decay={2} />
         </>
       )}
 
@@ -122,8 +124,8 @@ function ECUComponent({ def, isActive, variantScale }: { def: ECUDef; isActive: 
         <mesh position={scaledPos}>
           <boxGeometry args={[0.4, 0.35, 0.35]} />
           <meshPhysicalMaterial 
-            color={def.color} 
-            emissive={def.color}
+            color={color} 
+            emissive={color}
             emissiveIntensity={0.7}
             transparent 
             opacity={0.55}
@@ -482,7 +484,8 @@ interface CarModel3DProps {
 }
 
 export default function CarModel3D({ variant = "bmw-m5" }: CarModel3DProps) {
-  const { activeEcu } = useFleet();
+  const { activeEcu, fleet, selectedVehicleId } = useFleet();
+  const vehicle = fleet.find(v => v.deviceId === selectedVehicleId);
   const [rotation, setRotation] = useState(0);
   const rotationRef = useRef<THREE.Group>(null!);
 
@@ -515,9 +518,21 @@ export default function CarModel3D({ variant = "bmw-m5" }: CarModel3DProps) {
 
         <group ref={rotationRef}>
           <CarShell variant={variant} />
-          {getECUDefs(variant).map(def => (
-            <ECUComponent key={def.name} def={def} isActive={activeEcu === def.name} variantScale={CAR_MODELS[variant].scale} />
-          ))}
+          {getECUDefs(variant).map(def => {
+            // Map ECU name (e.g. "Brake ECU") to twin key (e.g. "brake")
+            const lookupKey = def.name.toLowerCase().split(" ")[0];
+            const liveColor = vehicle?.ecuStates?.[lookupKey] || "green";
+            
+            return (
+              <ECUComponent 
+                key={def.name} 
+                def={def} 
+                isActive={activeEcu === def.name} 
+                variantScale={CAR_MODELS[variant].scale}
+                liveColor={liveColor}
+              />
+            );
+          })}
         </group>
 
         <RotationController rotationRef={rotationRef} rotation={rotation} />
