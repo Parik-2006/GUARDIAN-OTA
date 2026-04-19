@@ -726,12 +726,12 @@ export default function Landing({ onEnterDashboard }: { onEnterDashboard: () => 
           </p>
           <SecurityBadges />
           <FeatureRow items={[
-            { icon: "🔐", title: "ECC P-256 Signature Verification", desc: "mbedTLS verifies firmware payload against embedded public key before any OTA acceptance. Blocks forged and supply-chain backdoor attacks." },
-            { icon: "🔑", title: "SHA-256 Binary Integrity", desc: "Firmware hash verified against signed manifest before installation. Detects corruption, replay, and altered binary attacks at reception." },
-            { icon: "🛡", title: "Pre-Update Safety Gate", desc: "OTA execution blocked when brake ECU reports UNSAFE state. Prevents firmware updates during active safety-critical vehicle operation." },
-            { icon: "↩", title: "Dual-Partition Rollback", desc: "ESP-IDF dual OTA slot with automatic revert on health-check failure. Prevents bricking and ensures safe recovery to verified firmware." },
-            { icon: "📡", title: "TLS MQTT Transport", desc: "All OTA commands encrypted over MQTT 8883 with certificate validation. Blocks MITM interception, command injection, and replay attacks." },
-            { icon: "🪪", title: "eFuse MAC Device Identity", desc: "Immutable hardware MAC-based device identifier stored in ESP32 eFuse. Eliminates logical node spoofing and supports fine-grained access control." },
+            { icon: "", title: "ECC P-256 Signature Verification", desc: "mbedTLS verifies firmware payload against embedded public key before any OTA acceptance. Blocks forged and supply-chain backdoor attacks." },
+            { icon: "", title: "SHA-256 Binary Integrity", desc: "Firmware hash verified against signed manifest before installation. Detects corruption, replay, and altered binary attacks at reception." },
+            { icon: "", title: "Pre-Update Safety Gate", desc: "OTA execution blocked when brake ECU reports UNSAFE state. Prevents firmware updates during active safety-critical vehicle operation." },
+            { icon: "", title: "Dual-Partition Rollback", desc: "ESP-IDF dual OTA slot with automatic revert on health-check failure. Prevents bricking and ensures safe recovery to verified firmware." },
+            { icon: "", title: "TLS MQTT Transport", desc: "All OTA commands encrypted over MQTT 8883 with certificate validation. Blocks MITM interception, command injection, and replay attacks." },
+            { icon: "", title: "eFuse MAC Device Identity", desc: "Immutable hardware MAC-based device identifier stored in ESP32 eFuse. Eliminates logical node spoofing and supports fine-grained access control." },
           ]} />
         </section>
 

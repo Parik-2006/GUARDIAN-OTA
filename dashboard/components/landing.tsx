@@ -297,12 +297,12 @@ export default function Landing({ onEnterDashboard }: { onEnterDashboard: () => 
         </p>
         <SecurityBadges />
         <FeatureRow items={[
-          { icon: "🔐", title: "ECC P-256 Signature",  desc: "mbedTLS verifies OTA payload against embedded public key. Prevents forged firmware and supply-chain tampering." },
-          { icon: "🔑", title: "SHA-256 Integrity",    desc: "Firmware binary hash compared to signed manifest. Prevents corruption replay and altered binary attacks." },
-          { icon: "🛡",  title: "Safety Gate",          desc: "OTA blocked when brake ECU reports UNSAFE state. No updates during active safety-critical conditions." },
-          { icon: "↩",  title: "Automatic Rollback",   desc: "ESP-IDF dual-partition scheme — failed health-check triggers esp_ota_mark_app_invalid_rollback_and_reboot." },
-          { icon: "📡", title: "TLS MQTT Transport",   desc: "Encrypted command channel prevents MITM sniffing and injection on OTA command topics." },
-          { icon: "🪪", title: "eFuse MAC Identity",   desc: "Device-specific identity derived from immutable hardware MAC. Prevents logical node spoofing." },
+          { icon: "", title: "ECC P-256 Signature",  desc: "mbedTLS verifies OTA payload against embedded public key. Prevents forged firmware and supply-chain tampering." },
+          { icon: "", title: "SHA-256 Integrity",    desc: "Firmware binary hash compared to signed manifest. Prevents corruption replay and altered binary attacks." },
+          { icon: "",  title: "Safety Gate",          desc: "OTA blocked when brake ECU reports UNSAFE state. No updates during active safety-critical conditions." },
+          { icon: "",  title: "Automatic Rollback",   desc: "ESP-IDF dual-partition scheme — failed health-check triggers esp_ota_mark_app_invalid_rollback_and_reboot." },
+          { icon: "", title: "TLS MQTT Transport",   desc: "Encrypted command channel prevents MITM sniffing and injection on OTA command topics." },
+          { icon: "", title: "eFuse MAC Identity",   desc: "Device-specific identity derived from immutable hardware MAC. Prevents logical node spoofing." },
         ]} />
       </section>
 
