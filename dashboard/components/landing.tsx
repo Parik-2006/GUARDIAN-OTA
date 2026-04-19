@@ -124,7 +124,6 @@ function FeatureRow({ items }: { items: { icon: string; title: string; desc: str
     <div className="lp-feature-row">
       {items.map((item, i) => (
         <motion.div key={i} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.08, duration: 0.55 }} className="lp-feature-card">
-          <div className="lp-feature-shine" />
           <h3 className="lp-feature-title">{item.title}</h3>
           <p className="lp-feature-desc">{item.desc}</p>
         </motion.div>

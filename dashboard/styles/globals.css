@@ -604,9 +604,7 @@ body::after {
 @media (max-width: 900px) { .lp-feature-row { grid-template-columns: 1fr 1fr; } }
 @media (max-width: 580px) { .lp-feature-row { grid-template-columns: 1fr; } }
 .lp-feature-card { background: rgba(240,235,224,0.028); border: 1px solid rgba(240,235,224,0.065); border-radius: 8px; padding: 28px 22px; position: relative; overflow: hidden; transition: border-color 0.3s, box-shadow 0.3s, transform 0.3s; cursor: default; }
-.lp-feature-shine { position: absolute; inset: 0; border-radius: inherit; background: linear-gradient(135deg, rgba(240,235,224,0.03) 0%, transparent 55%); pointer-events: none; }
 .lp-feature-card:hover { border-color: rgba(212,169,106,0.28); box-shadow: 0 0 32px rgba(212,169,106,0.08), 0 12px 40px rgba(0,0,0,0.35); transform: translateY(-4px) scale(1.008); }
-.lp-feature-icon { font-size: 1.8rem; margin-bottom: 16px; }
 .lp-feature-title { font-family: 'Rajdhani', sans-serif; font-weight: 600; font-size: 1rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--lp-cream); margin-bottom: 10px; }
 .lp-feature-desc { font-size: 0.82rem; color: rgba(240,235,224,0.32); line-height: 1.65; }
 

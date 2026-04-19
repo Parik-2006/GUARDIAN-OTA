@@ -143,8 +143,6 @@ function FeatureRow({ items }: {
           transition={{ delay: i * 0.08, duration: 0.55 }}
           className="lp-feature-card"
         >
-          <div className="lp-feature-shine" />
-          <div className="lp-feature-icon">{item.icon}</div>
           <h3 className="lp-feature-title">{item.title}</h3>
           <p className="lp-feature-desc">{item.desc}</p>
         </motion.div>
@@ -505,19 +503,7 @@ export default function Landing({ onEnterDashboard }: { onEnterDashboard: () => 
           transition:border-color 0.3s, box-shadow 0.3s, transform 0.3s;
           cursor:default;
         }
-        .lp-feature-shine {
-          position:absolute; inset:0; border-radius:inherit;
-          background:linear-gradient(135deg, rgba(240,235,224,0.03) 0%, transparent 55%);
-          pointer-events:none;
-        }
-        .lp-feature-card::before {
-          content:''; position:absolute; top:0; left:-100%;
-          width:80%; height:2px;
-          background:linear-gradient(90deg, transparent, rgba(212,169,106,0.6), transparent);
-          transition:left 0.5s ease;
-        }
         .lp-feature-card:hover { border-color:rgba(212,169,106,0.28); box-shadow:0 0 32px rgba(212,169,106,0.08), 0 12px 40px rgba(0,0,0,0.35); transform:translateY(-4px) scale(1.008); }
-        .lp-feature-card:hover::before { left:120%; }
         .lp-feature-icon { font-size:1.8rem; margin-bottom:16px; }
         .lp-feature-title {
           font-family:'Rajdhani',sans-serif; font-weight:600;
