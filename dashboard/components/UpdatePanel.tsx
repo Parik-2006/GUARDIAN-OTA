@@ -196,6 +196,7 @@ export default function UpdatePanel() {
 
       {/* Push button */}
       <button
+        type="button"
         onClick={handlePush}
         disabled={!file || pushing}
         style={{
@@ -229,31 +230,36 @@ export default function UpdatePanel() {
 
       {/* Rollback button - appears after successful push */}
       {done && !rolledBack && !rollingBack && (
-        <button
+        <motion.button
+          type="button"
           onClick={handleRollback}
+          initial={{ opacity: 0, y: -5 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -5 }}
+          transition={{ duration: 0.2 }}
           style={{
             width: "100%", padding: "10px 0",
-            background: P.copDim,
-            color: P.copper,
+            background: P.burgDim,
+            color: P.burg,
             fontFamily: "'Cormorant Garamond',serif", fontWeight: 700,
             fontSize: "0.9rem", letterSpacing: "0.08em",
             borderRadius: 3,
-            border: `1px solid ${P.bHi}`,
+            border: `1px solid rgba(158,90,90,0.4)`,
             cursor: "pointer",
             transition: "all 0.22s",
             display: "flex", alignItems: "center", justifyContent: "center", gap: 7,
           }}
           onMouseEnter={e => {
-            e.currentTarget.style.background = P.copper;
+            e.currentTarget.style.background = P.burg;
             e.currentTarget.style.color = P.ivory;
           }}
           onMouseLeave={e => {
-            e.currentTarget.style.background = P.copDim;
-            e.currentTarget.style.color = P.copper;
+            e.currentTarget.style.background = P.burgDim;
+            e.currentTarget.style.color = P.burg;
           }}
         >
           <I n="restore" sz={16} col="inherit" /> Rollback Update
-        </button>
+        </motion.button>
       )}
     </div>
   );
