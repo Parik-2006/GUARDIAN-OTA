@@ -115,84 +115,49 @@ function GlassStatCard({ icon, value, label, sub, delay = 0 }: {
 }
 
 /* ══════════════════════════════════════════
-   SECURITY PATTERN ICONS
+   SECURITY PATTERN ICONS (Small 2-4px)
 ══════════════════════════════════════════ */
 function SecurityPatternIcon({ title }: { title: string }) {
   const patterns: Record<string, JSX.Element> = {
     "ECC P-256 Signature": (
-      <svg viewBox="0 0 60 60" style={{ width: "100%", height: "100%" }}>
-        <defs>
-          <pattern id="eccPattern" x="0" y="0" width="10" height="10" patternUnits="userSpaceOnUse">
-            <circle cx="5" cy="5" r="1.5" fill="currentColor" opacity="0.6" />
-            <line x1="5" y1="0" x2="5" y2="10" stroke="currentColor" strokeWidth="0.5" opacity="0.3" />
-            <line x1="0" y1="5" x2="10" y2="5" stroke="currentColor" strokeWidth="0.5" opacity="0.3" />
-          </pattern>
-        </defs>
-        <circle cx="30" cy="30" r="25" fill="url(#eccPattern)" />
-        <path d="M30 10 L45 20 L45 40 L30 50 L15 40 L15 20 Z" stroke="currentColor" strokeWidth="1.5" fill="none" opacity="0.8" />
+      <svg viewBox="0 0 8 8" style={{ width: "4px", height: "4px" }}>
+        <circle cx="4" cy="4" r="2" fill="none" stroke="currentColor" strokeWidth="0.8" opacity="0.7" />
+        <circle cx="4" cy="4" r="1" fill="currentColor" opacity="0.8" />
       </svg>
     ),
     "SHA-256 Integrity": (
-      <svg viewBox="0 0 60 60" style={{ width: "100%", height: "100%" }}>
-        <defs>
-          <pattern id="hashPattern" x="0" y="0" width="8" height="8" patternUnits="userSpaceOnUse">
-            <line x1="0" y1="4" x2="8" y2="4" stroke="currentColor" strokeWidth="0.8" opacity="0.5" />
-            <line x1="4" y1="0" x2="4" y2="8" stroke="currentColor" strokeWidth="0.8" opacity="0.5" />
-          </pattern>
-        </defs>
-        <rect x="10" y="15" width="40" height="30" rx="3" fill="url(#hashPattern)" stroke="currentColor" strokeWidth="1.5" />
-        <circle cx="20" cy="22" r="3" stroke="currentColor" strokeWidth="1" fill="none" />
-        <circle cx="40" cy="22" r="3" stroke="currentColor" strokeWidth="1" fill="none" />
-        <circle cx="20" cy="38" r="3" stroke="currentColor" strokeWidth="1" fill="none" />
-        <circle cx="40" cy="38" r="3" stroke="currentColor" strokeWidth="1" fill="none" />
+      <svg viewBox="0 0 8 8" style={{ width: "4px", height: "4px" }}>
+        <line x1="2" y1="4" x2="6" y2="4" stroke="currentColor" strokeWidth="0.8" opacity="0.8" />
+        <line x1="4" y1="2" x2="4" y2="6" stroke="currentColor" strokeWidth="0.8" opacity="0.8" />
+        <circle cx="4" cy="4" r="0.5" fill="currentColor" />
       </svg>
     ),
     "Safety Gate": (
-      <svg viewBox="0 0 60 60" style={{ width: "100%", height: "100%" }}>
-        <path d="M30 10 L50 20 L50 45 C50 48 48 50 45 50 L15 50 C12 50 10 48 10 45 L10 20 Z" stroke="currentColor" strokeWidth="1.5" fill="none" />
-        <line x1="30" y1="10" x2="30" y2="30" stroke="currentColor" strokeWidth="2" />
-        <line x1="22" y1="30" x2="38" y2="30" stroke="currentColor" strokeWidth="2" />
-        <circle cx="30" cy="30" r="8" stroke="currentColor" strokeWidth="1" fill="none" opacity="0.5" />
+      <svg viewBox="0 0 8 8" style={{ width: "4px", height: "4px" }}>
+        <path d="M4 1 L6.5 3 L6.5 6 L4 7 L1.5 6 L1.5 3 Z" stroke="currentColor" strokeWidth="0.7" fill="none" opacity="0.8" />
+        <line x1="4" y1="2.5" x2="4" y2="5" stroke="currentColor" strokeWidth="0.6" opacity="0.7" />
       </svg>
     ),
     "Automatic Rollback": (
-      <svg viewBox="0 0 60 60" style={{ width: "100%", height: "100%" }}>
-        <defs>
-          <pattern id="rotatePattern" x="0" y="0" width="6" height="6" patternUnits="userSpaceOnUse">
-            <circle cx="3" cy="3" r="1" fill="currentColor" opacity="0.4" />
-          </pattern>
-        </defs>
-        <circle cx="30" cy="30" r="20" fill="url(#rotatePattern)" stroke="currentColor" strokeWidth="1.5" />
-        <path d="M50 30 C50 41 41 50 30 50 C19 50 10 41 10 30" stroke="currentColor" strokeWidth="2" fill="none" />
-        <path d="M50 30 L45 24 L45 36 Z" fill="currentColor" />
+      <svg viewBox="0 0 8 8" style={{ width: "4px", height: "4px" }}>
+        <path d="M6 4 A2 2 0 0 0 2 4" stroke="currentColor" strokeWidth="0.8" fill="none" opacity="0.8" />
+        <path d="M6 4 L5.5 3 L5.5 4.5 Z" fill="currentColor" opacity="0.8" />
       </svg>
     ),
     "TLS MQTT Transport": (
-      <svg viewBox="0 0 60 60" style={{ width: "100%", height: "100%" }}>
-        <defs>
-          <pattern id="wavePattern" x="0" y="0" width="4" height="20" patternUnits="userSpaceOnUse">
-            <path d="M2 0 Q0 5 2 10 T2 20" stroke="currentColor" strokeWidth="0.8" fill="none" opacity="0.6" />
-          </pattern>
-        </defs>
-        <rect x="12" y="15" width="36" height="30" rx="3" fill="url(#wavePattern)" stroke="currentColor" strokeWidth="1.5" />
-        <circle cx="18" cy="22" r="2" fill="currentColor" opacity="0.8" />
-        <circle cx="42" cy="22" r="2" fill="currentColor" opacity="0.8" />
+      <svg viewBox="0 0 8 8" style={{ width: "4px", height: "4px" }}>
+        <path d="M4 1 L4 3 M3 2 L5 2" stroke="currentColor" strokeWidth="0.8" opacity="0.8" />
+        <path d="M4 4 L4 6 M3 5 L5 5" stroke="currentColor" strokeWidth="0.8" opacity="0.7" />
+        <line x1="4" y1="3" x2="4" y2="4" stroke="currentColor" strokeWidth="0.5" opacity="0.5" />
       </svg>
     ),
     "eFuse MAC Identity": (
-      <svg viewBox="0 0 60 60" style={{ width: "100%", height: "100%" }}>
-        <defs>
-          <pattern id="chipPattern" x="0" y="0" width="6" height="6" patternUnits="userSpaceOnUse">
-            <rect x="1" y="1" width="4" height="4" stroke="currentColor" strokeWidth="0.5" fill="none" opacity="0.5" />
-          </pattern>
-        </defs>
-        <rect x="15" y="18" width="30" height="24" rx="2" fill="url(#chipPattern)" stroke="currentColor" strokeWidth="1.5" />
-        <line x1="12" y1="24" x2="10" y2="24" stroke="currentColor" strokeWidth="1.5" />
-        <line x1="12" y1="30" x2="10" y2="30" stroke="currentColor" strokeWidth="1.5" />
-        <line x1="12" y1="36" x2="10" y2="36" stroke="currentColor" strokeWidth="1.5" />
-        <line x1="48" y1="24" x2="50" y2="24" stroke="currentColor" strokeWidth="1.5" />
-        <line x1="48" y1="30" x2="50" y2="30" stroke="currentColor" strokeWidth="1.5" />
-        <line x1="48" y1="36" x2="50" y2="36" stroke="currentColor" strokeWidth="1.5" />
+      <svg viewBox="0 0 8 8" style={{ width: "4px", height: "4px" }}>
+        <rect x="2" y="2" width="4" height="3" rx="0.5" fill="none" stroke="currentColor" strokeWidth="0.7" opacity="0.8" />
+        <line x1="1" y1="3" x2="1.5" y2="3" stroke="currentColor" strokeWidth="0.6" opacity="0.7" />
+        <line x1="1" y1="4" x2="1.5" y2="4" stroke="currentColor" strokeWidth="0.6" opacity="0.7" />
+        <line x1="6.5" y1="3" x2="7" y2="3" stroke="currentColor" strokeWidth="0.6" opacity="0.7" />
+        <line x1="6.5" y1="4" x2="7" y2="4" stroke="currentColor" strokeWidth="0.6" opacity="0.7" />
       </svg>
     ),
   };
